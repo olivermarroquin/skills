@@ -16,6 +16,104 @@ You will be given:
 
 ---
 
+## Phase 0 — Environment preflight
+
+**Run BEFORE the transcript pull (i.e., before SKILL.md's "Pull the transcript" step). This phase verifies the tools required by `transcript-pull.sh` are present in the current execution environment, attempts in-sandbox install if a tool is missing, and hard-fails loudly with operator acknowledgment if install fails. Do NOT silently degrade to "operator pulls on host" — that is the failure mode this phase exists to prevent.**
+
+**Phase 0 is stateless.** Every invocation of the skill re-runs Phase 0 from scratch. There is no session-level memoization, and no carryover from a previous run. "Retry" means an actual fresh check, not a recall of a previous result.
+
+Skip Phase 0 entirely if EITHER of the following is true:
+- The input is a local file path. (No network tooling required; `transcript-pull.sh`'s file-handling path uses only `cat` / `grep` / `sed` / `awk`.)
+- A cache hit exists for this URL (Step 6 Scenario A — the transcript is already on disk; no pull needed).
+
+Otherwise, run the appropriate sub-phase based on input type.
+
+### Phase 0a — YouTube URLs
+
+Required tool: `yt-dlp`.
+
+1. **Check availability.**
+   ```bash
+   command -v yt-dlp >/dev/null 2>&1 && yt-dlp --version
+   ```
+   If this succeeds, Phase 0a passes. Proceed to Step 6 (Pull).
+
+2. **If `yt-dlp` is missing, attempt install in-sandbox.**
+   ```bash
+   pip install yt-dlp --break-system-packages
+   ```
+   This matches the existing project convention (`transcript-pull.sh` uses the same `pip install ... --break-system-packages` pattern for `trafilatura`). Then re-check availability per step 1.
+
+3. **If install fails OR re-check fails, hard-fail loudly. STOP.** Do NOT proceed to the pull. Do NOT silently route the operator back to a host pull. Surface this exact format to the operator:
+
+   ```
+   PHASE 0 HARD-FAIL: yt-dlp is not available in the current execution environment, and the in-sandbox install attempt failed. Required to proceed with this YouTube URL.
+
+   To unblock, install yt-dlp on your Mac:
+
+       brew install yt-dlp
+
+   Then respond with one of:
+     - "acknowledged" or "retry" — re-invokes the skill. Phase 0 reruns from scratch (stateless; no memoization). If the install resolved the issue, Phase 0 will pass on retry.
+     - "abort" — stops the extraction entirely; no transcript is pulled.
+
+   Operator response is required. Do NOT proceed with any other action without explicit acknowledgment. Do NOT silently degrade to a host pull — that is the failure mode this phase exists to prevent.
+   ```
+
+   **Do not infer consent.** The hard-fail itself is the trigger for explicit acknowledgment, even if the operator's invoking instruction was something general like "ingest this video." This mirrors the Phase 1 path-fix pattern: silent degradation is the bug; loud-fail with explicit acknowledgment is the antidote.
+
+   The legacy host-pull fallback (where the operator manually runs `transcript-pull.sh` and pastes a filename back) is **not offered as an acknowledgment option**. Preserving the legacy escape hatch is what would re-create the original silent-degradation defect — it would let "use legacy pull" become the de-facto default and the sandbox would never get fixed. Operators who genuinely need the legacy path can invoke it manually as a separate step, but Phase 0 itself does not surface it.
+
+### Phase 0b — Article URLs
+
+Required tools: `curl` and the Python module `trafilatura` (in the active Python interpreter).
+
+1. **Check curl availability** (typically passes silently — curl is universally pre-installed):
+   ```bash
+   command -v curl >/dev/null 2>&1 && curl --version | head -1
+   ```
+
+2. **Check `trafilatura` availability:**
+   ```bash
+   python3 -c "import trafilatura; print(trafilatura.__version__)" 2>/dev/null
+   ```
+   If this succeeds, Phase 0b passes.
+
+3. **If `trafilatura` is missing, attempt install:**
+   ```bash
+   python3 -m pip install trafilatura --break-system-packages
+   ```
+   Then re-check.
+
+4. **If curl is missing OR trafilatura install fails, hard-fail with the same loud-fail pattern as Phase 0a.** Same acknowledgment vocabulary ("acknowledged" / "retry" or "abort"; no legacy-pull fallback offered). Hard-fail message format:
+
+   ```
+   PHASE 0 HARD-FAIL: trafilatura (or curl) is not available in the current execution environment, and the in-sandbox install attempt failed. Required to proceed with this article URL.
+
+   To unblock:
+
+       pip3 install trafilatura --break-system-packages
+       # (or, if curl is the missing tool — rare, but possible: brew install curl)
+
+   Then respond with one of:
+     - "acknowledged" or "retry" — re-invokes the skill. Phase 0 reruns from scratch (stateless; no memoization). If the install resolved the issue, Phase 0 will pass on retry.
+     - "abort" — stops the extraction entirely; no transcript is pulled.
+
+   Operator response is required. Do NOT proceed with any other action without explicit acknowledgment.
+   ```
+
+### Phase 0c — Local file inputs
+
+No environment preflight needed. Skip Phase 0 entirely; proceed to Step 6 (Pull) which will use the file-handling path of `transcript-pull.sh` (no network, no Python module, no yt-dlp).
+
+### Why hard-fail is the right pattern here
+
+Silent degradation is the same anti-pattern that produced the original Phase 1 `current-goals.md` path-fix bug: a missing/misplaced file was treated as "no goals," propagating mis-calibrated suggestions into Phase 6 without surfacing the issue to the operator. The same anti-pattern would re-surface here: a missing `yt-dlp` (or `trafilatura`) would silently route to "operator pulls on host," which adds friction every run, decays without the operator noticing it's degrading, and trains the operator to manually pull as the default path even when the sandbox could in principle handle it.
+
+Hard-fail with explicit operator acknowledgment is the lowest-cost way to keep the loud-fail pattern consistent with Phase 1. The acknowledgment vocabulary is intentionally narrow ("retry" or "abort") — there is no "use legacy pull anyway" escape hatch, because that escape hatch is exactly what created the original defect.
+
+---
+
 ## Phase 1 — Context gathering
 
 Before reading the transcript content, read these files in order:

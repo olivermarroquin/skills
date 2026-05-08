@@ -39,7 +39,32 @@ If the user provided a one-liner explaining why they're ingesting this source (e
 
 If they didn't provide one, leave the field empty — don't ask for it. The user can fill it later, or it can stay empty.
 
-### Step 4 — Pull the transcript
+### Step 4 — Read the extraction prompt and scoring rubric
+
+These are mandatory pre-pull reads. The extraction prompt defines Phase 0 (environment preflight, run in Step 5 below) and Phases 1-8 (the extraction itself, run in Step 7). Read both upfront so the rest of the workflow can proceed without re-reading.
+
+```bash
+cat /Users/olivermarroquin/workspace/skills/vis-extraction/prompts/extraction-prompt.md
+cat /Users/olivermarroquin/workspace/second-brain/_meta/scoring-rubric.md
+```
+
+The extraction prompt is v3.2. It defines Phase 0 (environment preflight) and Phases 1-8 (the extraction itself). The scoring rubric is canonical for tier/relevance/actionability/monetization values.
+
+### Step 5 — Phase 0 environment preflight
+
+Before pulling the transcript, run Phase 0 of the extraction prompt to verify the tools required by `transcript-pull.sh` are available in the current execution environment.
+
+The authoritative spec lives in `prompts/extraction-prompt.md` (the `## Phase 0 — Environment preflight` section, just before Phase 1). You already read it in Step 4 — execute it now:
+
+- For YouTube URLs without a cache hit: verify `yt-dlp`. If missing, attempt `pip install yt-dlp --break-system-packages`. If install fails, hard-fail per the spec.
+- For article URLs without a cache hit: verify `curl` and `trafilatura`. Same install + hard-fail pattern.
+- For local files OR cache hits: skip Phase 0 entirely.
+
+**Phase 0 is stateless.** Every invocation of the skill re-runs Phase 0 from scratch — there is no session-level memoization. If a previous invocation hit a Phase 0 hard-fail and the operator responded "retry" after installing the missing tool on the host, the new invocation will re-run the in-sandbox availability check from zero, and only proceed if the check (or its install fallback) actually passes this time.
+
+If Phase 0 hard-fails, STOP. Do not proceed to Step 6. Wait for explicit operator acknowledgment per the spec ("acknowledged" / "retry" → re-invokes the skill; "abort" → stops the extraction entirely). No other paths are valid; do not silently degrade to a host pull.
+
+### Step 6 — Pull the transcript
 
 The transcript-pull script may run in different contexts with different network capabilities. Handle three scenarios:
 
@@ -91,20 +116,9 @@ Wait for the user to provide the filename, then proceed to Step 5 using that fil
 
 Local files don't need network. Run the script normally — it produces a copy in cache with proper frontmatter. If for some reason the script fails on a local file, just use the original file path; the extraction can read from anywhere on disk.
 
-### Step 5 — Read the extraction prompt and scoring rubric
+### Step 7 — Run the extraction
 
-These are mandatory pre-extraction reads:
-
-```bash
-cat /Users/olivermarroquin/workspace/skills/vis-extraction/prompts/extraction-prompt.md
-cat /Users/olivermarroquin/workspace/second-brain/_meta/scoring-rubric.md
-```
-
-The extraction prompt is v3.2. It defines all 8 phases of the extraction. The scoring rubric is canonical for tier/relevance/actionability/monetization values.
-
-### Step 6 — Run the extraction
-
-Following the v3.2 extraction prompt, execute the 8 phases:
+Phase 0 (environment preflight) was already executed in Step 5. Following the v3.2 extraction prompt, execute Phases 1-8:
 
 1. **Phase 1 — Context gathering.** Read templates, conventions, broad workspace context (CLAUDE.md, current-goals.md per Phase 1 step 3 of the extraction prompt, project READMEs, existing-note index from the vault).
 2. **Phase 2 — Chunking decision.** Determine attention mode:
@@ -120,7 +134,7 @@ Following the v3.2 extraction prompt, execute the 8 phases:
 
 **Do NOT touch git.** The user commits manually after inspecting on disk.
 
-### Step 7 — Generate the final report
+### Step 8 — Generate the final report
 
 The final report goes in the conversation, not in the vault. Format below.
 
