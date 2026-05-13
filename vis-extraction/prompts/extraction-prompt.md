@@ -32,32 +32,32 @@ Otherwise, run the appropriate sub-phase based on input type.
 
 Required tool: `yt-dlp`.
 
-1. **Check availability.**
+1. **Check availability** (with PATH augmented to include `$HOME/.local/bin`):
    ```bash
-   command -v yt-dlp >/dev/null 2>&1 && yt-dlp --version
+   PATH="$HOME/.local/bin:$PATH" yt-dlp --version
    ```
-   If this succeeds, Phase 0a passes. Proceed to Step 6 (Pull).
+   If this exits 0, Phase 0a passes. Proceed to Step 6 (Pull) — and ensure Step 6's invocation of `transcript-pull.sh` also prepends `PATH="$HOME/.local/bin:$PATH"` (each bash call in the sandbox runs independently with no env carryover, so the augmentation must be set per-call).
 
-2. **If `yt-dlp` is missing, attempt install in-sandbox.**
+   **Why the augmented PATH (the PATH augmentation contract):** the in-sandbox install in step 2 places the yt-dlp binary at `$HOME/.local/bin/yt-dlp`, which is **not** on the sandbox's default PATH. Every subsequent bash call in this invocation that touches yt-dlp — including the `transcript-pull.sh` invocation in Step 6 — must prepend the same PATH augmentation. This contract structurally eliminates the failure mode where install succeeds but the resulting binary is reported as "not invocable" — the post-install re-check below uses the same augmented PATH the install targets, so success is well-defined.
+
+2. **If `yt-dlp` is not invocable on the augmented PATH, attempt install in-sandbox.**
    ```bash
-   pip install yt-dlp --break-system-packages
+   pip install --user --break-system-packages yt-dlp
    ```
-   This matches the existing project convention (`transcript-pull.sh` uses the same `pip install ... --break-system-packages` pattern for `trafilatura`). Then re-check availability per step 1.
+   The `--user` flag is explicit (older pip versions inferred user-install when system site-packages is non-writable; newer pip may not — explicit is more robust against pip-version drift). The binary lands at `$HOME/.local/bin/yt-dlp`. This matches the existing project convention (`transcript-pull.sh` uses `pip install ... --break-system-packages` for `trafilatura`; we add `--user` here to make the install location predictable). Then re-check availability per step 1; the re-check uses the augmented PATH, so a successful install produces a successful re-check.
 
-3. **If install fails OR re-check fails, hard-fail loudly. STOP.** Do NOT proceed to the pull. Do NOT silently route the operator back to a host pull. Surface this exact format to the operator:
+3. **If the install command exits non-zero, OR if the post-install re-check (with augmented PATH) still fails, hard-fail loudly. STOP.** Do NOT proceed to the pull. Do NOT silently route the operator back to a host pull. Surface this exact format to the operator:
 
    ```
-   PHASE 0 HARD-FAIL: yt-dlp is not available in the current execution environment, and the in-sandbox install attempt failed. Required to proceed with this YouTube URL.
+   PHASE 0 HARD-FAIL: yt-dlp is not available in the sandbox execution environment, and the in-sandbox install attempt did not succeed. Required to proceed with this YouTube URL.
 
-   To unblock, install yt-dlp on your Mac:
+   Likely cause: the in-sandbox `pip install --user --break-system-packages yt-dlp` failed — network unreachable, package resolver error, or a sandbox-config issue. The PATH-augmentation contract (Phase 0a step 1) structurally eliminates the alternate "install succeeded but binary not on PATH" mode, so a hard-fail here means the install genuinely did not complete.
 
-       brew install yt-dlp
+   Operator actions:
+     - "retry" or "acknowledged" — re-invokes the skill. Phase 0 reruns from scratch (stateless; no memoization). Useful if the previous failure was transient.
+     - "abort" — stops the extraction entirely; no transcript is pulled. Use this if retries fail repeatedly — a persistent install failure signals a sandbox-env defect worth surfacing as a separate task rather than continuing.
 
-   Then respond with one of:
-     - "acknowledged" or "retry" — re-invokes the skill. Phase 0 reruns from scratch (stateless; no memoization). If the install resolved the issue, Phase 0 will pass on retry.
-     - "abort" — stops the extraction entirely; no transcript is pulled.
-
-   Operator response is required. Do NOT proceed with any other action without explicit acknowledgment. Do NOT silently degrade to a host pull — that is the failure mode this phase exists to prevent.
+   Operator response is required. Do NOT silently degrade to a host pull from within the skill — that is the failure mode this phase exists to prevent. (Optional fallback for MANUAL workflows OUTSIDE the skill: `brew install yt-dlp` on your Mac. This does NOT fix the sandbox; it just lets you pull transcripts manually if you choose to bypass the skill.)
    ```
 
    **Do not infer consent.** The hard-fail itself is the trigger for explicit acknowledgment, even if the operator's invoking instruction was something general like "ingest this video." This mirrors the Phase 1 path-fix pattern: silent degradation is the bug; loud-fail with explicit acknowledgment is the antidote.
@@ -79,27 +79,30 @@ Required tools: `curl` and the Python module `trafilatura` (in the active Python
    ```
    If this succeeds, Phase 0b passes.
 
-3. **If `trafilatura` is missing, attempt install:**
+3. **If `trafilatura` is missing, attempt install in-sandbox:**
    ```bash
-   python3 -m pip install trafilatura --break-system-packages
+   python3 -m pip install --user --break-system-packages trafilatura
    ```
-   Then re-check.
+   The `--user` flag is explicit (parity with Phase 0a; older pip auto-`--user` when system site-packages is non-writable, newer pip may not — explicit is more durable across pip-version drift). Then re-check per step 2.
 
-4. **If curl is missing OR trafilatura install fails, hard-fail with the same loud-fail pattern as Phase 0a.** Same acknowledgment vocabulary ("acknowledged" / "retry" or "abort"; no legacy-pull fallback offered). Hard-fail message format:
+   **No PYTHONPATH augmentation needed (parity contrast with Phase 0a):** Python's `site` module automatically includes `$HOME/.local/lib/python3.X/site-packages/` on `sys.path` when `ENABLE_USER_SITE` is True (the default — verifiable via `python3 -c "import site; print(site.ENABLE_USER_SITE)"`). So a user-installed Python module is importable by `python3 -c "import X"` without any explicit `PYTHONPATH=...` prefix on the bash call. This is unlike Phase 0a's CLI-binary case, where `$HOME/.local/bin/` is NOT auto-included on the shell's PATH and per-call `PATH=...` augmentation is required.
+
+   **Caveat — future-proofing.** This non-augmentation is safe only as long as `transcript-pull.sh` consumes trafilatura via its Python API (the current pattern: `extract-article.py` imports `trafilatura`). If a future change shifts to invoking `trafilatura` as a CLI binary (`trafilatura --some-flag ...`), the same `$HOME/.local/bin/` PATH defect Phase 0a addresses would re-surface here — pip already installs `trafilatura`, `htmldate`, `courlan`, and `dateparser-download` as CLI scripts in `$HOME/.local/bin/` alongside the importable module. Audit Phase 0b at any rewrite of `transcript-pull.sh`'s article path.
+
+4. **If curl is missing OR the trafilatura install command exits non-zero OR the post-install re-check still fails, hard-fail loudly. STOP.** Same acknowledgment vocabulary as Phase 0a ("acknowledged" / "retry" or "abort"; no legacy-pull fallback offered). Hard-fail message:
 
    ```
-   PHASE 0 HARD-FAIL: trafilatura (or curl) is not available in the current execution environment, and the in-sandbox install attempt failed. Required to proceed with this article URL.
+   PHASE 0 HARD-FAIL: a required tool for article-URL handling is not available in the sandbox execution environment. Required to proceed with this article URL.
 
-   To unblock:
+   Likely causes (in order of probability):
+     1. trafilatura: `python3 -m pip install --user --break-system-packages trafilatura` failed — network unreachable, package resolver error, or sandbox-config issue. The Python user-site auto-inclusion (Phase 0b step 3 contract) structurally eliminates the alternate "install succeeded but module not importable" mode, so a hard-fail here means the install genuinely did not complete.
+     2. curl: not present in the sandbox PATH. Curl is universally pre-installed on Linux sandboxes; if it's missing, this is a deep sandbox-env defect.
 
-       pip3 install trafilatura --break-system-packages
-       # (or, if curl is the missing tool — rare, but possible: brew install curl)
-
-   Then respond with one of:
-     - "acknowledged" or "retry" — re-invokes the skill. Phase 0 reruns from scratch (stateless; no memoization). If the install resolved the issue, Phase 0 will pass on retry.
+   Operator actions:
+     - "retry" or "acknowledged" — re-invokes the skill. Phase 0 reruns from scratch (stateless; no memoization). Useful if the previous failure was transient.
      - "abort" — stops the extraction entirely; no transcript is pulled.
 
-   Operator response is required. Do NOT proceed with any other action without explicit acknowledgment.
+   Operator response is required. Do NOT silently degrade to a host pull from within the skill — that is the failure mode this phase exists to prevent. (Optional fallback for MANUAL workflows OUTSIDE the skill: ensure trafilatura is installed on your host's `/opt/homebrew/bin/python3.12` per the existing `transcript-pull.sh` convention. This does NOT fix the sandbox.)
    ```
 
 ### Phase 0c — Local file inputs
