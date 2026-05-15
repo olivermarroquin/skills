@@ -392,6 +392,212 @@ After synthesis file is written, executor invokes companion skills:
    - Plain-language variant if requested (path; from plain-language-translation)
    - Operator next-steps (review in Obsidian, commit manually)
 
+## Four synthesis shapes
+
+Skill 3 produces four distinct synthesis shapes, each with different scope, inputs, output structure, and filing destination. The shape proposal at Stage 2 selects one. This section documents each shape in depth.
+
+### Cluster synthesis
+
+**When applies.** A single vault cluster (e.g., marketing, content/video-intelligence, automation-systems) has reached operational stability with multiple source notes filed, and operator wants to consolidate what the cluster collectively says. Most common synthesis shape after the first 5-10 sources land in a new cluster.
+
+**Operator intent:** "Pull together what we've learned about <cluster topic>." The synthesis becomes the canonical reference for that cluster's current state.
+
+**Inputs needed:**
+- All source notes in the target cluster (typically located at `03_domains/<cluster>/insights/`)
+- All tactic notes in the cluster (typically at `03_domains/<cluster>/insights/tactic-*.md` or `05_shared-intelligence/patterns/` for cross-cluster tactics)
+- All tool notes the cluster references (typically at `05_shared-intelligence/tools/`)
+- Pattern math state for any patterns the cluster contributes to (1/3, 2/3, 3/3 with creator attributions)
+- Master primer for shared vocabulary (`_meta/primers/primer-synthesis-vocabulary-and-concepts.md`)
+- Cluster-specific operator context (e.g., for marketing cluster, the Goal B framing; for content cluster, the relevant content-cluster goal framing)
+
+**Output structure (high-level; detailed templates in Chunk 4):**
+- Executive summary (cluster's overall yield, key patterns, key tactics, key decisions surfaced)
+- Pattern math state (which patterns reached threshold via this cluster, which are at 2/3 awaiting cross-creator convergence, which are at 1/3)
+- Tactical convergences (patterns multiple creators agree on)
+- Tactical divergences (where creators disagree; preserve disagreement rather than papering over)
+- Operator-actionable takeaways (what the cluster collectively suggests operator should DO)
+- Open questions surfaced (decisions the cluster brings into focus without resolving)
+- Cross-cluster connections (if the cluster touches adjacent clusters)
+- Audit-pass items if applicable (consolidation candidates, count discrepancies, etc.)
+
+**Filing destination:** `03_domains/<cluster>/cluster-synthesis-<cluster>-<date>.md`
+
+Filed at cluster-folder root, NOT in `insights/` subfolder. Synthesis is cluster-level; source notes live in `insights/`. The cluster-folder root may also contain other cluster-level artifacts (cluster MOC if one exists, cluster README if scaffolded).
+
+**Discipline-specific notes:**
+- A cluster synthesis is operator-strategic-altitude, not source-detail-altitude. Don't re-summarize every source; reference sources by wikilink and synthesize themes.
+- Pattern math state is summarized, not promoted. If the synthesis surfaces that a pattern has reached 3/3 via this cluster, note it explicitly but don't trigger the promotion ritual (that's vault-curation discipline; Skill 2).
+- Contradictions between creators get preserved. If three sources advocate Approach A and two advocate Approach B, the synthesis presents both with evidence weights rather than collapsing to one.
+- Operator-relevance is the lens. If a cluster source surfaces evidence the operator isn't acting on (e.g., substrate-tutorial-archive sources), de-emphasize in synthesis but don't omit entirely.
+
+**Phase B exemplar:** As of this skill's creation (2026-05-13), no pure cluster synthesis exists in vault that this author is aware of (Phase B synthesis is cross-cluster-shape; see below). The first cluster synthesis to land will become the exemplar for future cluster syntheses.
+
+### Pattern synthesis
+
+**When applies.** A specific pattern has reached threshold (3/3 cross-creator) OR has reached 2/3 with operational utility, and operator wants to consolidate everything known about that pattern across all its contributing sources. Less common than cluster synthesis but high-value for patterns that anchor multiple downstream decisions.
+
+**Operator intent:** "Synthesize what we know about <pattern X>." The synthesis becomes the deep-reference for that pattern, supplementing the pattern's tactic note (which is usually shorter and more operator-actionable than a full synthesis).
+
+**Inputs needed:**
+- The pattern note itself (typically at `05_shared-intelligence/patterns/<pattern-name>.md` or `03_domains/<cluster>/insights/tactic-<pattern-name>.md`)
+- All sources in the pattern's sources-array (each canonical creator's source note)
+- Pattern's full attribution history (canonical creators, synthesizer creators noted, originator-lineage references)
+- Adjacent patterns (patterns with shared mechanism or in the same sub-layer)
+- Cross-references to operator-discipline precedents the pattern interacts with (e.g., cross-creator counting, Karpathy-weight, cross-substrate independent arrival)
+- Master primer for shared vocabulary
+
+**Output structure (high-level; detailed templates in Chunk 4):**
+- Pattern definition and architectural commitment (what the pattern IS)
+- Cross-creator evidence summary (which canonical creators, what they each contributed)
+- Pattern's etiology (originator lineage if any, how it reached threshold, retroactive-correction history if applicable)
+- Mechanism analysis (the underlying mechanism that makes the pattern work across contexts)
+- Variants and sub-patterns (different ways the pattern manifests)
+- Composition with other patterns (which patterns this composes with, which it conflicts with)
+- Operator-actionable implications (what adopting this pattern means for operator's work)
+- Open questions specific to this pattern
+
+**Filing destination:** `05_shared-intelligence/patterns/pattern-synthesis-<pattern-name>-<date>.md`
+
+Filed adjacent to the pattern's tactic note (the pattern note itself stays at `tactic-<pattern-name>.md`; the synthesis is its deeper companion).
+
+**Discipline-specific notes:**
+- Pattern synthesis assumes the pattern is at threshold or near-threshold. Synthesizing 1/3 patterns is premature — the evidence is too thin for synthesis to add value beyond what the tactic note already captures.
+- Don't conflate the pattern note (operator-actionable summary) with the pattern synthesis (deeper reference). They serve different audiences and operational purposes.
+- If the pattern has retroactive corrections in its history, the synthesis is the canonical place to document the correction reasoning (the tactic note's body may also mention it, but the synthesis is where the full archaeology lives).
+- Pattern synthesis should reference the master primer's Section E (cross-creator counting mechanic) rather than re-explaining it.
+
+**Phase B exemplar:** As of this skill's creation (2026-05-13), no standalone pattern synthesis exists in vault that this author is aware of. The first pattern synthesis to land becomes the exemplar. Likely candidates for first pattern synthesis: `agent-substrate-as-mcp-backend-for-other-agents` (the first cross-substrate-independent-arrival pattern) or `context-engineering-discipline` (5-layer framework spanning multiple creators).
+
+### Cross-cluster synthesis
+
+**When applies.** Operator-strategic question spans multiple clusters and needs cross-cluster evidence. Less common than cluster synthesis but operationally critical when it applies. The Phase B synthesis is the canonical example.
+
+**Operator intent:** "Given my strategic question X, pull from clusters A, B, C to consolidate what the evidence says." The synthesis becomes operator-decision-architecture-adjacent material.
+
+**Inputs needed:**
+- An operator-strategic anchor question (synthesis without anchor question produces generic output)
+- Cluster summaries for each cluster spanned (don't load all sources from each cluster; load 2-3 most representative sources per cluster + any cluster synthesis if one exists)
+- Pattern math state for any patterns that cross the relevant clusters
+- Relevant operator-discipline precedents the synthesis touches
+- Master primer for shared vocabulary
+- Any prior operator-strategic documents this synthesis builds on (e.g., for Goal A work, the build plan; for substrate decisions, the closed ToS task and substrate baseline commit)
+
+**Output structure (high-level; detailed templates in Chunk 4):**
+- Executive summary (strategic question + evidence weight + key tensions)
+- Cluster contributions (what each cluster brings to the question)
+- Cross-cluster pattern evidence (patterns that emerge across clusters; cross-substrate independent arrival is one example)
+- Tensions and contradictions (where clusters disagree or pull in different directions)
+- Operator-decision space (decisions the synthesis surfaces; pros + cons + dependencies)
+- Operator-discipline precedents in play (which precedents constrain interpretation)
+- Audit-pass items if applicable (drift, count discrepancies, retroactive-correction candidates)
+- What the synthesis does NOT decide (deliberate scope limits; operator-decision held in reserve)
+
+**Filing destination:** `_meta/synthesis/cross-cluster-synthesis-<topic>-<date>.md`
+
+Uses the existing `_meta/synthesis/` folder where Phase B synthesis lives. Operator-strategic cross-cluster synthesis is sufficiently high-altitude that it warrants its own folder rather than being filed under any single cluster.
+
+**Discipline-specific notes:**
+- The operator-strategic anchor question is load-bearing. Without it, the synthesis becomes a generic dump across clusters that serves no specific decision. Demand the anchor question at Stage 2.
+- Cross-cluster synthesis is the right place to surface tensions across operator's work (e.g., Goal A substrate priorities vs Goal B client work timelines; agent-architecture decisions vs marketing-PM-agent worker repertoire shape).
+- Phase B synthesis at `_meta/synthesis/phase-b-synthesis-2026-05-10.md` is the canonical exemplar. Match its altitude (operator-strategic), its honesty about uncertainty (6 OPEN decisions surfaced; no analysis), and its preservation of audit-pass items.
+- Cross-cluster synthesis is the natural input to build-plan revisions (Skill 4 work) and major operator-strategic decisions.
+
+**Phase B exemplar:** `_meta/synthesis/phase-b-synthesis-2026-05-10.md` — 550+ line synthesis spanning substrate cluster + Obsidian-with-AI cluster + content cluster + 10 operator-discipline precedents + 6 OPEN decisions + 8 audit-pass items. Use as structural reference for future cross-cluster syntheses.
+
+### Client-driven synthesis
+
+**When applies.** Operator has an active client with a documented profile, and operator wants to pull vault evidence into a client-deliverable strategy or roadmap document. Triggered by phrases like "create a strategy for client X based on cluster Y" or "based on client Z's profile, help me get them their stated outcome."
+
+**Operator intent:** "Use my vault as the evidence base to drive client X toward their stated outcome." The synthesis becomes client-deliverable artifact (or operator-internal pre-deliverable that shapes what gets shipped to client).
+
+**Inputs needed:**
+- **Client README profile at `04_projects/clients/_active/<client-slug>/README.md`** (PREREQUISITE — if absent, synthesis cannot proceed)
+- The full README is read; the skill makes NO assumption about specific field names or required structure within the README. Operator may organize the README as they prefer (business profile, ICP, offer architecture, sequencing rules, open questions, decision archaeology, change log, or any other shape that fits the client). The README is the authoritative source of client context.
+- Cluster summaries for clusters relevant to the client's profile (e.g., for a marketing client, the marketing cluster; for an app-building client, the app-building cluster)
+- Operator's `_strategic-decisions/` folder contents at `04_projects/clients/_active/_strategic-decisions/` (operator-discipline context that affects client work across all clients; e.g., three-track migration playbook, visual social proof capture model, client onboarding patterns)
+- Relevant tactic notes from contributing clusters (filtered by client-relevance; don't dump unrelated tactics)
+- Master primer for shared vocabulary
+
+**Output structure (high-level; detailed templates in Chunk 4):**
+- Client context summary (compressed restatement of relevant README sections; what the client wants, what their current state is, what constraints apply)
+- Evidence base used (which clusters synthesized, why each is relevant to this client)
+- Tactical recommendations (specific actions filtered by client-relevance per profile)
+- Sequencing (what to do first, second, third; respects client's stated sequencing rules from README if present)
+- Decision points operator/client needs to resolve (open questions from README surfaced if relevant; new questions surfaced by synthesis)
+- Risks and constraints (operator-discipline precedents that bound the recommendations; client-specific constraints from README)
+- Deliverable shape (if synthesis is intended as input to a client-deliverable document, surface the shape that document should take)
+
+**Filing destination:** `04_projects/clients/_active/<client-slug>/client-synthesis-<client-slug>-<topic>-<date>.md`
+
+Filed in the client's own folder. The client's folder becomes the operational home for all artifacts related to that client (README + synthesis + any operator-internal notes + any client-deliverable drafts).
+
+**Discipline-specific notes:**
+- **README prerequisite is hard.** No README → synthesis blocked. Suggested remediation surfaced to operator: create README first.
+- **Read the full README.** Don't assume field structure; don't skip sections. Operator's README format may evolve; synthesis adapts to whatever's there.
+- **README sections like "Open questions" and "Sequencing rules" (if present) are load-bearing.** They tell synthesis what to drive toward and what to defer. If README has these sections, synthesis should respect them.
+- **Evidence-filtering is operator-discipline.** A marketing client doesn't need substrate-cluster evidence; a substrate-research client doesn't need marketing cluster evidence. Synthesis filters by client-relevance per profile.
+- **Cross-reference `_strategic-decisions/` folder.** Operator's accumulated cross-client discipline (e.g., three-track migration playbook) applies to client work; synthesis should respect those precedents.
+- **The synthesis is operator-facing first, client-facing second.** Even if intended for client delivery, the synthesis is operator's strategic working document. The client-deliverable that may eventually ship is a downstream artifact (drafted from the synthesis, not equal to the synthesis).
+
+**Phase B exemplar:** As of this skill's creation (2026-05-13), no client-driven synthesis exists in vault that this author is aware of (operator's structured client work is new as of 2026-05-13). The first client-driven synthesis will likely be for EV Electric Services or S&H Contracting — both have active READMEs.
+
+### Cross-cluster vs client-driven distinction
+
+Both cross-cluster synthesis and client-driven synthesis may pull from multiple clusters. The distinguishing factor is the ANCHOR:
+
+- **Cross-cluster synthesis anchor:** operator-strategic question (e.g., "what does evidence collectively suggest for marketing-PM agent worker repertoire?"). The anchor is operator's own strategic concern. Filing: `_meta/synthesis/`.
+- **Client-driven synthesis anchor:** specific client + their stated outcome (e.g., "based on EV Electric Services and their 90-day plan in README, drive them toward booking 30 jobs"). The anchor is the client's profile and outcome. Filing: client's own folder.
+
+If operator's request anchors on a strategic question but mentions a client incidentally (e.g., "what does the evidence say about local SEO, given my client work background"), it's cross-cluster shape. If operator's request anchors on a specific client's outcome but mentions strategic questions incidentally (e.g., "synthesize for EV Electric Services using whatever cluster evidence applies"), it's client-driven shape.
+
+Multi-anchor cases (genuinely both operator-strategic AND client-deliverable) should surface to operator at Stage 2 for clarification. Ask: "Is the primary anchor operator-strategic (cross-cluster shape) or client-deliverable (client-driven shape)?" Default to client-driven if operator surfaces a specific client outcome; default to cross-cluster if operator surfaces a strategic question without specific client deliverable in mind.
+
+## Mode 3 elicitation at invocation
+
+Operator's invocation request may not explicitly name the shape. Skill 3's Stage 2 analysis figures out the shape from request phrasing. This section documents the elicitation logic.
+
+### Shape signals in operator's request
+
+**Cluster signals:**
+- Names a specific cluster: "the marketing cluster," "the substrate sources," "the content/video-intelligence work"
+- Names a domain folder: "everything in 03_domains/marketing/"
+- Asks to consolidate vault work in one specific area without strategic framing
+
+**Pattern signals:**
+- Names a specific pattern: "the agent-substrate-as-MCP-backend pattern," "cross-creator-counting precedent application"
+- Asks to consolidate evidence on a specific architectural commitment
+- References a specific tactic note: "synthesize tactic-context-engineering-discipline"
+
+**Cross-cluster signals:**
+- Asks an operator-strategic question that spans clusters: "what does evidence collectively suggest for X"
+- Names multiple clusters explicitly: "marketing + content + app-building"
+- References operator-strategic anchor: "given my Goal A decisions, what do clusters A and B suggest"
+
+**Client-driven signals:**
+- Names a specific client (by slug, name, or business): "client EV Electric Services," "client Z," "for [business name]"
+- References client-deliverable shape: "strategy for," "roadmap for," "plan to deliver X for"
+- References client outcome: "get them their stated outcome," "drive them toward Y result"
+
+### Ambiguous request handling
+
+If the request fits multiple shapes or fits none clearly:
+
+**Multi-shape candidate:** Surface to operator at Stage 2 with explicit "this could be shape A or shape B" reasoning, and ask operator to clarify. Don't guess; ask. Example: "Synthesize the marketing cluster for client X" could be cluster synthesis OR client-driven synthesis depending on intent.
+
+**No-clear-shape:** Surface to operator that the request doesn't fit any standard shape, and ask for clarification on shape + scope + intent. Don't fabricate a shape that doesn't fit.
+
+**Mismatched signals:** If request names a cluster but asks an operator-strategic question (looks like cluster signal + cross-cluster signal mixed), surface the mismatch and ask operator which shape they want. Example: "synthesize the marketing cluster to inform my client-acquisition strategy" — is this cluster synthesis OR cross-cluster synthesis with marketing as one input?
+
+### Stage 2 elicitation discipline
+
+The Stage 2 proposal should:
+
+- Quote the operator's verbatim request at the top of the proposal
+- Show shape reasoning explicitly so operator can validate the shape match
+- Propose ONE primary shape (not multiple) unless the request is genuinely ambiguous, in which case surface the ambiguity as a clarifying question rather than producing a multi-shape proposal
+- For client-driven shapes: confirm the client README path explicitly so operator can verify the right client is being synthesized
+- For cross-cluster shapes: confirm the anchor question so operator can verify the synthesis will drive toward the right strategic outcome
+
 ## Reference files
 
 The actual content this skill operates on lives outside the skill folder:
