@@ -3,41 +3,46 @@ type: primer-reading
 status: active
 created: <today-iso-date>
 updated: <today-iso-date>
-related: [<target-meta-document-wikilink>, primer-synthesis-vocabulary-and-concepts]
-tags: [primer, reading-aid, <document-type-tag>]
+related: [<target-document-wikilink>, <primary-primer-wikilink>, <secondary-primer-wikilinks-if-any>]
+tags: [primer, reading-aid, <document-type-tag>, <scope-tag>]
 ---
 
-# Reading guide: <target-meta-document-title>
+# Reading guide: <target-document-title>
 
-> Companion reading guide for `<target-meta-document-path>`. Use alongside the master primer at `[[primer-synthesis-vocabulary-and-concepts]]`. This guide scaffolds comprehension; it does not summarize, analyze, or critique the target document.
+> Companion reading guide for `<target-document-path>`. Use alongside the primer(s) loaded for this document. This guide scaffolds comprehension; it does not summarize, analyze, or critique the target document.
 
 ## What this reading guide is for
 
-<3–5 sentences naming the target meta-document, its frontmatter type, its overall purpose, and how to use this reading guide alongside it. Mention the master primer as the conceptual reference. State explicitly: "This reading guide does not summarize the meta-document; it scaffolds comprehension of it.">
+<3–5 sentences naming the target document, its frontmatter type, its overall purpose, and how to use this reading guide alongside it. Name the primary primer used and any secondary primers loaded. State explicitly: "This reading guide does not summarize the target document; it scaffolds comprehension of it.">
+
+## Primers loaded for this reading
+
+- **Primary:** `[[<primary-primer-base-name>]]` — <scope: system | domain | project>; the most-specific primer for this document's scope.
+- **Secondary (if any):** `[[<secondary-primer-1>]]`, `[[<secondary-primer-2>]]` — cross-references for terms outside the primary's scope.
 
 ## Document overview at a glance
 
-<One short paragraph summarizing the meta-document's shape — how many top-level sections, what the document's overall arc is, where the load-bearing content lives. Use this to orient before diving into sections.>
+<One short paragraph summarizing the target document's shape — how many top-level sections, what the document's overall arc is, where the load-bearing content lives. Use this to orient before diving into sections.>
 
 ## Section-by-section walkthrough
 
-### <Meta-document section heading 1>
+### <Target-document section heading 1>
 
 **What this section does.** <One sentence on the section's role in the document.>
 
 **What to watch for.** <Comprehension hooks. What Part 1 concepts are operative; what vocabulary appears; where the load-bearing claims are; what the reader might miss on a first pass.>
 
-**Cross-references.** <Explicit pointers to master primer: "see Part 1 Section X," "see Appendix A — term." Pull these in actively rather than re-explaining the concepts inline.>
+**Cross-references.** <Explicit pointers to the loaded primer(s): "see [primary-primer] Section X," "see [secondary-primer] Appendix A — term." Pull these in actively rather than re-explaining the concepts inline. Indicate which primer each reference is in.>
 
-**Gaps or ambiguity flags (if any).** <Anywhere the meta-document is genuinely unclear, or where the master primer would need extension to fully cover the section. Omit this subsection if no flags.>
+**Gaps or ambiguity flags (if any).** <Anywhere the target document is genuinely unclear, or where any loaded primer would need extension to fully cover the section. Indicate which primer the gap belongs in. Omit this subsection if no flags.>
 
-### <Meta-document section heading 2>
+### <Target-document section heading 2>
 
 <Same shape as above.>
 
-### <Continue for each top-level section of the target meta-document.>
+### <Continue for each top-level section of the target document.>
 
-<For deeply-structured meta-documents with substantial subsections, give each subsection its own walkthrough paragraph within the parent section's coverage. Don't proliferate ###-level headings for every subsection unless they're complex enough to warrant their own treatment.>
+<For deeply-structured documents with substantial subsections, give each subsection its own walkthrough paragraph within the parent section's coverage. Don't proliferate ###-level headings for every subsection unless they're complex enough to warrant their own treatment.>
 
 ## What to keep in mind across the document
 
@@ -45,27 +50,28 @@ tags: [primer, reading-aid, <document-type-tag>]
 
 ## Gaps surfaced during reading-guide generation
 
-<If gaps were flagged in the skill's Step 5 but not addressed (i.e., extensions weren't written), list them here so the reader knows what the master primer doesn't yet cover relative to this document.
+<If gaps were flagged in the skill's Step 4 but not addressed (i.e., extensions weren't written), list them here so the reader knows what the loaded primer(s) don't yet cover relative to this document.
 
 Format per gap:
-- **<term-or-concept>** — appears in <section reference>; would need <Appendix A entry | Part 1 subsection | Part 1 section> to cover fully. Disposition: <flagged for retrospective | deferred per operator | other>.
+- **<term-or-concept>** — appears in <section reference>; belongs in <primer scope>; would need <Appendix A entry | Part 1 subsection | Part 1 section> to cover fully. Disposition: <flagged for retrospective | deferred per operator | candidate for compound-primer run | other>.
 
 Omit this section if no gaps were flagged.>
 
 ## Cross-references
 
 ### Upstream
-- `[[primer-synthesis-vocabulary-and-concepts]]` — master primer (Part 1 conceptual scaffolding)
-- `[[<target-meta-document-base-name>]]` — the meta-document this guide scaffolds
+- `[[<primary-primer-base-name>]]` — primary primer (conceptual scaffolding for this document's scope)
+- `[[<secondary-primer-base-names>]]` — secondary primers (cross-references for out-of-scope terms)
+- `[[<target-document-base-name>]]` — the document this guide scaffolds
 
 ### Downstream
 - <Any documents this reading guide will help the reader navigate next; usually empty for v1 reading guides>
 
-### Related primers
-- <Other reading guides for related meta-documents; usually empty until multiple reading guides accumulate>
+### Related primer readings
+- <Other reading guides in this primer's scope; usually empty until multiple accumulate>
 
 ---
 
 **End of reading guide.**
 
-Generated by the `meta-document-primer` skill on <today-iso-date>. The master primer is the source of truth for Part 1 concepts; this guide cross-references it rather than restating it. If this guide drifts from the master primer over time (e.g., master primer is extended after this guide was generated), the master primer takes precedence.
+Generated by the `meta-document-primer` skill on <today-iso-date>. The loaded primer(s) are the source of truth for cross-referenced concepts; this guide cross-references them rather than restating them. If this guide drifts from any primer over time (e.g., the primer is extended after this guide was generated), the primer takes precedence.

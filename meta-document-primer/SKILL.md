@@ -1,195 +1,214 @@
 ---
 name: meta-document-primer
-description: Help the user (or another agent) read meta-documents in the Knowledge OS vault — synthesis documents, decisions documents, roadmap documents, alignment documents, and other cross-cutting inventory or analysis files — with full comprehension. Maintains the master primer at `/Users/olivermarroquin/workspace/second-brain/_meta/primers/primer-synthesis-vocabulary-and-concepts.md` and generates per-document reading guides on demand. Triggers on phrases like "help me read this synthesis," "explain this synthesis to me," "I want to understand this decisions document," "give me a primer for this," "what does this meta-doc mean," "walk me through this synthesis," "make this readable," "I'm stuck on this synthesis vocabulary," "create a reading guide for this," or any time the user (or an agent) needs comprehension support for a vault meta-document (frontmatter `type: synthesis`, `type: decisions`, `type: roadmap`, `type: alignment`, `type: primer`, or other cross-cutting inventory/analysis files). Also triggers when the user mentions they're about to read a synthesis-class document and wants help, when a phase closes and the operator wants a primer-currency check, or when a Cowork/Claude review chat needs comprehension scaffolding before doing review work on a meta-document. This is the primary path for meta-document comprehension support in the Knowledge OS.
+description: Help the user (or another agent) read documents in the Knowledge OS vault with full comprehension by routing to the right primer(s) — system, domain, or project. Maintains primer files at multiple scopes (the master/system primer at `_meta/primers/` for synthesis-class meta-documents, per-domain primers at `03_domains/<domain>/` for knowledge domains like marketing or web-development, per-project primers at `04_projects/<area>/<project>/` for specific projects) and generates per-document reading guides on demand. Triggers on phrases like "help me read this," "explain this synthesis to me," "I want to understand this document," "give me a primer for this," "what does this meta-doc mean," "walk me through this," "make this readable," "create a reading guide for this," "compound the marketing primer," "extend the domain primer from recent notes," "primer-currency check on this domain," or any time the user (or an agent) needs comprehension support for a vault document — synthesis, decisions, roadmap, alignment, domain insight notes, project artifacts, or any other doc whose vocabulary spans the working knowledge. Also triggers when the operator wants to grow a primer from recent activity, when a phase closes and primer-currency needs checking, or when an agent needs vocabulary scaffolding before working on a document. This is the primary path for Knowledge OS comprehension support and primer maintenance.
 ---
 
-# Meta-document Primer Skill (v1.0)
+# Meta-document Primer Skill (v2.0 — multi-primer)
 
-The meta-document comprehension skill. Maintains the master primer (`primer-synthesis-vocabulary-and-concepts.md`) and produces per-document reading guides for synthesis-class meta-documents in the Knowledge OS vault.
+The Knowledge OS comprehension skill. Maintains primers at three scopes (system, domain, project), generates per-document reading guides, and grows primers from recent vault activity. v2.0 generalizes the v1.0 single-primer design into multi-primer routing.
 
 **Critical behavior (read this before anything else):**
 - **Read-only by default.** Default mode is `read-for-me` — comprehension scaffold delivered inline; no files written. Only switch to `extend-and-write` when the user explicitly says so.
-- **The master primer is the source of truth.** Before extending it, read it. Before generating a reading guide, consult it. Don't duplicate content already in the master primer; reference it instead.
-- **Conservative on extension.** When new vocabulary surfaces in a meta-document, flag the gap and propose extension. Don't write to the master primer without operator confirmation, even in `extend-and-write` mode for the master primer itself.
-- **Don't replace the meta-document.** The skill produces comprehension support; it never modifies the meta-document being read.
-- **Don't drift into producing the meta-document's analysis.** Reading guides scaffold comprehension; they don't decide, advocate, or propose work the meta-document itself is supposed to do.
+- **Primers are the source of truth.** Before extending, read the applicable primer(s). Before generating a reading guide, consult them. Don't duplicate content already in a primer; reference it instead.
+- **Conservative on extension.** When new vocabulary surfaces, flag the gap and propose extension. Don't write to a primer without operator confirmation, even in `extend-and-write` mode.
+- **Don't replace the target document.** The skill produces comprehension support; it never modifies the document being read.
+- **Don't drift into producing the document's analysis.** Reading guides scaffold comprehension; they don't decide, advocate, or propose work the document itself is supposed to do.
+- **Primers serve two audiences at once.** Every entry has to land for both the operator (layman-accessible teaching) and agents (precise enough for deterministic term resolution). Don't drift the voice toward only one audience. See "Audiences" below.
 
-## Core workflow
+## Primer scopes — the three layers
 
-When invoked, follow these steps in order. Stop and ask the user only when explicitly required.
+Three layers of primer can exist:
 
-### Step 1 — Identify the target meta-document
+1. **System primer** — synthesis-class meta-document vocabulary. The original primer. Path:
+   `second-brain/_meta/primers/primer-synthesis-vocabulary-and-concepts.md`.
+
+2. **Domain primer** — vocabulary for a knowledge domain. One per domain that has dense or specialized vocabulary. Path pattern:
+   `second-brain/03_domains/<domain>/primer-<domain>-vocabulary-and-concepts.md`.
+   Example: `second-brain/03_domains/marketing/primer-marketing-vocabulary-and-concepts.md`.
+
+3. **Project primer** — vocabulary specific to one project. One per project where project-specific terminology exists (client names, internal product terms, business-specific systems). Lives in the project's `.kos/` folder; visible in the vault via symlink. Path pattern:
+   `repos/<project>/.kos/primer-<project>-vocabulary-and-concepts.md`
+   (visible in vault at `second-brain/04_projects/<area>/<project>/primer-<project>-vocabulary-and-concepts.md`).
+
+When more than one primer applies to a document, the skill loads all applicable. Most-specific primer wins on conflicting term definitions; the others act as cross-references.
+
+### Synthesis-class docs that touch multiple scopes
+
+When a synthesis-class meta-document spans clusters (e.g., a cross-domain or cross-project synthesis), the system primer is the base AND any applicable domain/project primers stack on top. Example: a synthesis covering Phase B + marketing source notes for a specific client would load the system primer, the marketing domain primer, and the client's project primer.
+
+## Audiences
+
+Every primer is written for two audiences simultaneously:
+
+- **The operator (Oliver).** Layman-accessible teaching that builds genuine mental models. Etymology used where it makes terms stick. Concrete examples from the vault rather than generic textbook ones. Cross-references active.
+- **Agents.** Definitions precise enough that an agent can deterministically resolve a term and use it in downstream work without re-deriving meaning from context.
+
+The two audiences are compatible: precise definitions are what teach, and good teaching is what makes agents useful. The system primer (`primer-synthesis-vocabulary-and-concepts.md`) is the canonical voice example — match it.
+
+Don't write primers as if they're for only one audience. If a section reads like a textbook chapter but doesn't define terms crisply, it fails the agent audience. If a section reads like a spec but doesn't teach concepts in plain language, it fails the operator audience.
+
+## Modes
+
+Four modes:
+
+- `read-for-me` (default) — comprehension scaffold delivered inline; no files written; primers not modified.
+- `extend-and-write` — write a per-document reading guide as a file; optionally extend the affected primer(s).
+- `currency-check` — gap scan + proposed extensions only; no reading guide generated.
+- `compound-primer` — point at a domain or project (not a specific doc); scan recent notes in that scope for vocabulary missing from the primer; propose extensions in batch.
+
+If the user doesn't specify a mode, default to `read-for-me`. Explicit signals only.
+
+Override triggers:
+- "extend the primer," "write the reading guide to a file," "save this as a primer reading," "make it permanent," "extend and write" → `extend-and-write`
+- "is the primer current?" "does the primer need updating?" → `currency-check`
+- "compound the primer," "extend the marketing primer from recent notes," "primer-currency check on <domain>," "primer-extension pass on <scope>" → `compound-primer`
+
+## Core workflow (per-document modes)
+
+For `read-for-me`, `extend-and-write`, and `currency-check`. The `compound-primer` workflow is described separately below.
+
+### Step 1 — Identify the target document
 
 The user gave you one of:
-- A path to a vault meta-document (e.g., `_meta/synthesis/phase-b-synthesis-2026-05-10.md`)
-- A document title or descriptor ("the Phase B synthesis," "the decisions document," "the latest synthesis")
-- A direct paste of meta-document content into the conversation
+- A path to a vault document
+- A document title or descriptor
+- A direct paste of document content
 
-If the input is ambiguous (e.g., user said "help me read the latest synthesis" and multiple syntheses exist), list candidate paths from `_meta/synthesis/`, `_meta/decisions/`, `_meta/roadmap/`, `_meta/alignment/` and ask which one. Don't guess.
+If the input is ambiguous, list candidate paths in likely locations and ask. Don't guess.
 
-If the user pasted content directly without specifying a path, treat that as the meta-document; note that no file will be referenced by path, but the comprehension scaffold can still be produced.
+If the user pasted content directly without specifying a path, treat that as the document; note that no file will be referenced by path, but the comprehension scaffold can still be produced (file-output modes won't be available for inline-only documents).
 
-### Step 2 — Identify the mode
+### Step 2 — Resolve and load the applicable primer(s)
 
-Default mode: `read-for-me` (read-only; comprehension scaffold delivered inline; no files written; master primer not modified).
+Resolution algorithm:
 
-Override: if the user explicitly says "extend the primer," "write the reading guide to a file," "save this as a primer reading," "make it permanent," "extend and write," or any clear indication that file output is wanted, use `extend-and-write` mode.
+1. **Did the user name a primer explicitly?** ("Use the marketing primer to read this.") If yes, that primer is the primary. Continue to check whether other primers also apply.
 
-If the user doesn't specify, default to `read-for-me`. Explicit signals only.
+2. **Walk up from the target's folder.** Collect every primer whose scope is in-path:
+   - If target is inside `04_projects/<area>/<project>/`, look for the project primer at the project root.
+   - If target is inside `03_domains/<domain>/`, look for the domain primer at the domain root.
+   - If target's frontmatter has `domain:`, `client:`, `venture:`, or `relevant-projects:` fields, look for matching domain/project primers too. Marketing tactic notes with `relevant-projects: [s-and-h-contracting, ev-electric-services]` would load the marketing domain primer plus both project primers (if they exist).
 
-A third implicit mode exists — `currency-check`. If the user asks "is the primer current?" or "does the primer need updating?" without referencing a specific meta-document, run only Steps 4 and 5 (gap scan + extension proposal); skip reading-guide generation.
+3. **Is the target synthesis-class?** If it lives in `_meta/synthesis/`, `_meta/decisions/`, `_meta/roadmap/`, or `_meta/alignment/`, always load the system primer. Domain/project primers stack on top if applicable per step 2.
+
+4. **Does the target reference system-vocab terms even though it isn't synthesis-class?** Quick scan of the doc for system-primer vocabulary signals (e.g., "1/3 cross-creator math," "canonical creator," "operator-discipline precedent," "Karpathy weight," "stat-gated," "premature-abstraction"). If any appear, also load the system primer as a **secondary**. This catches domain/project docs that lean on the system primer's framework without being formally synthesis-class.
+
+5. **No primer found at the relevant scope?** If the target is a domain doc and no domain primer exists, ask the user: "No marketing domain primer found. Do you want me to bootstrap one, or proceed with just the system primer?" Don't auto-bootstrap.
+
+The most-specific primer that applies becomes the **primary**. The others are **secondary**.
+
+Read each loaded primer's Part 1 sections and Appendix A into working context. Hold them all in memory simultaneously — gap scanning needs to check the term against every loaded primer's vocabulary.
 
 ### Step 3 — Capture optional scope hint
 
-If the user provided a one-liner explaining what aspect of the document they're trying to understand (e.g., "I'm trying to understand the decisions section specifically," or "I need to spot-check this before commit"), capture it. It tunes the reading guide's emphasis.
+If the user provided a one-liner explaining what aspect of the document they're trying to understand, capture it. It tunes the reading guide's emphasis.
 
-If they didn't provide one, leave the field empty — don't ask. The default reading guide covers the whole document evenly.
+If they didn't, leave the field empty.
 
-### Step 4 — Read the master primer
+### Step 4 — Read the target and scan for vocabulary gaps
 
-This is a mandatory pre-extension and pre-reading-guide read:
+Read the target document fully.
 
-```bash
-cat /Users/olivermarroquin/workspace/second-brain/_meta/primers/primer-synthesis-vocabulary-and-concepts.md
-```
+Pass through the document with every loaded primer's Appendix A in working context. For each technical term, acronym, named convention, named precedent, or framing-specific phrase, ask:
 
-Hold the master primer's Part 1 sections (A–K), Appendix A (vocabulary), and Appendix B (extension conventions) in working context. The master primer is what the reading guide will reference, and what extensions will modify.
-
-If the master primer doesn't exist, surface this as a problem and ask the user how to proceed — the skill is designed to compose with a pre-existing master primer, not to bootstrap one from scratch. Bootstrapping is out of scope for v1.
-
-### Step 5 — Read the target meta-document and scan for vocabulary gaps
-
-Read the target meta-document fully (paste content from conversation, or read from the provided path):
-
-```bash
-cat <path-to-meta-document>
-```
-
-Pass through the document with the master primer's Appendix A in working context. For each technical term, acronym, named convention, named precedent, or framing-specific phrase in the meta-document, ask:
-
-1. Is this term defined in Appendix A?
-2. Is the concept this term references explained in a Part 1 section?
-3. If not, is it explained inline in the meta-document itself?
+1. Is the term defined in any loaded primer's Appendix A?
+2. Is the concept the term references explained in a Part 1 section of any loaded primer?
+3. If not, is it explained inline in the target document itself?
 4. If not, this is a vocabulary gap. Capture it.
 
 Produce a gap list with three categories:
-- **Missing from Appendix A** (term used but not in vocabulary reference). Note where the term appears.
-- **Missing from Part 1** (concept used but not taught in foundational sections). Note where the concept appears.
-- **Borderline** (term is in Appendix A but its current entry may be inadequate for the way it's used in this document). Note the friction point.
+- **Missing from Appendix A** (term used but not in any loaded primer's vocabulary). Note where the term appears and which primer it most naturally belongs in (based on the term's most-central scope).
+- **Missing from Part 1** (concept used but not taught in any loaded primer's foundational sections). Note where it appears and which primer it belongs in.
+- **Borderline** (term is in a loaded primer's Appendix A but the current entry may be inadequate for the way it's used). Note the friction point.
 
-### Step 6 — Decide whether to extend the master primer
+When tagging gaps to a primer scope, use these heuristics:
+- Term is specific to a single project → project primer
+- Term is specific to a single domain → domain primer
+- Term is cross-cutting (used in synthesis-class docs across scopes) → system primer
+- Term spans 2+ domains but isn't synthesis-vocab → flag as candidate for future cross-domain primer (don't create one; just note it; see "Cross-domain vocabulary handling" below)
 
-Apply this decision rule:
+### Step 5 — Decide whether to extend the primer(s)
 
-- **No gaps found** → primer is current. Skip Step 7. Proceed to Step 8 (reading-guide generation).
-- **1–3 gaps found, all missing-from-Appendix-A only** → minor extension. In `read-for-me` mode, flag the gaps to user and continue. In `extend-and-write` mode (for the primer), proceed to Step 7.
-- **Substantial gaps (4+ entries, or any missing-from-Part-1 gap)** → significant extension. Flag explicitly. In either mode, propose the extension to the user before drafting — don't draft significant extensions autonomously.
-- **Borderline-only gaps** → no extension needed for this run, but flag for retrospective consideration.
+Apply this decision rule per affected primer:
 
-When flagging gaps in `read-for-me` mode, present the gap list compactly. Don't lecture; let the user decide whether extension is worth a separate `extend-and-write` invocation later.
+- **No gaps found for this primer** → primer is current. Skip extension for it.
+- **1–3 gaps, all Appendix A only** → minor extension. In `read-for-me` mode, flag to user and continue. In `extend-and-write` mode, proceed to Step 6 for this primer.
+- **Substantial gaps (4+ entries, or any missing-from-Part-1 gap)** → significant extension. Flag explicitly. In either mode, propose the extension to the user before drafting.
+- **Borderline-only gaps** → no extension needed for this run; flag for retrospective.
 
-### Step 7 — Extend the master primer (extend-and-write mode only)
+If multiple primers need extension, present the gap list grouped by primer scope so the user can decide whether to extend all, some, or none.
 
-Two extension paths:
+### Step 6 — Extend the affected primer(s) (extend-and-write mode only)
 
-**Path A — Appendix A entries only.** For each new vocabulary entry:
+For each primer to extend, follow the same two-path logic as v1.0 (Appendix A entries vs. Part 1 subsection/section). Load the entry template and extension prompt:
 
-1. Load the entry template:
+```bash
+cat /Users/olivermarroquin/workspace/skills/meta-document-primer/templates/appendix-a-entry-template.md
+cat /Users/olivermarroquin/workspace/skills/meta-document-primer/prompts/primer-extension-prompt.md
+```
 
-   ```bash
-   cat /Users/olivermarroquin/workspace/skills/meta-document-primer/templates/appendix-a-entry-template.md
-   ```
+Write paths by scope:
+- System primer: `second-brain/_meta/primers/primer-synthesis-vocabulary-and-concepts.md`
+- Domain primer: `second-brain/03_domains/<domain>/primer-<domain>-vocabulary-and-concepts.md`
+- Project primer: `repos/<project>/.kos/primer-<project>-vocabulary-and-concepts.md` (vault-visible at `second-brain/04_projects/<area>/<project>/...`)
 
-2. Fill the template per the vocabulary item observed in the meta-document. Be concise — Appendix A entries are 1–3 sentences, with a cross-reference to the Part 1 section that would explain the term in full context (or "no Part 1 reference" if the concept doesn't warrant a section).
+Update the relevant primer's `updated:` frontmatter to today's date.
 
-3. Splice the new entries into Appendix A alphabetically. Maintain alphabetical order.
+**Always confirm before writing.** Even in `extend-and-write` mode, surface the proposed extension to the user as a diff or summary before writing to disk. Primers are foundational; conservative discipline applies.
 
-4. Update the master primer's `updated:` frontmatter field to today's date.
+### Step 7 — Generate the reading guide
 
-**Path B — New Part 1 subsection or section.** For concepts substantial enough to warrant Part 1 treatment:
+Reading guide structure is the same regardless of primer scope; only the write path changes.
 
-1. Load the extension prompt:
+Two delivery shapes depending on mode:
 
-   ```bash
-   cat /Users/olivermarroquin/workspace/skills/meta-document-primer/prompts/primer-extension-prompt.md
-   ```
+**Inline delivery (read-for-me mode, default).** Deliver in the conversation. Structured response with:
+- Brief opener naming the document and its frontmatter type
+- Section-by-section walkthrough
+- For each section: what to watch for; gaps flagged in Step 4 that affect comprehension; cross-references to specific primer sections or Appendix A entries (cite which primer each cross-reference is in)
+- Short closer noting cross-cutting items
 
-2. Follow the extension prompt to draft the new content. It will include guidance on layman-tone, etymology when helpful, common-confusions disambiguation, and cross-references.
-
-3. Insert the new content into Part 1 at the appropriate position (concept-tier ordering — earlier sections are more foundational; later sections build on earlier ones).
-
-4. Update Appendix A with corresponding entries cross-referencing the new section.
-
-5. Update the master primer's `updated:` frontmatter field.
-
-**Always confirm before writing.** Even in `extend-and-write` mode, surface the proposed extension to the user as a diff or summary before writing to disk. The master primer is foundational; conservative discipline applies.
-
-### Step 8 — Generate the reading guide
-
-The reading guide is the Part 2 deliverable — a section-by-section walkthrough of the target meta-document, with notes on what to watch for given Part 1 concepts.
-
-Two delivery shapes depending on mode and document type:
-
-**Inline delivery (read-for-me mode, default for non-synthesis documents):**
-
-Deliver the reading guide directly in the conversation. Structured response with:
-- A brief opener naming the document and its frontmatter type
-- A section-by-section walkthrough (matching the meta-document's own section structure)
-- For each section, what to watch for given Part 1 concepts; any gaps flagged in Step 5 that affect comprehension of that section; cross-references to specific Part 1 sections or Appendix A entries
-- A short closer noting any audit-pass-shaped items or unresolved questions the reader should keep in mind
-
-Keep the inline reading guide proportional to the meta-document's density. A short decisions document might warrant a 200–400 word guide; a synthesis document warrants 800–2000+ words. Don't pad.
-
-**File delivery (extend-and-write mode, default for synthesis-class documents):**
-
-Load the reading-guide template:
+**File delivery (extend-and-write mode).** Load the reading-guide template and prompt:
 
 ```bash
 cat /Users/olivermarroquin/workspace/skills/meta-document-primer/templates/primer-reading-template.md
-```
-
-Load the reading-guide prompt:
-
-```bash
 cat /Users/olivermarroquin/workspace/skills/meta-document-primer/prompts/reading-guide-prompt.md
 ```
 
-Generate the full reading guide following the template structure and the prompt's guidance. Write the file to:
+Write path by **primary primer scope** (the most-specific primer that applied):
+- System primary: `second-brain/_meta/primers/readings/primer-reading-<doc-base-name>.md`
+- Domain primary: `second-brain/03_domains/<domain>/primer-readings/primer-reading-<doc-base-name>.md`
+- Project primary: `repos/<project>/.kos/primer-readings/primer-reading-<doc-base-name>.md`
 
-```
-/Users/olivermarroquin/workspace/second-brain/_meta/primers/readings/primer-reading-{document-base-name}.md
-```
+Where `<doc-base-name>` is the target document's filename minus its extension.
 
-Where `{document-base-name}` is the meta-document's filename minus its extension and minus any `phase-*` prefix where redundant. Examples:
-- Target: `phase-b-synthesis-2026-05-10.md` → Reading guide: `primer-reading-phase-b-synthesis-2026-05-10.md`
-- Target: `phase-b-decisions-2026-05-11.md` → Reading guide: `primer-reading-phase-b-decisions-2026-05-11.md`
+The reading guide's frontmatter `related:` field lists every primer loaded (primary + secondary), so the guide cross-references all of them.
 
-If the `readings/` subfolder doesn't exist yet, create it.
+If the corresponding `primer-readings/` subfolder doesn't exist yet, create it.
 
-If a reading guide already exists for this meta-document (filename collision), surface it. Don't silently overwrite. Ask whether to overwrite, append, or skip.
+If a reading guide already exists for this document (filename collision), surface it. Don't silently overwrite. Ask whether to overwrite, append, or skip.
 
-### Step 9 — Generate the final report
+### Step 8 — Generate the final report
 
 The final report goes in the conversation, not in the vault. Format below.
 
 ## Final report format
 
-After the reading guide and any primer extension are complete, produce a report with this structure:
-
 ```
 META-DOCUMENT PRIMER COMPLETE
 
 Target document: <path-or-descriptor>
-                 → frontmatter type: <synthesis|decisions|roadmap|alignment|other>
+                 → frontmatter type: <type>
                  → <word-count> words; <section-count> top-level sections
-- Mode: <read-for-me|extend-and-write|currency-check>
+- Mode: <read-for-me|extend-and-write|currency-check|compound-primer>
 - Scope hint: <captured-or-none>
 
-Master primer status:
-- Path: /Users/olivermarroquin/workspace/second-brain/_meta/primers/primer-synthesis-vocabulary-and-concepts.md
-- Last updated: <date>
-- Vocabulary gaps found this run: <count>
-- Extensions written this run: <count or "none">
+Primers loaded:
+- Primary: <path-to-primary-primer>
+- Secondary: <list-of-secondary-primers-if-any>
+
+Primer status (per loaded primer):
+- <primer-name>: vocabulary gaps found this run: <count>; extensions written this run: <count or "none">
 
 Reading guide delivery:
 - Shape: <inline|file>
@@ -197,76 +216,213 @@ Reading guide delivery:
 - Length: <approximate-word-count>
 
 Gaps flagged for operator review (if any):
-- <list of gaps; for each: term-or-concept, where it appeared, why it's a gap, suggested disposition>
+- <list of gaps; for each: term-or-concept, where it appeared, which primer it belongs in, suggested disposition>
 
 Borderline items (if any):
-- <list of Appendix-A entries whose current shape may be inadequate; for each: term, friction point observed in this document>
+- <list of Appendix-A entries whose current shape may be inadequate>
 
 Files written / modified (if extend-and-write):
-M <path-to-master-primer>     (if extended)
-A <path-to-reading-guide>      (if written as file)
+M <path-to-each-modified-primer>
+A <path-to-reading-guide>
 
 Next steps for you:
-1. <document-specific suggestion — e.g., "Review the reading guide alongside the synthesis to spot-check sections 4 and 7">
+1. <document-specific suggestion>
 2. <if extensions written: "Inspect the primer diff and commit if it looks right">
-3. <if gaps flagged but not addressed: "Consider invoking the skill in extend-and-write mode to address the flagged gaps, or defer to retrospective">
+3. <if gaps flagged but not addressed: "Consider invoking the skill in extend-and-write mode...">
 4. Commit (when ready, run yourself):
 
    cd /Users/olivermarroquin/workspace/second-brain && git add . && git commit -m "<suggested-message>"
 ```
 
+## Compound-primer mode — workflow
+
+`compound-primer` is the proactive primer-growth mode. The operator points the skill at a scope (a domain folder, a project folder, or a primer file directly), and the skill scans recent notes in that scope for vocabulary missing from the primer, then proposes extensions in batch.
+
+This is the mode that makes primers self-maintaining. Without it, primers drift out of date as vocabulary accumulates in the vault faster than reading-guide invocations surface it.
+
+### Trigger context
+
+`compound-primer` typically gets invoked after a batch of new vocabulary has just landed in the vault. Examples:
+- After a VIS skill ingestion run that produced 5–20 new source notes in a domain
+- After a phase of client work that introduced new project-specific terms
+- On a periodic primer-currency cadence (monthly per domain, for instance)
+
+The mode is also invocable directly any time the operator suspects the primer is out of date.
+
+### Step C1 — Identify the scope
+
+The user gave you one of:
+- A domain name ("marketing") → scope is `second-brain/03_domains/marketing/`; primer at `second-brain/03_domains/marketing/primer-marketing-vocabulary-and-concepts.md`
+- A project name ("ev-electric-services") → scope is the project folder; primer at the project root
+- A path to a primer file directly
+
+If no primer exists at the resolved scope, ask: "No primer found at <path>. Do you want me to bootstrap one as part of this compound run, or skip?"
+
+### Step C2 — Identify the candidate notes
+
+Default: all notes in the scope folder modified in the last 30 days. Override options the user might specify:
+- "From these specific notes" (provide paths) — scan only the listed notes
+- "Everything in the domain" — scan every note in the scope folder regardless of date
+- "Since <date>" — scan notes modified after a specific date
+- "Notes referenced by <source>" — scan notes that frontmatter-link to a specific source
+
+If no override, default to last-30-days. State the chosen window in the proposal.
+
+### Step C3 — Load the primer and scan each note
+
+Read the target primer's Part 1 + Appendix A into working context.
+
+For each candidate note, scan for vocabulary gaps using the same heuristics as per-document Step 4. Aggregate gaps across notes — if the same term appears in 5 notes, that's one gap with high signal, not five separate gaps.
+
+Track per gap: the term, where it appears (which notes), suggested entry shape (Appendix A entry vs. Part 1 subsection), and rough confidence in the term's load-bearing status (a term that appears across many notes is more load-bearing than one that appears in one).
+
+### Step C4 — Propose the batch extension
+
+Present the proposal in a structured shape:
+
+```
+Compound primer extension — <primer-name>
+
+Scanned: <count> notes modified <date-range>
+Notes contributing to gaps: <count>
+
+Appendix A additions proposed (alphabetical):
+- <term> — appeared in <count> notes (e.g., <example-note-1>, <example-note-2>)
+  Proposed entry: <draft>
+- <term> — ...
+
+Part 1 changes proposed:
+- <section/subsection> at <position>: <rationale> — <draft outline>
+
+Borderline items (in primer but possibly inadequate):
+- <term> — friction observed in <notes>; <suggested revision>
+
+The primer's `updated:` field will advance to <today's date>.
+
+Confirm batch extension? (yes / revise / partial / skip)
+```
+
+If the user says:
+- `yes` → write all proposed extensions to the primer
+- `revise` → ask which to change
+- `partial` → ask which to include and which to skip
+- `skip` → don't write; the gaps stay flagged for a future run
+
+### Step C5 — Write and report
+
+If approved, write extensions to the primer (alphabetical splice for Appendix A; conceptual-tier ordering for Part 1). Update `updated:` field. Generate a final report:
+
+```
+COMPOUND PRIMER COMPLETE
+
+Scope: <domain or project>
+Primer: <path>
+Notes scanned: <count>
+Date range: <range>
+
+Extensions written:
+- Appendix A entries: <count>
+- Part 1 additions: <count>
+
+Files modified:
+M <path-to-primer>
+
+Next steps for you:
+1. Review the primer diff
+2. Commit (when ready):
+   cd /Users/olivermarroquin/workspace/second-brain && git add . && git commit -m "primer: compound from <scope> activity"
+```
+
 ## What this skill does NOT do
 
-- Does NOT modify the target meta-document. The meta-document is the subject of comprehension support; it's not edited by this skill.
-- Does NOT produce analysis, decisions, or recommendations that the meta-document itself was supposed to produce. Reading guides scaffold comprehension; they don't substitute for the work the meta-document represents.
-- Does NOT advocate for or against options in a decisions-class document. The skill explains what's being decided and where the evidence is; the user/agent decides.
-- Does NOT auto-write extensions to the master primer without explicit confirmation, even in `extend-and-write` mode.
+- Does NOT modify the target document. Comprehension support only; never edits the doc being read.
+- Does NOT produce analysis, decisions, or recommendations that the document itself was supposed to produce.
+- Does NOT advocate for or against options in a decisions-class document.
+- Does NOT auto-write extensions without explicit confirmation, even in `extend-and-write` or `compound-primer` mode.
 - Does NOT commit to git. User runs the commit command after inspecting.
-- Does NOT push to GitHub. User pushes when ready.
-- Does NOT bootstrap a master primer from scratch. If the master primer doesn't exist, surface that and stop.
-- Does NOT do extraction. That's `vis-extraction`'s job. The two skills operate at different altitudes (extraction = source → vault; primer = meta-document → comprehension).
-- Does NOT chase pattern promotions, cross-creator math, or any other extraction-time discipline. Those are extraction-time concerns. The primer skill is comprehension-time.
+- Does NOT push to GitHub.
+- Does NOT bootstrap a primer from scratch without confirmation. If the target's scope has no primer, ask.
+- Does NOT do extraction. That's `vis-extraction`'s job.
+- Does NOT chase pattern promotions, cross-creator math, or other extraction-time discipline.
 
 ## Edge cases
 
-**No master primer at the canonical path.** Surface as a problem. Do not bootstrap. Tell user: "The master primer is expected at `/Users/olivermarroquin/workspace/second-brain/_meta/primers/primer-synthesis-vocabulary-and-concepts.md` but doesn't exist. This skill composes with a pre-existing primer. If you want me to help draft a master primer from scratch, that's a separate, larger task — let me know."
+**No primer found at the relevant scope.** Ask the user whether to bootstrap one as part of this run, or proceed with whichever primers do load (and fall back to system primer for synthesis-class docs).
 
-**Target meta-document doesn't exist at the path the user named.** List candidates from likely locations (`_meta/synthesis/`, `_meta/decisions/`, `_meta/roadmap/`, `_meta/alignment/`, plus `_meta/` itself) and ask which the user meant.
+**Multiple primers apply but their definitions of the same term conflict.** Most-specific primer wins for the reading guide's purposes. Flag the conflict to the operator in the report so they can decide whether to reconcile.
 
-**Target document is not a meta-document.** If the user points the skill at a source note, tactic note, tool note, task note, or other non-meta document, gently surface this — those have their own conventions and may not benefit from a primer-style reading guide. Ask whether the user actually wants this skill or a different kind of help.
+**Target document doesn't exist at the path the user named.** List candidates from likely locations and ask.
 
-**Reading guide already exists at the target path.** Don't silently overwrite. Surface the existing file's `updated:` field and ask: overwrite (regenerate fresh), append (add new sections leaving existing), or skip (use existing).
+**Target is not a meta-document but is in a domain with a domain primer.** This is fine — domain primers serve any note in their scope (insights, tactics, sources, etc.), not just meta-documents. Generate a reading guide if the target's vocabulary density warrants one. If the target is so simple it doesn't need one, say so and offer to skip.
 
-**Master primer is heavily out-of-date.** If gap count exceeds ~10 entries or includes multiple Part 1 gaps, treat this as a substantial-extension situation. Don't draft autonomously; propose a focused extension session to the user. Suggest invoking `extend-and-write` mode specifically for currency-check work before resuming reading-guide generation.
+**Reading guide already exists at the target path.** Surface and ask: overwrite, append, or skip.
 
-**User pastes meta-document content directly.** Proceed with reading-guide generation in inline shape; file shape isn't possible without a stable filename. Note in the final report that the reading guide was inline-only.
+**Primer is heavily out-of-date.** If gap count exceeds ~10 entries or includes multiple Part 1 gaps, treat as substantial-extension; propose a focused extension session. Suggest `compound-primer` mode if the gap density suggests broader maintenance is needed.
 
-**User asks for a reading guide in `read-for-me` mode but the meta-document is a synthesis-class document.** Honor the mode; deliver inline. Mention at the end of the inline guide that the user can re-invoke in `extend-and-write` mode to persist the reading guide as a file. Don't write the file just because the document type would default to file.
+**User pastes document content directly.** Inline-only; file output isn't possible without a stable filename. Note in the final report.
 
-**Skill invoked without a target document.** Ask what document the user wants help reading. List recently-modified meta-documents from `_meta/synthesis/`, `_meta/decisions/`, `_meta/roadmap/`, `_meta/alignment/` as candidates.
+**Compound-primer scope has zero recent notes.** Tell the user the scope had no qualifying activity in the date window and offer to widen the window.
 
-**Cowork or another agent invokes the skill on behalf of an upstream task.** The skill's behavior doesn't change based on caller; it produces comprehension support either way. If the caller is an agent doing review work, the reading guide may be more valuable as an inline scaffold for the agent's review than as a file for the operator. Default inline delivery is correct for that case.
+**Compound-primer scope has primer-missing terms but they're all single-occurrence.** Flag them lower-confidence. Single-occurrence terms might be one-off rather than load-bearing. Recommend either skipping them or holding for the next compound run when more signal accumulates.
+
+**Synthesis-class document references a domain that has no primer yet.** Load the system primer; flag the gap; offer to bootstrap the domain primer if the synthesis would meaningfully benefit. Don't auto-bootstrap.
+
+## Cross-domain vocabulary handling
+
+Default rule: each term lives in the most-central primer for its scope. Other primers reference via wikilink:
+```
+**JSON-LD** — see [[primer-marketing-vocabulary-and-concepts#json-ld]].
+```
+
+This avoids duplication while preserving cross-domain discoverability.
+
+**Trigger to revisit:** if you find a term being cross-referenced from 3+ domain primers, that's the signal to consider lifting it into a shared primer. Shape it would take:
+- Path: `second-brain/_meta/primers/primer-cross-domain-vocabulary.md`
+- Structure: same as a domain primer (Part 1 + Appendix A)
+- Scope: terms that genuinely span 3+ domains
+- Domain primers cross-reference into it instead of redefining
+
+This isn't built yet. The trigger is documented so you'll know when it's time.
+
+## Index for reading guides
+
+A single index file lives at `second-brain/_meta/primers/readings/INDEX.md`. It's a Dataview-based auto-index:
+
+````markdown
+# Reading guides — index
+
+> Auto-generated from `type: primer-reading` frontmatter. Don't edit by hand.
+
+```dataview
+TABLE
+  file.path AS "Reading guide",
+  related[0] AS "Target document",
+  updated AS "Updated"
+FROM "second-brain" OR "repos"
+WHERE type = "primer-reading"
+SORT updated DESC
+```
+````
+
+Because the index is a Dataview query, it never goes stale — every reading guide written anywhere in the vault (any domain, any project, the system path) shows up automatically as long as its frontmatter is correct.
+
+If a reading guide is written by this skill, its frontmatter must include `type: primer-reading` for the index to pick it up. The template enforces this.
 
 ## Reference files
 
-The actual content this skill operates on lives outside the skill folder:
+The skill's working materials (templates, prompts, references):
 
-- **Master primer:** `/Users/olivermarroquin/workspace/second-brain/_meta/primers/primer-synthesis-vocabulary-and-concepts.md`
-- **Reading guides folder:** `/Users/olivermarroquin/workspace/second-brain/_meta/primers/readings/`
-- **Vault meta-documents:**
-  - Synthesis: `/Users/olivermarroquin/workspace/second-brain/_meta/synthesis/`
-  - Decisions: `/Users/olivermarroquin/workspace/second-brain/_meta/decisions/` (if exists)
-  - Roadmap: `/Users/olivermarroquin/workspace/second-brain/_meta/roadmap/` (if exists)
-  - Alignment: `/Users/olivermarroquin/workspace/second-brain/_meta/alignment/` (if exists)
-- **Vault root:** `/Users/olivermarroquin/workspace/second-brain/`
-- **Conventions reference:** `/Users/olivermarroquin/workspace/second-brain/_meta/conventions.md`
-
-The skill's own working materials:
-
+- **Primer structure reference:** `/Users/olivermarroquin/workspace/skills/meta-document-primer/references/primer-structure.md` (formerly `master-primer-structure.md`; generalized in v2.0 to apply to all primers)
 - **Reading-guide prompt:** `/Users/olivermarroquin/workspace/skills/meta-document-primer/prompts/reading-guide-prompt.md`
 - **Primer-extension prompt:** `/Users/olivermarroquin/workspace/skills/meta-document-primer/prompts/primer-extension-prompt.md`
 - **Reading-guide template:** `/Users/olivermarroquin/workspace/skills/meta-document-primer/templates/primer-reading-template.md`
 - **Appendix-A entry template:** `/Users/olivermarroquin/workspace/skills/meta-document-primer/templates/appendix-a-entry-template.md`
-- **Master primer structure reference:** `/Users/olivermarroquin/workspace/skills/meta-document-primer/references/master-primer-structure.md`
+
+The vault paths the skill operates on (primer files + reading-guide folders) are scope-derived per the rules above; they're not enumerated here because they grow as new primers come online.
+
+The system primer remains at: `/Users/olivermarroquin/workspace/second-brain/_meta/primers/primer-synthesis-vocabulary-and-concepts.md`.
+
+Vault root: `/Users/olivermarroquin/workspace/second-brain/`.
+Conventions reference: `/Users/olivermarroquin/workspace/second-brain/_meta/conventions.md`.
 
 Read these as needed. The prompts are the authoritative specs for content generation; this SKILL.md is the orchestration layer.

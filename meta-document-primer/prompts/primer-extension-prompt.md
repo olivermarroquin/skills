@@ -1,8 +1,10 @@
-# Primer-extension prompt (v1.0)
+# Primer-extension prompt (v2.0)
 
-The authoritative spec for extending the master primer (`primer-synthesis-vocabulary-and-concepts.md`) — adding new entries to Appendix A and, when warranted, drafting new Part 1 subsections or sections.
+The authoritative spec for extending any primer (system, domain, or project) — adding new entries to Appendix A and, when warranted, drafting new Part 1 subsections or sections.
 
-This prompt is loaded by `meta-document-primer/SKILL.md` Step 7.
+This prompt is loaded by `meta-document-primer/SKILL.md` Step 6 (per-document extension) and Step C4 (compound-primer batch extension).
+
+**Generalization in v2.0:** the v1.0 version of this prompt assumed a single master primer with lettered Part 1 sections A–K. v2.0 generalizes: extensions can target any primer at any scope, and Part 1 section structure is whatever the primer itself uses. Some smaller primers may not have lettered sections; that's fine. Match the primer's existing shape.
 
 ## When extensions are appropriate
 
@@ -42,7 +44,8 @@ Rules:
 
 - Entries assume Part 1 context. Don't re-explain Part 1 concepts in the entry; cross-reference them.
 - Entries are 1–3 sentences. Anything longer signals the term deserves a Part 1 subsection rather than an Appendix A entry.
-- Cross-references use the existing format: "Section X." for single-section references; "Sections X and Y." for multiple; "Precedent #N." when referencing one of the 10 operator-discipline precedents; "Synthesis Section N." when referencing the Phase B synthesis Part 2 walkthrough.
+- Cross-references use the existing format: "Section X." for single-section references; "Sections X and Y." for multiple; "Precedent #N." when referencing one of the 10 operator-discipline precedents (system primer only); "Synthesis Section N." when referencing an embedded Part 2 reading guide (legacy; system primer only).
+- "See [[primer-X-vocabulary-and-concepts#term]]." is the cross-primer reference format — use when the term's home scope is in a different primer. This avoids duplication.
 - "No Part 1 reference needed" is acceptable for narrow technical terms that don't compose with broader concepts.
 - Splice entries alphabetically into Appendix A. Maintain the existing alphabetical order strictly.
 
@@ -62,10 +65,10 @@ When a new Part 1 subsection is warranted (extending an existing section with a 
 
 Rules:
 
-- Match the layman-tone of existing Part 1 sections. The reference for tone is the existing `primer-synthesis-vocabulary-and-concepts.md`.
+- Match the layman-tone of existing Part 1 sections in the target primer. The canonical voice reference is `primer-synthesis-vocabulary-and-concepts.md`. Domain and project primers should match this voice, not invent their own.
 - Use concrete examples from the operator's vault. Generic textbook examples are worse than specific vault examples.
-- Cross-reference other Part 1 sections actively when the new sub-concept depends on them.
-- End the subsection with explicit guidance for how to read the synthesis when the sub-concept appears ("when you see X in a synthesis, it means Y").
+- Cross-reference other Part 1 sections actively when the new sub-concept depends on them. Cross-primer references are allowed and encouraged when the sub-concept relates to a term that's most-central in a different primer.
+- End the subsection with explicit guidance for how to read documents when the sub-concept appears ("when you see X in a marketing tactic note, it means Y").
 
 ## Part 1 section shape
 
@@ -90,20 +93,32 @@ Rules:
 
 - Assign a section letter that places the new section in conceptual-tier order. Earlier letters are more foundational. The new section should be placed where its dependencies are satisfied by preceding sections.
 - This may require re-lettering subsequent sections. If the re-lettering is extensive (touching more than 2 sections), surface the choice to the user before writing.
+- If the target primer doesn't use lettered Part 1 sections (smaller primers may not), use a descriptive heading and place it in conceptual-tier order. Don't introduce letters retroactively unless the primer is genuinely big enough to warrant them.
 - Match the existing section structure: opening framing paragraph, 2–5 subsections, optional putting-it-together closer.
 - Update Appendix A with corresponding entries cross-referencing the new section.
 
-## What to do when the same gap appears multiple times across recent meta-documents
+## What to do when the same gap appears multiple times across recent documents
 
-If Step 5 surfaces a vocabulary item that appears across multiple recent meta-documents (not just the current one), this is stronger signal for extension. Mention this in the extension proposal — repeated appearance suggests the concept is becoming load-bearing in the operator's work.
+If Step 4 (per-document) or Step C3 (compound-primer) surfaces a vocabulary item that appears across multiple recent documents, this is stronger signal for extension. Mention this in the extension proposal — repeated appearance suggests the concept is becoming load-bearing in the operator's work.
+
+In compound-primer mode specifically, the count of notes a term appears across is the primary signal for ordering proposed extensions. Higher-occurrence terms are extended first; single-occurrence terms may be deferred to a later run when more signal accumulates.
 
 ## Tone calibration
 
-The master primer's Part 1 sections are written for someone who:
-- Is technically literate but not a specialist in AI agent infrastructure
+Every primer's Part 1 sections are written for two audiences simultaneously:
+
+**The operator (Oliver), who:**
+- Is technically literate but not a specialist in the domain being primered
 - Wants to understand *why* terms exist, not just what they mean
 - Will re-read sections months later and needs them to still teach, not just remind
-- Reads other meta-documents in the vault and needs scaffolding to make those documents readable
+- Reads documents in the vault and needs scaffolding to make those documents readable
+
+**Agents, who:**
+- Need definitions precise enough to resolve a term deterministically
+- Will use the primer for term lookup before doing downstream work
+- Should be able to extract the load-bearing meaning of a term from its entry without needing to read the full Part 1 section
+
+Both audiences are compatible: precise definitions are what teach; good teaching is what makes agents useful. The system primer is the canonical voice example.
 
 Extensions should match this voice. Specifically:
 - **Use the second person occasionally** when the explanation is grounded in the operator's own work ("when you read X in the synthesis, it means Y"). Don't overdo it.
@@ -129,10 +144,10 @@ If any answer reveals a problem, revise before writing.
 
 ## Confirmation discipline
 
-Even in `extend-and-write` mode, the skill surfaces the proposed extension to the user before writing. The shape of the confirmation:
+Even in `extend-and-write` or `compound-primer` mode, the skill surfaces the proposed extension to the user before writing. The shape of the confirmation:
 
 ```
-Proposed primer extension:
+Proposed primer extension — <primer-name>:
 
 Appendix A additions (alphabetical):
 - <new entry 1>
@@ -141,9 +156,11 @@ Appendix A additions (alphabetical):
 Part 1 changes (if any):
 - <section/subsection> at <position>: <brief description>
 
-The master primer's `updated:` field will be advanced to <today's date>.
+The primer's `updated:` field will be advanced to <today's date>.
 
 Confirm extension? (yes / revise / skip)
 ```
+
+When multiple primers are being extended in a single run (per-document mode where gaps spanned scopes, or compound-primer mode where one primer is being extended from notes that reference other primers' terms), show one confirmation block per primer. Each gets independent confirmation.
 
 If the user says "yes," write. If "revise," ask what to change. If "skip," don't write; the gap stays flagged for retrospective.

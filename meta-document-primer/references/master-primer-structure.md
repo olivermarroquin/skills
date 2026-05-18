@@ -1,4 +1,14 @@
-# Master primer structure reference
+# Master primer structure reference (DEPRECATED in v2.0)
+
+**This file is deprecated.** v2.0 of the `meta-document-primer` skill generalizes primer structure to apply across three scopes (system, domain, project) — not just the master/system primer. The replacement is:
+
+`/Users/olivermarroquin/workspace/skills/meta-document-primer/references/primer-structure.md`
+
+That new file describes the structure conventions any primer should follow at any scope. The content below is preserved for historical reference but is no longer the source of truth.
+
+---
+
+## (Historical) Master primer structure reference
 
 A reference doc describing the structure of the master primer at `/Users/olivermarroquin/workspace/second-brain/_meta/primers/primer-synthesis-vocabulary-and-concepts.md`. Used by the `meta-document-primer` skill to know what it's extending or referencing when generating reading guides.
 

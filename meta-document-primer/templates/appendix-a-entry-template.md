@@ -1,6 +1,6 @@
 # Appendix A entry template
 
-Use this template when adding new vocabulary entries to Appendix A of the master primer (`primer-synthesis-vocabulary-and-concepts.md`).
+Use this template when adding new vocabulary entries to Appendix A of any primer (system, domain, or project). Section-letter references in the cross-reference format below assume the primer uses lettered Part 1 sections; if the primer is small enough not to have section letters, use "See Part 1" or omit the section reference.
 
 ## Entry shape
 
@@ -15,10 +15,11 @@ Use this template when adding new vocabulary entries to Appendix A of the master
 3. **1–3 sentences max.** Longer entries signal the term deserves Part 1 treatment, not Appendix A treatment.
 4. **Assume Part 1 context.** The reader has access to Part 1; don't re-explain concepts. Cross-reference instead.
 5. **Cross-reference using existing format:**
-   - `Section X.` — single Part 1 section reference
+   - `Section X.` — single Part 1 section reference (where the primer uses lettered sections)
    - `Sections X and Y.` — multiple sections
-   - `Precedent #N.` — one of the 10 operator-discipline precedents
-   - `Synthesis Section N.` — section of the Phase B synthesis Part 2 walkthrough
+   - `Precedent #N.` — one of the 10 operator-discipline precedents (system primer only)
+   - `Synthesis Section N.` — section of an embedded Part 2 reading guide (legacy; system primer only)
+   - `See [[primer-X-vocabulary-and-concepts#term]].` — cross-primer reference (when the term's home scope is in a different primer)
    - `No Part 1 reference needed.` — for narrow technical terms that don't compose with broader concepts
 6. **Alphabetical placement.** Splice into Appendix A alphabetically. Don't append to the end.
 

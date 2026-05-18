@@ -1,14 +1,18 @@
-# Reading-guide prompt (v1.0)
+# Reading-guide prompt (v2.0)
 
-The authoritative spec for generating Part 2 reading guides — section-by-section walkthroughs of vault meta-documents (synthesis, decisions, roadmap, alignment) that scaffold comprehension using Part 1 concepts from the master primer.
+The authoritative spec for generating per-document reading guides — section-by-section walkthroughs of vault documents (synthesis, decisions, roadmap, alignment, domain notes, project artifacts) that scaffold comprehension using Part 1 concepts from the loaded primer(s).
 
-This prompt is loaded by `meta-document-primer/SKILL.md` Step 8.
+This prompt is loaded by `meta-document-primer/SKILL.md` Step 7.
+
+**Generalization in v2.0:** the v1.0 version assumed a single master primer was always the conceptual reference. v2.0 supports loading multiple primers simultaneously (primary + secondaries when scope stacks apply). The reading guide cross-references whichever primers were loaded for the target document; the primary primer is the one most-central to the target's scope, secondaries provide cross-reference coverage.
 
 ## What a reading guide is
 
-A reading guide is the companion document to a meta-document. It walks the reader through the meta-document section by section, with notes on what to watch for given the conceptual scaffolding in the master primer's Part 1. It's not a summary; it's an annotated tour.
+A reading guide is the companion document to a target document. It walks the reader through the target section by section, with notes on what to watch for given the conceptual scaffolding in the loaded primer(s)' Part 1. It's not a summary; it's an annotated tour.
 
-The reader uses the reading guide alongside the meta-document — primer-reading and meta-document open in parallel. The reading guide assumes the reader has read (or has access to) the master primer's Part 1 sections and Appendix A.
+The reader uses the reading guide alongside the target — primer-reading and target document open in parallel. The reading guide assumes the reader has access to all loaded primers' Part 1 sections and Appendix A.
+
+The "loaded primer(s)" depends on the target document's scope. A synthesis-class meta-document might load only the system primer. A marketing tactic note inside a project folder might load the project primer (primary), the marketing domain primer (secondary), and skip the system primer entirely. The skill's Step 2 (resolution) determines which primers are loaded.
 
 ## What a reading guide is NOT
 
@@ -20,10 +24,10 @@ The reader uses the reading guide alongside the meta-document — primer-reading
 
 ## Tone and depth
 
-- **Layman-accessible without dumbing down.** Use plain language but don't sacrifice technical accuracy. If a concept genuinely requires a particular technical term, use the term and cross-reference the master primer entry that explains it.
-- **Concise where the meta-document is concise; dense where the meta-document is dense.** Don't pad. A short decisions document might warrant a 300-word reading guide; a long synthesis warrants 1500–2500+ words.
-- **Cross-reference the master primer's Part 1 sections and Appendix A actively.** When a section uses a Part 1 concept, name the concept and cite the section ("see Part 1 Section B" or "see Appendix A — substrate"). This is the load-bearing connective tissue.
-- **Honest about your own uncertainty.** If the reading guide encounters a section it can't comfortably explain (e.g., because the master primer doesn't cover the necessary concepts), flag this in-line rather than papering over.
+- **Layman-accessible without dumbing down.** Use plain language but don't sacrifice technical accuracy. If a concept genuinely requires a particular technical term, use the term and cross-reference the primer entry that explains it.
+- **Concise where the target is concise; dense where the target is dense.** Don't pad. A short decisions document might warrant a 300-word reading guide; a long synthesis warrants 1500–2500+ words.
+- **Cross-reference the loaded primer(s)' Part 1 sections and Appendix A actively.** When a section uses a Part 1 concept, name the concept, cite the section, and name which primer the cross-reference is in ("see marketing primer Section C" or "see system primer Appendix A — substrate"). This is the load-bearing connective tissue.
+- **Honest about your own uncertainty.** If the reading guide encounters a section it can't comfortably explain (e.g., because no loaded primer covers the necessary concept), flag this in-line rather than papering over, and identify which primer would need to grow to cover it.
 
 ## Structure
 
@@ -31,7 +35,9 @@ The reading guide follows the meta-document's own structural shape. Standard sec
 
 ### Frontmatter
 
-`type: primer-reading`; `status: active`; `created: <today>`; `related: [<target-meta-document>, primer-synthesis-vocabulary-and-concepts]`; `tags: [primer, reading-aid, <document-type-tag>]`.
+`type: primer-reading`; `status: active`; `created: <today>`; `related: [<target-document>, <primary-primer-base-name>, <any-secondary-primer-base-names>]`; `tags: [primer, reading-aid, <document-type-tag>, <primary-primer-scope-tag>]`.
+
+The `type: primer-reading` field is what the index Dataview query at `_meta/primers/readings/INDEX.md` filters on. It must be exact.
 
 ### Opening: what this reading guide is for
 
@@ -71,16 +77,17 @@ When generating each section's walkthrough:
 - **If the meta-document section is summarizing precedents or disciplines**: cite the master primer's Part 1 Section G coverage of operator-discipline precedents and don't re-explain each precedent from scratch.
 - **If the meta-document section is an audit-pass or retrospective**: identify which items are reconciliation work (count discrepancies, drift) vs interpretation work (is this metric meaningful?) vs procedural observations (closure-mechanism characterization).
 
-## What to do when concepts are missing from the master primer
+## What to do when concepts are missing from the loaded primer(s)
 
-The skill's Step 5 already produced a gap list. The reading guide should:
+The skill's Step 4 already produced a gap list, with each gap tagged to the primer it most naturally belongs in. The reading guide should:
 
 - Note the gap inline at the section where the missing concept appears
+- Identify which primer the gap belongs in ("this term would belong in the marketing domain primer's Appendix A")
 - Provide a one-sentence ad-hoc explanation so the reader isn't stuck mid-document
 - Refer to the gap list at the end of the reading guide (or in the final skill report, depending on delivery mode)
-- Not pretend the master primer covers it; the gap exists and the reader should know
+- Not pretend any primer covers a term that none of them do; the gap exists and the reader should know
 
-If the gap is large enough to genuinely block comprehension of multiple sections, surface this prominently — at the top of the reading guide — and recommend that the user invoke the skill in `extend-and-write` mode to address gaps before relying on the reading guide.
+If the gap is large enough to genuinely block comprehension of multiple sections, surface this prominently — at the top of the reading guide — and recommend that the user invoke the skill in `extend-and-write` mode (per-document) or `compound-primer` mode (batch) to address gaps before relying on the reading guide.
 
 ## What to do when the meta-document has visible drift or errors
 
