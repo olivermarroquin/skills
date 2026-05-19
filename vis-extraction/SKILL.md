@@ -836,6 +836,12 @@ Phase 0 (environment preflight) was already executed in Step 5. Following the v3
 
 The final report goes in the conversation, not in the vault. Format below.
 
+### Step 9 — Compound-primer offer
+
+Step 9 is a SKILL.md-layer addition that runs after the v3.2 extraction prompt completes. The prompt itself ends at Phase 8; this step extends the workflow but is not part of the prompt's phase count.
+
+After the final report prints, detect which domain(s) this run touched and surface a one-line offer to invoke the `meta-document-primer` skill in `compound-primer` mode against each. Operator-confirmable; never auto-runs. Format and detection rules below in "Compound-primer offer".
+
 ## Final report format
 
 After all writes complete, produce a report with this structure:
@@ -896,6 +902,56 @@ Next steps for you:
 
    cd /Users/olivermarroquin/workspace/second-brain && git add . && git commit -m "feat: extract <source-filename>"
 ```
+
+## Compound-primer offer
+
+Step 9 surfaces a follow-up offer after the final report prints. The goal: keep domain primers current as VIS ingests new vocabulary, without forcing the operator to remember to run `compound-primer` manually.
+
+### How to detect affected domain(s)
+
+Collect the distinct domains touched by this run. Sources, in order of preference:
+
+1. **Frontmatter `domain:` field** on any note written or modified in Phase 7 (source note, tactic notes, tool notes, task notes). Read each created file's frontmatter and gather the `domain:` values.
+2. **Destination folder inference.** Any supporting note written under `second-brain/03_domains/<domain>/...` implies that `<domain>` was touched. Use this as a fallback when frontmatter is missing or as a cross-check.
+3. **Triage destination (if known).** The triage step's recommended destination folder for the source note (e.g., `03_domains/marketing/`) implies the operator-intended primary domain.
+
+Deduplicate. Also keep a separate list of **the actual file paths written or modified in Phase 7** — the run-scoped sub-option below needs them.
+
+If only one domain surfaces, offer once. If multiple surface, offer per domain. If zero surface (rare — source landed entirely outside `03_domains/`, e.g., only in `_meta/` or `05_shared-intelligence/`), skip the offer silently.
+
+### Format of the offer
+
+The presentation depends on the agent's environment:
+
+**Interactive option UI (preferred when available, e.g., Cowork's `AskUserQuestion` multi-select tool):** present one multi-select question with one option per domain × scope combination, plus a "skip — I'll run it later" option. Operator picks zero or more in one response. Use this path whenever the executing agent has access to an interactive option-UI tool, because checkbox/radio UI renders properly and is faster for the operator than parsing a numbered list.
+
+**Inline numbered-list (fallback for chat-only environments without interactive option UI):** after the report block, append in the conversation:
+
+```
+Compound-primer offer:
+- This run added notes to domain(s): <domain-1>, <domain-2>, ...
+- Reply with the numbers you want (multi-select; e.g., "1, 4"):
+
+  1. <domain-1> — full domain (default 30-day window)
+  2. <domain-1> — scoped to just the notes from this run
+  3. <domain-2> — full domain (default 30-day window)
+  4. <domain-2> — scoped to just the notes from this run
+  ...
+  0. skip — I'll run it later
+```
+
+Wait for the operator's response. Then:
+
+- If the operator picks a **full domain** option → invoke `meta-document-primer` in `compound-primer` mode, passing only the domain name as the scope. The compound-primer skill will default to its last-30-days window per its Step C2.
+- If the operator picks a **scoped to just the notes from this run** option → invoke `meta-document-primer` in `compound-primer` mode, passing the domain name as the scope AND the explicit list of file paths captured during detection (the Phase 7 write list). This uses the compound-primer skill's "From these specific notes" override per its Step C2, so the scan is bounded to this run's output rather than the rolling 30-day window.
+- If the operator picks multiple options across domains, invoke once per chosen line.
+- If the operator picks `skip` or doesn't respond with a confirmation → do nothing further. The offer is a prompt, not a queue; it doesn't persist.
+
+The compound-primer workflow has its own approval gates (see that skill's Step C4); this skill's role ends at the handoff.
+
+### Never auto-run
+
+Even in `auto` mode, the compound-primer offer is operator-confirmable. `auto` mode for VIS suppresses the Phase 6 review gate; it does NOT suppress the Step 9 offer. The compound-primer skill has its own discipline around extending primers (read-only by default, conservative on extension) — that contract is preserved by requiring explicit operator confirmation here.
 
 ## What this skill does NOT do
 

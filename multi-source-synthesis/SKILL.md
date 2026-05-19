@@ -552,6 +552,56 @@ If operator's request anchors on a strategic question but mentions a client inci
 
 Multi-anchor cases (genuinely both operator-strategic AND client-deliverable) should surface to operator at Stage 2 for clarification. Ask: "Is the primary anchor operator-strategic (cross-cluster shape) or client-deliverable (client-driven shape)?" Default to client-driven if operator surfaces a specific client outcome; default to cross-cluster if operator surfaces a strategic question without specific client deliverable in mind.
 
+## Scope overrides
+
+By default, each synthesis shape uses a folder/identifier-based scope (whole cluster, whole pattern's sources-array, all relevant clusters for a cross-cluster question, all profile-relevant evidence for a client). Operators may override this default by providing a specific list of notes to synthesize, mirroring the meta-document-primer skill's Step C2 "From these specific notes" override.
+
+### When override applies
+
+- Operator says "synthesize these specific notes: [path1, path2, path3]" — synthesis is bounded to those paths
+- The synthesis-readiness-scan skill hands off a scoped invocation with explicit paths (e.g., refresh synthesis using just the new sources added since last synthesis)
+- Operator wants a partial-cluster synthesis (e.g., "synthesize just the substrate sources from automation-systems, not the full cluster")
+
+### Shape selection under override
+
+The four shapes still apply; the override narrows the scope inside the shape:
+
+- All override paths live in one cluster folder → cluster synthesis, scoped to those paths
+- Override paths are all sources contributing to one pattern → pattern synthesis, scoped to those sources
+- Override paths span multiple clusters AND operator provides a strategic anchor question → cross-cluster synthesis, scoped to those paths
+- Override paths are filtered for one client → client-driven synthesis, scoped to those paths
+
+Specific-notes is a scope refinement, not a fifth shape. Shape selection logic at Stage 2 still runs.
+
+### Stage 2 proposal under override
+
+The proposal block (see Stage 2) includes the override paths verbatim in the "Scope" section. The "<approximate scope size in human terms>" line reflects the override count, not the whole-folder count. The proposal explicitly labels the run as scope-overridden so the operator can verify the right paths are being used.
+
+### Refresh-synthesis case
+
+When invoked with a previous synthesis path passed as context (synthesis-refresh, surfaced by synthesis-readiness-scan when growth ≥ 5):
+
+- Read the previous synthesis into context before drafting
+- New synthesis covers ALL current sources in the cluster (not just the delta), but builds on the previous synthesis's framing rather than re-deriving
+- Frontmatter on the new synthesis: include `supersedes: <previous-synthesis-filename>` for lineage
+- Previous synthesis file stays in place
+- The new synthesis is filed alongside with a new date stamp per the standard cluster-synthesis filing rule
+
+### Override discipline
+
+- Override does NOT silently bypass the precondition, but does NOT hard-block either. If the explicit override paths fall below the standard precondition threshold (e.g., cluster synthesis with fewer than 5 load-bearing sources in the override set), surface the gap as a confirmation gate before drafting:
+
+  ```
+  Heads up: <N> paths provided, but only <X> are load-bearing (tier 1/2).
+  The default cluster synthesis precondition is 5+ load-bearing sources.
+
+  Proceed anyway? [yes / no]
+  ```
+
+  Operator's explicit `yes` IS the precondition under override; the warning just prevents accidental thin synthesis. If operator confirms, the synthesis body's decision-archaeology section records the actual tier distribution so the audit trail is honest. If operator says `no`, exit without writing.
+- Override is operator-honest: the synthesis body's decision-archaeology section names the scope override explicitly ("synthesis bounded to N operator-provided paths; full cluster contains M sources at synthesis date") so future-operator can interpret the synthesis's coverage correctly.
+- Operator override on 2/3 pattern synthesis (via synthesis-readiness-scan watch list pick) records "synthesized at 2/3 per operator override" in the synthesis body's decision-archaeology section. The pattern's own promotion math is unchanged by this synthesis (synthesis reports state; it does not promote).
+
 ## Mode 3 elicitation at invocation
 
 Operator's invocation request may not explicitly name the shape. Skill 3's Stage 2 analysis figures out the shape from request phrasing. This section documents the elicitation logic.
