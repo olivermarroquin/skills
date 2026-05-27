@@ -25,9 +25,14 @@ Six template shapes. Live at `~/workspace/skills/perplexity-refinement/reference
 
 No query templates of its own. The router dispatches; it doesn't query.
 
-### perplexity-citation-monitoring (Wave 1C — pending)
+### perplexity-citation-monitoring (Wave 1C — shipped 2026-05-27)
 
-Will own query templates focused on "is this site/page cited by Perplexity for query [X]." Templates land when the skill ships.
+Four query shapes. Live at `~/workspace/skills/perplexity-citation-monitoring/references/query-shapes.md`.
+
+- **Shape 1 — General source list (default)** — "For the search query "[head query]", which 5-10 sources are most authoritatively cited as of [YYYY-MM-DD]?" Used for generic commercial-intent head queries with no brand, safety, or pricing emphasis.
+- **Shape 2 — Cost-anchored query** — "For the question "[head query]", which 5-10 sources are most authoritatively cited as of [YYYY-MM-DD] when someone is looking for real cost information?" Used when the head query includes cost/price/budget framing.
+- **Shape 3 — Brand-named / safety-anchored query** — "For the query "[head query]" — which involves a named brand, product, or safety concern — which 5-10 sources are most authoritatively cited as of [YYYY-MM-DD]?" Used for brand-named or safety-anchored head queries.
+- **Shape 4 — Local-intent / city-anchored query** — "For the local-intent query "[head query]", which 5-10 sources are most authoritatively cited as of [YYYY-MM-DD]?" Used when the head query includes a city, neighborhood, or "near me" component.
 
 ### perplexity-blueprint-research (Wave 2 — pending, flagship)
 

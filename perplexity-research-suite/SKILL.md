@@ -59,10 +59,10 @@ When to use: any time a vault artifact would benefit from external citation, fac
 **`perplexity-research-suite`** (this skill — shipped Wave 1B)
 The menu and router. You're reading it.
 
-**`perplexity-citation-monitoring`** (Wave 1C — pending)
-Will scan whether Oliver's site (or his clients' sites) are cited by Perplexity for target queries. Runs on a schedule via the Sonar API so it doesn't burn the shared Pro browser cap. Output: a tracker of "queries we want to be cited for, and where we currently stand."
+**`perplexity-citation-monitoring`** (Wave 1C — shipped 2026-05-27)
+Runs a monthly (or on-demand) scan per client or per domain to track which URLs Perplexity is citing for a small set of head queries that matter. Each run writes a dated snapshot to a per-scope citation-history note and diffs against the prior snapshot to surface newly-emerging sources, drops, and position shifts. Cheap by design — 5-8 queries per run (hard cap 8), monthly cadence, Perplexity-only at v1. Pairs with Otterly.ai's daily configured-prompt tracking by catching the open-ended "what NEW sources are appearing" question.
 
-When to use (once shipped): standing measurement of AI-search visibility for the most active clients.
+When to use: standing monthly read of AI-citation patterns for an active client or a tracked domain. The first run can be operator-triggered; subsequent runs typically fire from the registered monthly schedule.
 
 ### Wave 2 — flagship
 
@@ -124,9 +124,9 @@ Output shape:
 > **Shipped:**
 > - `perplexity-refinement` — refine a vault artifact with external citations and counter-evidence
 > - `perplexity-research-suite` — this router
+> - `perplexity-citation-monitoring` — monthly scan of which URLs Perplexity cites for the head queries that matter
 >
 > **Pending (in build order):**
-> - `perplexity-citation-monitoring` (Wave 1C) — standing scan of "are my pages cited"
 > - `perplexity-blueprint-research` (Wave 2) — turn vault knowledge into agent-executable blueprints
 > - ... (the rest)
 >
@@ -151,7 +151,7 @@ Map the goal to a skill. Use this table:
 | "should I enter [niche] / is [vertical] worth pursuing" | `perplexity-niche-validation` | high — pending |
 | "what's [competitor] doing / are competitors moving / detect competitor moves" | `perplexity-competitor-move-detection` | high — pending |
 | "why does Perplexity cite [URL] / what makes a page get cited" | `perplexity-ai-overview-hardening` | high — pending |
-| "is [my site / client site] cited by Perplexity / track citations" | `perplexity-citation-monitoring` | high — pending |
+| "is [my site / client site] cited by Perplexity / track citations / monthly citation scan / who's getting cited for [head query]" | `perplexity-citation-monitoring` | high |
 | "any acquisition signals in [vertical] / who's getting bought" | `perplexity-acquisition-signal` | high — pending |
 
 If the routing is unambiguous (one clear match) and the skill is shipped, invoke it directly using its primary trigger phrase. Tell Oliver which skill you're invoking and why.
@@ -408,6 +408,7 @@ When the router errors or produces a miss in production, add a new entry: **Issu
 ## See also
 
 - [[perplexity-refinement]] — Wave 0, the first skill the router lists
+- [[perplexity-citation-monitoring]] — Wave 1C, the standing monthly scan
 - [[perplexity-browser-setup]] — shared browser setup
 - [[perplexity-cost-rules]] — shared cost rules
 - [[perplexity-query-templates-index]] — shared templates index
