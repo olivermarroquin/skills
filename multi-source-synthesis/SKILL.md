@@ -55,8 +55,10 @@ When invoked without a review agent in the loop:
 6. Executor writes synthesis file to confirmed destination
 7. Executor invokes meta-document-primer skill (default-on) on the synthesis
 8. If plain-language variant requested: executor invokes plain-language-translation skill on the synthesis
-9. Executor reports completion with all files created
-10. Operator reviews / commits manually
+9. Executor emits the auto-invoke output-quality-loop block (Stage 7)
+10. Quality-loop runs Mode 1 on the synthesis (and routed companions); iterates on revision prompts until PASS or 3rd-iteration escalation
+11. Executor reports completion with all files created + verdicts
+12. Operator reviews / commits manually
 
 This is the standard standalone path. Use when there's no review agent in the loop.
 
@@ -95,11 +97,14 @@ When a review agent is present, the work flows through phases per source. Transc
 - Plain-language-translation skill runs its own workflow; surfaces its own gates if any directly to operator
 - Executor reports completion of all companion skill invocations
 
-#### Phase E — Completion report and commit handoff
+#### Phase E — Quality-loop auto-invoke and completion report
 
-- Executor produces final completion report listing all files created (synthesis + reading guide + optional plain-language variant + any master-primer extensions)
+- Executor emits the auto-invoke output-quality-loop block (Stage 7)
+- Quality-loop runs Mode 1 on the synthesis (and routed companions); iterates on revision prompts until PASS or 3rd-iteration escalation
+- For NEEDS REVISION (substantive) or FAIL verdicts, the revision prompt may flow back through the review-agent loop one more time before regeneration — review agent helps shape the regeneration prompt; operator transcribes back to executor
+- After PASS (or accepted escalation), executor produces final completion report listing all files created (synthesis + reading guide + optional plain-language variant + any master-primer extensions) + quality-loop verdict + iteration count
 - Operator transcribes completion report to review agent
-- Review agent drafts commit message preserving synthesis decision archaeology (shape choice, destination choice, variant choices, evidence sources synthesized)
+- Review agent drafts commit message preserving synthesis decision archaeology (shape choice, destination choice, variant choices, evidence sources synthesized, quality-loop verdict)
 - Operator commits manually using heredoc-to-file pattern (see Skill 1 Chunk 5 commit message template)
 
 ### Why this protocol exists
@@ -208,7 +213,7 @@ The operator does NOT need to validate every word of the synthesis draft — tha
 
 ## Invocation workflow
 
-Skill 3 follows a fixed invocation workflow regardless of mode. The workflow has six stages:
+Skill 3 follows a fixed invocation workflow regardless of mode. The workflow has seven stages (Stage 7, auto-invoke output-quality-loop, added 2026-05-28 as part of output-quality-loop Phase 2):
 
 ### Stage 1 — Receive operator request
 
@@ -385,12 +390,89 @@ After synthesis file is written, executor invokes companion skills:
    - Produces a plain-language version as a sibling file with `-plain` suffix
    - Surfaces its output to operator directly
 
-3. Executor produces a completion report listing all files created:
+3. Executor produces a draft completion report listing all files created:
    - Synthesis file (path)
    - Reading guide (path; from meta-document-primer)
    - Master primer extensions if any (per meta-document-primer's report)
    - Plain-language variant if requested (path; from plain-language-translation)
-   - Operator next-steps (review in Obsidian, commit manually)
+
+The draft report stays in working memory — the chat does NOT declare done yet. Stage 7 follows.
+
+### Stage 7 — Auto-invoke output-quality-loop on the synthesis (and companion artifacts)
+
+After Stage 6 completes (synthesis file written, companion skills invoked, all files in working memory), the skill hands off to [[output-quality-loop]] for a structured evaluation pass. This is the closing step. The synthesis gets quality-checked before the chat declares done.
+
+This was added 2026-05-28 as part of output-quality-loop Phase 2 (the first real-world test of the auto-invoke convention). The review-agent mode documented earlier in this SKILL.md operates IN the synthesis chat during creation (multi-turn pressure-testing at the shape-and-destination gate, drafting review, etc.); the quality-loop integration operates AFTER the synthesis lands. The two don't conflict — review-agent shapes what gets produced; quality-loop evaluates what landed against its spec sources.
+
+#### 7a. Identify the artifact(s) the synthesis produced
+
+Always include: the synthesis file itself.
+
+Optionally include (operator-choice; default include):
+- The reading guide produced by meta-document-primer (it has its own artifact type and its own routing entry in `spec-routing-table.md` once Phase 5 of the output-quality-loop project extends the table to cover reading guides; for v1 the reading guide may surface as "no spec routing for this type" and the operator decides whether to skip its evaluation)
+- The plain-language variant if one was requested
+
+The synthesis is always evaluated; the companions are evaluated when their artifact-types are routed in the routing table.
+
+#### 7b. Emit the auto-invoke block
+
+After the draft completion report is built and before the chat declares done, emit the standard auto-invoke block per [[auto-invoke-convention]]:
+
+```markdown
+## Auto-invoke output-quality-loop
+
+This skill produced the following artifact(s):
+- `<synthesis-file-path>`
+- `<reading-guide-path>`        ← only if routed
+- `<plain-language-variant-path>`  ← only if produced and routed
+
+[output-quality-loop:eval] — for each artifact, run output-quality-loop in EVALUATE mode. If PASS, declare the chat done. If NEEDS REVISION or FAIL, ingest the revision prompt as if it were operator input and regenerate the artifact, then re-invoke output-quality-loop. Cap at 3 iterations; on the 3rd FAIL, escalate to the operator with the evaluation report.
+```
+
+Required-element discipline per the convention spec:
+- Heading text matches verbatim: `## Auto-invoke output-quality-loop`
+- One bullet per artifact, full path inside backticks
+- Directive line opens with `[output-quality-loop:eval]` and includes the iteration-cap discipline language
+
+#### 7c. Run the evaluation
+
+`output-quality-loop` Mode 3 (AUTO-INVOKE-CONVENTION) parses the block and runs Mode 1 (EVALUATE) on each named artifact. The detected artifact type for a synthesis output is "Cluster synthesis" or "Cross-cluster synthesis" per the routing table in `~/workspace/skills/output-quality-loop/references/spec-routing-table.md` (with the right row picked based on the synthesis-shape frontmatter field). Loaded spec sources include this SKILL.md, every source note named in the synthesis frontmatter's `related:` block, the intel-routing convention spec, and `_meta/conventions.md`'s synthesis-shape rules.
+
+For client-driven and pattern-shape syntheses, the routing-table row may not yet exist (Phase 1 of the output-quality-loop project shipped the most common types; less-common types fall under "no spec routing — operator names spec sources or extends the routing table"). When the routing table has no row for the detected type, the producing chat asks the operator at Stage 7c-fallback either to (a) name spec sources for the one-off evaluation, (b) skip the quality-loop pass for this synthesis, or (c) extend the routing table before re-invoking. Default: ask the operator, don't guess.
+
+The evaluation produces a verdict per artifact: PASS | NEEDS REVISION (minor) | NEEDS REVISION (substantive) | FAIL.
+
+#### 7d. Iterate or declare done
+
+**On PASS for every artifact.** Synthesis is good. Proceed to the completion report and declare the chat done.
+
+**On NEEDS REVISION (minor) for any artifact.** `output-quality-loop` Mode 2 auto-fires and produces a revision prompt. Ingest the prompt as if it were operator input — re-read the synthesis output, apply the suggested fixes (typically: tighten a section, add a missing wikilink, fix a frontmatter field, clarify a pattern-math-state line). Re-emit the auto-invoke block. Loop.
+
+**On NEEDS REVISION (substantive) for any artifact.** Same as minor, but the revision is heavier — regenerate the affected section(s) rather than touch-editing. The revision prompt names the gaps; close them explicitly. Re-emit the auto-invoke block. Loop.
+
+**On FAIL for any artifact.** The synthesis missed a hard requirement (wrong shape applied, missing required section, wrong filing destination, malformed frontmatter, etc.). The revision prompt includes a root-cause analysis. Address the root cause; regenerate; re-emit; loop.
+
+For substantive or FAIL verdicts, the **multi-turn collaboration protocol** documented earlier in this SKILL.md may apply — if a review agent is in the loop, the executor surfaces the revision prompt to the operator, the operator transcribes to the review agent, and the review agent helps shape the regeneration. This composes naturally with the iteration cap.
+
+#### 7e. The iteration cap (3 max)
+
+Track the iteration count by checking the folder-quality-log's per-artifact section before each regeneration. If three iteration entries already exist for the synthesis and the verdict is still not PASS, **stop iterating and escalate to the operator** with the evaluation report. Don't run a fourth iteration; that's the load-bearing cost-control discipline.
+
+The escalation message names the unresolved gaps and asks the operator to either (a) edit the synthesis directly, (b) extend a spec source (e.g., the routing-table row, the synthesis-shape rules) so future iterations have clearer guidance, or (c) accept the artifact as-is and override the verdict manually.
+
+For multi-turn collaboration mode, escalation includes a synthesis-specific extra: the operator can route the unresolved gaps back through the review-agent loop one more time before final acceptance, since cross-cluster and client-driven syntheses sometimes have calibration-fit issues that aren't obvious from the verdict report alone.
+
+#### 7f. Final completion report
+
+Fires only after Stage 7 resolves — either with a PASS verdict on every artifact or with operator-accepted escalation. The chat does NOT declare done while iteration is in flight.
+
+The final completion report lists:
+- All files created (synthesis + reading guide + optional plain-language variant + any master-primer extensions)
+- Quality-loop verdict per artifact + iteration count per artifact
+- Folder-log entries written (path + which `_quality-log.md` was updated)
+- Operator next-steps (review in Obsidian, commit manually)
+
+**Stop condition.** Verdict is PASS on every named artifact, OR operator has accepted escalation. Proceed to commit handoff (Phase E of multi-turn mode, or operator-direct in single-agent mode).
 
 ## Four synthesis shapes
 

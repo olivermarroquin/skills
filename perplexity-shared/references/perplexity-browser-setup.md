@@ -11,9 +11,32 @@ Use this when a Perplexity skill is about to send live Pro Search queries throug
 
 Skills that route through the Perplexity Sonar API (citation-monitoring on a schedule, acquisition-signal scans) don't need this file — they hit the API directly.
 
+## Claude in Chrome verification (do this first)
+
+Before the four-step browser check, the calling skill (per the two-path priority decision tree in `perplexity-cost-rules.md`) decides whether Path A is available. This subsection documents what counts as "available."
+
+**Path A is available when ALL of the following hold:**
+
+1. `mcp__Claude_in_Chrome__list_connected_browsers` returns at least one connected browser.
+2. The browser tools (`mcp__Claude_in_Chrome__navigate`, `mcp__Claude_in_Chrome__get_page_text`, etc.) are loaded in the current Cowork session. If they appear as deferred tools in the tool registry but haven't been loaded via ToolSearch yet, load them now; if they don't appear at all, the extension isn't active and Path A is unavailable.
+3. The operator has the Claude in Chrome extension running in the same tab group as the Perplexity Pro session. (Typical operator setup: a pinned Perplexity Pro tab plus the extension; the extension can drive that tab.)
+
+**Path A is NOT available when:**
+
+- `list_connected_browsers` returns an empty list, OR
+- The browser tools aren't in the current Cowork tool registry, OR
+- The browser is connected but not signed in to Pro (caught in Step 3 below), OR
+- The browser is signed in to a different Perplexity account (free / different operator).
+
+When Path A is unavailable, the calling skill falls through to Path B (Sonar API per `perplexity-cost-rules.md`) — NOT to Cowork's built-in `WebSearch`. Path A failure does not authorize WebSearch substitution under any condition; that's the load-bearing rule the two-path priority enforces.
+
+If both Path A and Path B fail, the skill emits the refusal message in `perplexity-cost-rules.md` and stops.
+
+**Why this subsection exists.** Wave 0 (2026-05-27) shipped the four-step browser check below but didn't document what counts as "Claude in Chrome being available" — and the calling skill (`perplexity-refinement`) silently fell back to WebSearch when the check would have failed. The subsection above plus the calling-skill's three-step decision tree closes that gap. Treat any future regression of "skill ran but didn't use Path A or Path B" as a bug in this file or its callers, not as expected behavior.
+
 ## The four-step browser check
 
-Run these in order. Don't skip steps. A missed step means the run might use standard search (not Pro Search) and waste the user's subscription.
+After verifying Claude in Chrome is available (above), run these in order. Don't skip steps. A missed step means the run might use standard search (not Pro Search) and waste the user's subscription.
 
 ### Step 1 — Confirm a browser is connected
 

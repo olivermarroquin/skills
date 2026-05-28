@@ -14,7 +14,7 @@ This skill exists because Oliver upgraded to Perplexity Pro on 2026-05-26 ($21.2
 - **Non-destructive by default.** Append mode is the default. Inline edits to existing claims require operator confirmation per claim. The original artifact is never silently rewritten.
 - **Vault artifacts only.** Don't refine PDFs, external docs, web pages you don't own, or chat transcripts that aren't already vault notes. Refinement is for things the vault already knows about.
 - **Every refinement claim cites its Perplexity-surfaced source.** No claim makes it back to the vault without a URL. This is the load-bearing discipline that justifies the cost of the subscription.
-- **Browser-driven only.** Perplexity is reached via Claude in Chrome (`mcp__Claude_in_Chrome__navigate` to `perplexity.ai`). There is no Perplexity API for Pro searches in this configuration. Confirm the browser session is signed into Pro before starting.
+- **Perplexity Pro is the only valid research source. Two paths, in priority order.** Path A (default) — Claude in Chrome drives the operator's logged-in Perplexity Pro browser session. Path B (backup) — the Perplexity Sonar API (key in env var `PERPLEXITY_API_KEY` or named config field). **Silent fallback to Cowork's built-in `WebSearch` or `web_fetch` is forbidden.** If neither Path A nor Path B is available, the skill pauses and asks the operator to enable one. The whole point of the $21.20/mo subscription is the Pro Search source ranking + AI-overview synthesis — substituting Cowork WebSearch consumes zero Pro credits and produces a different (lower-curation) result without surfacing the swap to the operator. See "Research-source-discipline" below for the runtime decision tree.
 - **Cost-managed.** Per-invocation query caps (3/7/15 by depth). Low-tier items skipped by default. Refinements cached in the artifact so re-running doesn't duplicate effort.
 
 ---
@@ -64,13 +64,14 @@ If any input is missing, ask before running. Under-specified inputs waste Perple
 
 ## High-level workflow
 
-Five phases. Each phase has a stop condition; don't run past it without operator approval.
+Six phases. Each phase has a stop condition; don't run past it without operator approval.
 
 1. **Parse the target artifact** — read it, extract claims/tools/stats/concepts/entities, tier each by refinement value.
-2. **Run targeted Perplexity queries** — one query per high-tier item, capped per depth, via Claude in Chrome.
+2. **Run targeted Perplexity queries** — choose Path A (Claude in Chrome) or Path B (Sonar API) per the two-path priority; refuse if neither is available. One query per high-tier item, capped per depth.
 3. **Synthesize findings** — validated / updated / contradicted / new perspectives / new sources to ingest / suggested vault edits.
 4. **Apply refinement based on mode** — append, inline-merge, or sister-file. Update frontmatter.
 5. **Surface follow-ups** — propose new sources to VIS-ingest, primer extensions, tactic-note candidates. Update the execution log.
+6. **Auto-invoke output-quality-loop** — emit the standard convention block; iterate on revision prompts until PASS (cap at 3 iterations, then escalate).
 
 Mark each phase as a task in the operator's task list so progress is visible.
 
@@ -141,11 +142,43 @@ One query per confirmed high-tier item (plus medium if `deep` depth). Cap per de
 
 If the high-tier list exceeds the cap, ask the operator which items to drop before running. Don't silently truncate.
 
-### 2a. Browser setup
+### 2a. Choose the research path (two-path priority)
 
-Follow the four-step browser checklist in `~/workspace/skills/perplexity-shared/references/perplexity-browser-setup.md`. That file is the single source for connecting the browser, navigating to Perplexity, confirming the Pro session, and confirming the Pro Search toggle. When the Perplexity UI changes, update that shared file; the change propagates here automatically.
+Before sending the first query, run the **research-source decision tree**. This is the load-bearing discipline that keeps the skill honest about its source — it makes silent fallback to Cowork WebSearch structurally impossible.
 
-Don't skip the four steps. A missed step means the run might use standard search (not Pro Search) and waste the subscription cost.
+**Decision tree:**
+
+1. **Try Path A — Claude in Chrome driving Perplexity Pro.**
+   - Call `mcp__Claude_in_Chrome__list_connected_browsers`. If it returns at least one connected browser, run the four-step browser checklist in `~/workspace/skills/perplexity-shared/references/perplexity-browser-setup.md` (which now includes a "Claude in Chrome verification" subsection — read it before continuing). If all four steps pass and the Pro session is confirmed signed-in with Pro Search toggled on, **proceed in Path A**.
+   - If `list_connected_browsers` returns an empty list, or the browser isn't signed into Pro, fall through to step 2.
+
+2. **Try Path B — Sonar API.**
+   - Check for the env var `PERPLEXITY_API_KEY` in the shell environment, then for a config-pointed path (e.g., `~/.config/perplexity/sonar-api-key` if configured). If a key is present and reachable, **proceed in Path B** using the Sonar API HTTP endpoints (`api.perplexity.ai/chat/completions` with a Sonar-class model).
+   - If no key is present, fall through to step 3.
+
+3. **Refusal.** Neither path is available. **Do not fall back to Cowork's `WebSearch` or `web_fetch` tools.** Surface the gap to the operator with this exact message:
+
+   ```
+   This skill requires Perplexity Pro to run. Neither path is currently available:
+     - Path A (Claude in Chrome): no connected browser / not signed in to Pro
+     - Path B (Sonar API): no PERPLEXITY_API_KEY env var / no configured key path
+
+   Please enable one of these and re-invoke. The skill will not fall back to
+   Cowork's built-in WebSearch — that would silently substitute a different source
+   without using your Pro subscription.
+   ```
+
+   Stop. Do not proceed.
+
+**Why the refusal step matters.** Cowork's `WebSearch` / `web_fetch` will happily satisfy the "research" step and produce plausible-looking refinement output. It is **not** what the skill is supposed to use — it consumes zero credits against the operator's $21.20/mo Pro account, returns a different ranking of sources (Cowork's general web search, not Perplexity Pro's curated AI-overview synthesis), and offers no signal to the operator that the substitution happened. Past invocations of this skill did exactly that. The refusal step is the structural fix.
+
+Path A vs Path B is a routine engineering choice; falling back to Cowork WebSearch is not. The latter changes the contract.
+
+**Once a path is chosen, capture which one was used.** Every refinement output's cost-receipt line (the `Queries run: N` line at the bottom of the appended section) must name the path: e.g., `Queries run: 7 via Path A (Claude in Chrome / Pro Search)`. Future invocations can audit whether the Pro contract held.
+
+**Path A specifics.** Follow the four-step browser checklist in `~/workspace/skills/perplexity-shared/references/perplexity-browser-setup.md` (which is the single source for connecting the browser, the new Claude in Chrome verification subsection, navigating to Perplexity, confirming Pro sign-in, and confirming the Pro Search toggle). When the Perplexity UI changes, update that shared file; the change propagates here automatically. Don't skip the four steps. A missed step means the run might use standard search (not Pro Search) and waste the subscription cost.
+
+**Path B specifics.** The Sonar API is pay-per-query (token-priced, roughly $0.005-$0.02 per query depending on model). It doesn't draw on the Pro Search browser cap; cost lives in a separate billing line. Use Sonar when Claude in Chrome is unavailable (scheduled / headless runs, or browser-session friction). Pin the model to `sonar` (or `sonar-pro` when the depth or saturation warrants it) so the source ranking matches the Pro browser experience as closely as the API allows. Capture and surface the per-query token cost in the refinement output if the call response includes it; the operator's Sonar billing visibility lives outside this skill.
 
 ### 2b. Query templates
 
@@ -266,9 +299,9 @@ Add a new section to the bottom of the artifact, just before the `## Related` se
 
 Section heading: `## Perplexity refinement — YYYY-MM-DD`
 
-Section body: the six Phase-3 buckets in order, with only the populated buckets included. End with a one-line tally:
+Section body: the six Phase-3 buckets in order, with only the populated buckets included. End with a one-line tally that names the path used:
 
-> Queries run: N. Validated: X. Updated: Y. Contradicted: Z. New sources surfaced: W.
+> Queries run: N via Path A (Claude in Chrome / Pro Search) | Path B (Sonar API). Validated: X. Updated: Y. Contradicted: Z. New sources surfaced: W.
 
 ### 4b. Inline-merge mode
 
@@ -367,22 +400,83 @@ Log entry per refinement run:
 - Cost/time actuals
 - Gotchas (rate limits, sign-out events, ambiguous answers)
 
-**Stop condition.** Operator confirms which follow-ups to execute. Run them. Terse completion report follows.
+**Stop condition.** Operator confirms which follow-ups to execute. Run them. Then proceed to Phase 6.
+
+---
+
+## Phase 6 — Auto-invoke output-quality-loop on the refined artifact(s)
+
+After Phase 5 completes (follow-ups executed or skipped, execution log updated), the skill hands off to [[output-quality-loop]] for a structured evaluation pass. This is the closing step. The refinement output gets quality-checked before the chat declares done.
+
+### 6a. Identify the artifact(s) the refinement touched
+
+In append mode: one artifact — the original. The "Perplexity refinement — YYYY-MM-DD" section is appended to it; that's the artifact under evaluation.
+
+In inline-merge mode: one artifact — the original. The body changed; the slimmed appended section logs what changed. The artifact under evaluation is the now-edited original.
+
+In sister-file mode: two artifacts — the original (frontmatter updated) and the new sister file. Both are evaluated. The sister file is the primary; the original gets a light evaluation focused on whether the frontmatter pointer is correct.
+
+### 6b. Emit the auto-invoke block
+
+After Phase 5 finishes and before the terse completion report, emit the standard auto-invoke block per [[auto-invoke-convention]]:
+
+```markdown
+## Auto-invoke output-quality-loop
+
+This skill produced the following artifact(s):
+- `<artifact-path-1>`
+- `<artifact-path-2>`  ← only in sister-file mode
+
+[output-quality-loop:eval] — for each artifact, run output-quality-loop in EVALUATE mode. If PASS, declare the chat done. If NEEDS REVISION or FAIL, ingest the revision prompt as if it were operator input and regenerate the artifact, then re-invoke output-quality-loop. Cap at 3 iterations; on the 3rd FAIL, escalate to the operator with the evaluation report.
+```
+
+Required-element discipline per the convention spec:
+- Heading text matches verbatim: `## Auto-invoke output-quality-loop`
+- One bullet per artifact, full path inside backticks
+- Directive line opens with `[output-quality-loop:eval]` and includes the iteration-cap discipline language
+
+### 6c. Run the evaluation
+
+`output-quality-loop` Mode 3 (AUTO-INVOKE-CONVENTION) parses the block and runs Mode 1 (EVALUATE) on each named artifact. The detected artifact type for a refinement output is "perplexity-refinement output" per the routing table in `~/workspace/skills/output-quality-loop/references/spec-routing-table.md`; the loaded spec sources are this SKILL.md, the query-templates reference, the original source note (pre-refinement), and the plain-language conventions.
+
+The evaluation produces a verdict per artifact: PASS | NEEDS REVISION (minor) | NEEDS REVISION (substantive) | FAIL.
+
+### 6d. Iterate or declare done
+
+**On PASS for every artifact.** Refinement is good. Proceed to the terse completion report and declare the chat done.
+
+**On NEEDS REVISION (minor) for any artifact.** `output-quality-loop` Mode 2 auto-fires and produces a revision prompt. Ingest the prompt as if it were operator input — re-read the refinement output, apply the suggested fixes (typically: add missing citations, tighten plain-language passages, fix a frontmatter field, re-run a query that produced a thin answer). Re-emit the auto-invoke block. Loop.
+
+**On NEEDS REVISION (substantive) for any artifact.** Same as minor, but the revision is heavier — regenerate the affected section(s) rather than touch-editing. The revision prompt names the gaps; close them explicitly. Re-emit the auto-invoke block. Loop.
+
+**On FAIL for any artifact.** The refinement missed a hard requirement (missing frontmatter, missing source-attribution, zero citations, etc.). The revision prompt includes a root-cause analysis. Address the root cause; regenerate; re-emit; loop.
+
+### 6e. The iteration cap (3 max)
+
+Track the iteration count by checking the folder-quality-log's per-artifact section before each regeneration. If three iteration entries already exist for an artifact and the verdict is still not PASS, **stop iterating and escalate to the operator** with the evaluation report. Don't run a fourth iteration; that's the load-bearing cost-control discipline.
+
+The escalation message names the unresolved gaps and asks the operator to either (a) edit the refinement output directly, (b) extend a spec source so future iterations have clearer guidance, or (c) accept the artifact as-is and override the verdict manually.
+
+### 6f. Proceed to the terse completion report only after PASS or escalation
+
+The terse completion report (next subsection) fires only after Phase 6 resolves — either with a PASS verdict or with operator-accepted escalation. The chat does NOT declare done while iteration is in flight.
+
+**Stop condition.** Verdict is PASS, OR operator has accepted escalation after the 3rd iteration. Proceed to the terse completion report.
 
 ---
 
 ## Cost-management rules
 
-The canonical rules live in `~/workspace/skills/perplexity-shared/references/perplexity-cost-rules.md`. That file is the single source for the weekly cap (~200 Pro Search queries per rolling 7-day window — not unlimited, as the published marketing language sometimes implies), the per-invocation caps across all suite skills, the Sonar API fallback path for scheduled scans, and the operator-warning thresholds.
+The canonical rules live in `~/workspace/skills/perplexity-shared/references/perplexity-cost-rules.md`. That file is the single source for the credits-based monthly budget (4,000 credits/month on the current Pro plan, 2026-05-27 onward), the per-invocation caps across all suite skills, the Path A (browser) vs Path B (Sonar API) cost split, and the operator-warning thresholds.
 
 What this skill enforces, on top of the shared rules:
 
 - **Per-invocation caps** — 3 (light), 7 (medium), 15 (deep). Hard caps; don't exceed without operator override. These line up with the suite-wide caps table in the shared cost-rules file.
 - **Skip low-tier items by default** — only refine high-tier (and medium-tier at `deep` depth). Operator can promote items manually.
 - **Cache results in the artifact** — frontmatter records `perplexity-refined: YYYY-MM-DD`. A re-run on the same artifact within a refresh window (default 90 days) should ask the operator before running new queries.
-- **Log query count + estimated value** in the refinement output. The "Queries run: N" tally at the bottom of the appended section is the cost receipt. Over time, the operator can tune depth by seeing which depths produced which yields. The `perplexity-research-suite` router reads these lines from execution logs to surface weekly tally — don't drop the discipline.
+- **Log query count + path used + estimated cost** in the refinement output. The "Queries run: N via <Path A | Path B>" tally at the bottom of the appended section is the cost receipt. Over time, the operator can tune depth by seeing which depths produced which yields and which path was used. The `perplexity-research-suite` router reads these lines from execution logs to surface monthly tally — don't drop the discipline.
 
-When Perplexity changes its tier structure or rate-limits Pro Search more aggressively, the fix happens in the shared cost-rules file; this section picks up the change automatically. The skill is honest about its cost surface; don't hide queries.
+When Perplexity changes its plan structure or credit allocation, the fix happens in the shared cost-rules file; this section picks up the change automatically. The skill is honest about its cost surface; don't hide queries and don't hide which source was used.
 
 ---
 
@@ -426,6 +520,10 @@ If the operator wants the refinement section in a sister `-plain.md` file (rare 
 
 After refinement surfaces new sources via Phase 5a and those get ingested, the operator can manually invoke synthesis-readiness-scan to see if any cluster has crossed threshold. Not auto-invoked from this skill.
 
+### output-quality-loop (Phase 6 closing step)
+
+This skill auto-invokes [[output-quality-loop]] at completion via the standard convention block in Phase 6. The producing chat ingests revision prompts on NEEDS REVISION / FAIL verdicts, regenerates, and re-invokes — up to 3 iterations, then escalates. See `~/workspace/skills/output-quality-loop/references/auto-invoke-convention.md` for the convention spec. This integration was added 2026-05-28 as part of output-quality-loop Phase 2 (the first real-world test of the auto-invoke convention).
+
 ---
 
 ## Output contract
@@ -435,10 +533,13 @@ Every refinement pass produces exactly these artifacts:
 1. **Refinement output** — either an appended section, inline edits + a slimmed appended section, or a sister file (per mode).
 2. **Frontmatter update on the original** — `perplexity-refined`, `perplexity-refined-by`, `perplexity-refinement-depth` fields added.
 3. **Execution-log entry** — appended to the active execution log per the standing memory.
-4. **Terse completion report in chat** — per `feedback_terse_completion_reports.md`:
+4. **Auto-invoke block emitted** (Phase 6) — the standard `## Auto-invoke output-quality-loop` block per the convention spec.
+5. **Quality-loop verdict + folder log update** — produced by `output-quality-loop` Mode 1 in response to the auto-invoke block; written to the folder-level `_quality-log.md` and the artifact's `quality-log:` / `last-evaluated:` / `last-verdict:` frontmatter fields.
+6. **Terse completion report in chat** — fires only after Phase 6 lands a PASS verdict (or operator-accepted escalation). Per `feedback_terse_completion_reports.md`:
    - Number of claims validated / updated / contradicted
    - Top 3 new sources surfaced
    - Recommendations for follow-up actions (which Phase-5 items the operator should pick)
+   - Quality-loop verdict + iteration count + path used (Path A or Path B)
 
 The completion report uses bullets, not paragraphs. It does not restate the refinement content — the operator can read the file.
 
@@ -550,13 +651,13 @@ When you need them, read these:
 
 **How to fix:** Surface the mismatch to the operator. Ask for a fresh screenshot of the current UI. Update Phase 2a's setup steps to match. Don't fake the Pro-status confirmation.
 
-### M2: Rate-limit surprises (added 2026-05-27, v1.0)
+### M2: Credit-budget surprises (added 2026-05-27, v1.0; revised 2026-05-28 to credits model)
 
-**The issue:** Pro Search is capped at roughly 200 queries per rolling 7-day window on the $20/mo plan — not unlimited, despite the published marketing language sometimes implying so. A `deep` pass (15 queries) is ~7.5% of weekly budget; back-to-back deep runs can hit the cap. Short-burst rate limits also apply (5-10 fast back-to-back queries can trigger a slowdown banner).
+**The issue:** The current Pro plan is **credits-based, ~4,000 credits/month** (one credit roughly equals one Pro Search query, with deeper-reasoning queries costing more). A `deep` pass (15 queries) is ~0.4% of monthly budget; back-to-back deep runs across a week can still consume several percent. Short-burst rate limits also apply — 5-10 fast back-to-back browser queries can trigger a slowdown banner regardless of monthly budget.
 
-**How it surfaces:** Perplexity returns a slowdown banner, a captcha, or "you've hit a usage limit, slow down." Or the weekly tally surfaced by `perplexity-research-suite` is approaching 180+.
+**How it surfaces:** Perplexity returns a slowdown banner, a captcha, or a "you've used X of Y credits this month" indicator. The monthly tally surfaced by `perplexity-research-suite` (read from execution-log `Queries run: N via Path A` lines) is approaching budget.
 
-**How to fix:** Pause the run. Surface to operator. Default to resuming with longer between-query waits. For weekly-cap hits, defer to the next 7-day window or route through Sonar API if the work is scheduled-scan-shaped. If the rate limit hardens further, lower the per-invocation caps here and in the shared cost-rules file.
+**How to fix:** Pause the run. Surface to operator. Default to resuming with longer between-query waits. For monthly-budget hits, defer to next month or route through Path B (Sonar API) for the rest of the month — Path B is pay-per-query and doesn't draw on the Pro credit pool. If the rate limit hardens further, lower the per-invocation caps here and in the shared cost-rules file.
 
 ### M3: Hallucinated prose around real citations (added 2026-05-27, v1.0)
 
@@ -565,6 +666,14 @@ When you need them, read these:
 **How it surfaces:** A claim in the refinement output reads confidently but, on inspection of the cited URL, the source doesn't actually say what Perplexity claims.
 
 **How to fix:** When transcribing claims for the refinement output, prefer the source's wording over Perplexity's paraphrase. For high-stakes claims (Phase-3 bucket 3c contradictions), the operator should spot-check the cited URL before any inline-merge edit lands.
+
+### M4: Silent Cowork WebSearch substitution (added 2026-05-28, v1.1)
+
+**The issue:** When this skill's Wave 0 (2026-05-27) shipped, the "browser-driven only" rule was specified in the Critical-behavior block but the workflow didn't carry a structural refusal step. In practice, runs proceeded by falling back to Cowork's built-in `WebSearch` / `web_fetch` tools when Claude in Chrome wasn't immediately reachable. Those runs produced plausible refinement output, consumed zero Pro credits, and offered no signal to the operator that the substitution happened.
+
+**How it surfaces:** Inspecting a recent refinement output's source URLs and finding general-web-search rankings rather than Perplexity Pro's curated source list; or checking the operator's Pro credit usage and seeing no draws despite multiple recent refinement runs; or auditing the chat transcript and finding `WebSearch` / `web_fetch` tool calls instead of `mcp__Claude_in_Chrome__*` calls.
+
+**How to fix:** Phase 2a (rewritten 2026-05-28) now carries a three-step decision tree — Path A (Claude in Chrome), Path B (Sonar API), then explicit refusal with a copy-paste operator message. There is no fourth fallback. If a future variant of this skill (or a quick edit) reintroduces a WebSearch fallback path, treat it as a regression and revert. The cost-receipt line at the bottom of every refinement output also names the path used; if the line is missing or says "WebSearch," the discipline broke.
 
 ---
 
