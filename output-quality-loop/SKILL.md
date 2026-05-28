@@ -1,9 +1,9 @@
 ---
 name: output-quality-loop
-description: Evaluate a finished Knowledge OS artifact against the specs that define what "good" looks like for its type, produce a structured verdict (PASS / NEEDS REVISION minor or substantive / FAIL), and — when revision is needed — generate a revision prompt the producing chat can ingest to regenerate. Triggers on phrases like "quality-check <artifact-path>," "evaluate <artifact-path>," "run output-quality-loop on <artifact-path>," "is this draft ready to ship," "does this brief meet the spec," "did the refinement pass actually elevate the source note," "audit this synthesis against its sources," or any time the operator wants a structured fitness evaluation of an artifact already on disk. Also fires via the auto-invoke convention block other skills emit at completion (see references/auto-invoke-convention.md). The keystone of the output-quality-loop system; Phases 2-6 of the roadmap build on top of this skill.
+description: Evaluate a finished Knowledge OS artifact against the specs that define what "good" looks like for its type, produce a structured verdict (PASS / NEEDS REVISION minor or substantive / FAIL), generate a revision prompt the producing chat can ingest to regenerate, and (Mode 4) compose with `perplexity-refinement` to research the strongest published version of each gap and feed those elevation suggestions back into the revision prompt. Triggers on phrases like "quality-check <artifact-path>," "evaluate <artifact-path>," "run output-quality-loop on <artifact-path>," "is this draft ready to ship," "does this brief meet the spec," "did the refinement pass actually elevate the source note," "audit this synthesis against its sources," "elevate this draft against the strongest published version," "what's the best version of this artifact in the world," or any time the operator wants a structured fitness evaluation of an artifact already on disk. Also fires via the auto-invoke convention block other skills emit at completion (see references/auto-invoke-convention.md). The keystone of the output-quality-loop system; Phases 2-6 of the roadmap build on top of this skill.
 ---
 
-# Output Quality Loop Skill (v1.0)
+# Output Quality Loop Skill (v1.1)
 
 The quality-evaluation layer of the Knowledge OS. Runs after an artifact lands. Reads the artifact, walks the spec-routing table to gather every spec source that applies to that artifact type, builds an evaluation checklist from the specs, scores the artifact against the checklist, lands a verdict, writes the verdict to the folder-level quality log, and — when the verdict is NEEDS REVISION or FAIL — produces a revision prompt the producing chat can ingest to regenerate.
 
@@ -41,7 +41,7 @@ Do **not** use this skill for:
 
 ---
 
-## Three invocation modes
+## Four invocation modes
 
 ### Mode 1 — EVALUATE (the core mode)
 
@@ -57,7 +57,8 @@ Reads an artifact, builds the checklist, scores it, writes the verdict to the fo
 **Operator overrides (bypass the routing table):**
 
 - "Quality-check `<artifact>` against `<spec1>` `<spec2>`" — the named specs are used instead of the auto-routed ones
-- "Quality-check `<artifact>` with depth=deep" — runs the auto-research path (Phase 4 mode; for v1 this surfaces as a deferred capability)
+- "Quality-check `<artifact>` with depth=deep" — runs Mode 4 (AUTO-RESEARCH) after the EVALUATE pass, regardless of verdict (including PASS — Mode 4 normally only fires on NEEDS REVISION / FAIL but the operator can force it on PASS to elevate further)
+- "Quality-check `<artifact>` with auto-research max=N" — overrides the per-type cap from `references/research-budget-per-type.md` for this single run
 
 **Workflow:** 6 phases. Each phase has a stop condition; honor it.
 
@@ -189,6 +190,147 @@ The producing chat retains responsibility for the iteration cap (3) — this ski
 
 ---
 
+### Mode 4 — AUTO-RESEARCH (the elevation mode)
+
+The deepening capability. Modes 1-3 evaluate fit against the spec — they enforce the floor. Mode 4 asks "what's the strongest version of this argument or claim or section that exists in current published work?" and compares the artifact against that external benchmark. The gap becomes new revision suggestions that feed back into Mode 2's prompt.
+
+Mode 4 turns the loop from policing-only into quality-elevation. Without it the loop only enforces the spec the artifact was written against — which may itself be incomplete or out of date. With it the loop pushes outputs toward the frontier.
+
+**Trigger phrases:**
+
+- Auto-fires after Mode 1's verdict on NEEDS REVISION (minor), NEEDS REVISION (substantive), or FAIL by default
+- Operator-opt-in on PASS via "Quality-check `<artifact>` with depth=deep" (skipped by default for PASS to keep the loop fast)
+- Manual: "Run auto-research on `<artifact-path>` using the existing evaluation"
+- "Elevate `<artifact-path>` against the strongest published version"
+- "What's the best version of `<artifact-path>` in the world?"
+
+**Critical behavior for Mode 4:**
+
+- **Perplexity Pro is the only external research source.** Mode 4 invokes `perplexity-refinement` as a subroutine. After Phase 2's 2026-05-28 fix, `perplexity-refinement` routes through Path A (Claude in Chrome) → Path B (Sonar API) → refusal. **Silent fallback to Cowork's `WebSearch` is forbidden at every layer.** If `perplexity-refinement` returns the refusal message, Mode 4 surfaces the gap to the operator and stops; it does not degrade to vault-internal research and pretend it filled the external benchmark.
+- **Capped per artifact type.** See `references/research-budget-per-type.md`. Hard ceiling is 8 queries per artifact regardless of type; soft ceiling is top-5 gaps researched. Don't pad runs to hit the cap.
+- **Non-destructive.** Mode 4 writes only to the folder log (a new `### External research (Mode 4)` sub-section under the artifact's per-artifact section) and to Mode 2's revision prompt. It never edits the artifact body.
+- **Honest about inconclusive results.** If Perplexity returns "inconclusive" three queries in a row, stop and surface in the folder log. The artifact's gaps may not be researchable externally (vault-internal patterns, operator-discipline observations, proprietary knowledge). Don't fabricate elevation suggestions to justify the cost.
+- **Cache reuse within iteration only.** Two gaps that trigger the same query share one query. Cross-artifact cache reuse is not allowed in v1 — gap shapes differ enough that reusing a query would silently drop attribution discipline.
+
+**Workflow:** 7 steps. Each step has a stop condition; honor it.
+
+#### Step 1 — Identify the top-N gaps
+
+Read the EVALUATE pass's checklist results (in-memory if just produced, from the folder log if invoked manually). Rank gaps by severity using this order:
+
+1. Hard-requirement misses (every miss is in scope, no top-N cutoff)
+2. High-stakes quality dimensions at fail (per `references/verdict-rollup-thresholds.md` and the per-type heuristics — these are the verdict-elevating items)
+3. Quality dimensions at fail
+4. Discipline-rule violations that elevate verdicts (3+ violations bumping severity)
+5. Quality dimensions at partial
+6. Discipline-rule violations not elevating verdicts
+
+Take the top-N for the artifact type (per `references/research-budget-per-type.md`). For most types N=5; for source notes and small notes N=3.
+
+**Stop condition.** If fewer gaps were surfaced than N, take them all. Don't pad. If zero gaps were surfaced (the verdict was PASS and the operator forced Mode 4), pick the top-N quality dimensions even though they passed — Mode 4 on PASS targets quality dimensions where partial-score is already implicit "could be strengthened."
+
+#### Step 2 — Formulate a research question per gap
+
+For each gap, write one research question of the form: **"What's the strongest version of [claim / pattern / argument / section] in current published work?"** Be specific:
+
+- For a hard-requirement miss (missing schema field): "What's the canonical shape of the [missing field] in current Schema.org documentation for [entity type]?"
+- For a quality-dimension fail (low attribute density): "What's the highest-attribute-density published version of [section topic] currently ranking on [target SERP / cited by Perplexity]?"
+- For a discipline-rule violation: "What's the best practice for [discipline rule topic] in current published work on [artifact type]?"
+
+Use the per-artifact-type strategy in `references/evaluation-heuristics-by-type.md` § "Auto-research strategy" — each type has its own characteristic gap shapes and the strategy section names the right query templates.
+
+**Cache check.** If two gaps share the same question shape, merge them. Run the query once and attribute the answer to both gaps in Step 4.
+
+**Stop condition.** N questions written (or fewer if N gaps were merged through cache check).
+
+#### Step 3 — Invoke `perplexity-refinement` as a subroutine
+
+For each unique research question, invoke `perplexity-refinement` with:
+
+- **Target artifact path:** the artifact being evaluated (the same one EVALUATE just ran on)
+- **Refinement depth:** `light` (3-query cap) by default for recursive composition. Operator can override to `medium` on a per-gap basis if a gap warrants deeper triangulation.
+- **Refinement mode:** `append` (Mode 4 doesn't want body edits — it wants research findings it can interpret)
+- **Specific focus area:** the research question text from Step 2
+
+The recursive `perplexity-refinement` call inherits the Perplexity Pro contract: Path A → Path B → refusal. If it refuses, Mode 4 surfaces the refusal to the operator and stops.
+
+Compose with **type-specific sibling skills** where they exist (per `references/evaluation-heuristics-by-type.md`):
+
+- **Core 30 page:** also compose with `competitor-deep-research` for SERP-level comparison (its own Perplexity queries count against the per-artifact cap)
+- **Cluster synthesis:** also compose with `multi-source-synthesis` review-agent mode for additional pattern-math triangulation
+- **SKILL.md:** Perplexity Pro queries about skill-design literature and agent-skill conventions (no specific sibling skill yet)
+- **Brief:** target sections marked "operator follow-up pending" or "AI surfaces not reachable from Cowork" — those gaps now ARE reachable through Perplexity Pro
+- **Refinement output:** recursive composition with `perplexity-refinement` itself (deeper triangulation on the gaps the first pass left)
+
+**Stop condition.** All N queries run, OR three consecutive `inconclusive` verdicts surface, OR `perplexity-refinement` refuses, OR the operator overrides mid-run. Per the termination rules in `references/research-budget-per-type.md`.
+
+#### Step 4 — Compare findings against the artifact
+
+For each query result, do a side-by-side:
+
+- What does the artifact currently say or do for this gap?
+- What does the strongest published version say or do?
+- What's the gap between them?
+
+Land the comparison in one sentence per gap of the form: **"Claim X in [section] could be strengthened by citing [source] which [adds / changes / contradicts] [specific finding]. Section Z misses the framing the strongest published work uses ([describe framing])."**
+
+If the verdict was `validates` and the artifact already cites the strongest source, the gap is closed — no elevation suggestion needed for this gap. Record "Validated by external source" in the folder log and move on.
+
+If the verdict was `inconclusive` (Perplexity couldn't find authoritative published work on this gap), surface that explicitly. Don't fabricate an elevation suggestion. Record "External research inconclusive — gap may not be externally researchable" in the folder log.
+
+**Stop condition.** All query results processed; per-gap elevation sentences written for the gaps with research findings.
+
+#### Step 5 — Surface elevation suggestions
+
+Group the per-gap elevation sentences into a structured block to feed Mode 2. The block carries:
+
+- The gap (one line, copied from Step 1)
+- The strongest source surfaced (URL + one-line characterization)
+- The elevation suggestion (the comparison sentence from Step 4, plus a concrete "add this, change that, cite this source" edit)
+
+This block becomes the new "Elevation suggestions from auto-research" section in the revision prompt template (see `references/revision-prompt-template.md`).
+
+#### Step 6 — Integrate into Mode 2's revision prompt
+
+If Mode 2 has already produced its prompt (auto-fired after Mode 1's verdict), reopen it and add the new section. If Mode 2 hasn't fired yet (Mode 4 ran on PASS at operator opt-in), generate the prompt now with the elevation suggestions in place — the prompt is the artifact even when the verdict was PASS, because it tells the producing chat how to elevate further.
+
+The revision prompt's tone stays neutral and instructional. The elevation suggestions read as "the strongest published version uses framing X; consider adopting it" — not "your version is worse than X."
+
+#### Step 7 — Record the external research in the folder log
+
+Per `references/folder-quality-log-shape.md` and `references/research-budget-per-type.md` § "Tracking and audit":
+
+1. **Locate the artifact's per-artifact section** in `<folder>/_quality-log.md` (already exists from Mode 1).
+2. **Append a new `### External research (Mode 4)` sub-section** beneath the iteration entry that triggered Mode 4. Shape per `references/research-budget-per-type.md`:
+
+```markdown
+### External research (Mode 4) — YYYY-MM-DD
+
+**Path used:** Path A (Claude in Chrome / Pro Search) | Path B (Sonar API)
+**Queries run:** N of cap N (top M of top-N gaps researched; K gaps skipped per termination rule)
+**Credits consumed (Path B only):** ~$X.XX
+
+**Per-gap queries:**
+
+1. **Gap:** <one-line gap from EVALUATE>
+   - **Query:** "<query as run>"
+   - **Verdict:** validates / partially-validates / contradicts / inconclusive
+   - **Strongest source surfaced:** [URL]
+   - **Elevation suggestion:** <comparison sentence + concrete edit>
+2. ...
+
+**Cache hits:** N (queries reused from earlier in this iteration)
+**Termination reason:** "Top-N gaps covered" | "3 inconclusive results" | "Perplexity Pro unavailable" | "Operator override"
+```
+
+3. **Update the artifact's frontmatter** to add (or update) `auto-research-last-run: YYYY-MM-DD` and `auto-research-path: A | B`. These are read by Phase 6 (auto-approve thresholds) when calibrating confidence.
+
+4. **The artifact's main frontmatter `last-verdict:` field is not touched by Mode 4** — it carries the EVALUATE verdict from Mode 1. Mode 4's findings shape the next iteration's regeneration; the next EVALUATE pass produces the next `last-verdict:`.
+
+**Stop condition.** Folder log written, frontmatter updated, revision prompt updated. Mode 4 done.
+
+---
+
 ## Evaluation report format
 
 Every Mode 1 run produces a report in this exact shape (mirrors what gets written to the folder log):
@@ -257,13 +399,15 @@ When operator overrides with explicit spec sources, the routing table is bypasse
 
 ## Cost-management rules
 
-Mode 1 (EVALUATE) is cheap — it reads files and runs heuristics. The only cost surface is when Mode 1 needs to fetch a spec source from outside the vault (e.g., a citation URL the artifact references). For v1, external fetches are **not** part of Mode 1; the skill evaluates against vault-resident specs only. Phase 4 introduces auto-research mode (which composes with `perplexity-refinement` for external benchmarking) — at that point the cost-management rules in `~/workspace/skills/perplexity-shared/references/perplexity-cost-rules.md` apply.
+Mode 1 (EVALUATE) is cheap — it reads files and runs heuristics. The only cost surface is when Mode 1 needs to fetch a spec source from outside the vault (e.g., a citation URL the artifact references). For v1, external fetches are **not** part of Mode 1; the skill evaluates against vault-resident specs only.
 
 Mode 2 (REVISE-PROMPT) is free.
 
 Mode 3 (AUTO-INVOKE-CONVENTION) runs Mode 1 N times — same cost surface, multiplied by N.
 
-The cap discipline (3 iterations per artifact) is the load-bearing cost control. Don't let a loop run forever.
+Mode 4 (AUTO-RESEARCH) is the meaningful cost surface. Every Mode 4 run composes with `perplexity-refinement`, which routes through Path A (Claude in Chrome / Pro Search) → Path B (Sonar API) → refusal. Each query consumes either a Pro credit (Path A) or a per-query Sonar charge (Path B). Per-artifact-type caps live in `references/research-budget-per-type.md`; hard ceiling is 8 queries per artifact regardless of type. Suite-wide cost rules apply per `~/workspace/skills/perplexity-shared/references/perplexity-cost-rules.md`. See Mode 4 § "Critical behavior" for the refusal-vs-fallback contract.
+
+The cap discipline (3 iterations per artifact, plus 8-query hard ceiling per Mode 4 run) is the load-bearing cost control. Don't let a loop run forever; don't let auto-research spend its way past the per-type budget.
 
 ---
 
@@ -287,9 +431,9 @@ After Phase 2 ships, both of these skills emit the auto-invoke convention block 
 
 `scaffold-core-30-page.py` + `bulk-scaffold-pages.py` + `publish-core-30-page.py` route every page through Mode 1 before publish. The publish gate reads the artifact's `last-verdict:` frontmatter field (with a 7-day staleness window) and refuses to publish anything not at PASS.
 
-### Phase 4 auto-research mode
+### Phase 4 auto-research mode (shipped as Mode 4 in v1.1, 2026-05-28)
 
-Adds a new "what's the strongest version of this in the world?" pass. Composes with `perplexity-refinement` (browser-driven Perplexity Pro, per the architecture decision) for external benchmarking. Routes through the Perplexity Pro contract — no silent fallback to Cowork WebSearch.
+Adds the "what's the strongest version of this in the world?" pass as Mode 4 above. Composes with `perplexity-refinement` (browser-driven Perplexity Pro, per the architecture decision) for external benchmarking. Routes through the Perplexity Pro contract — no silent fallback to Cowork WebSearch at any layer. Per-artifact-type caps in `references/research-budget-per-type.md`; per-type research strategies in `references/evaluation-heuristics-by-type.md` § "Auto-research strategy" subsections.
 
 ### Phase 5 convention rollout
 
@@ -309,7 +453,8 @@ Every Mode 1 invocation produces exactly these artifacts:
 2. **Folder log update** — new iteration entry appended to the per-artifact section in `<folder>/_quality-log.md`; folder log created if absent.
 3. **Artifact frontmatter update** — `quality-log:`, `last-evaluated:`, `last-verdict:` fields added or updated on the artifact being evaluated.
 4. **Revision prompt (when verdict ≠ PASS)** — emitted to stdout; written to `<artifact-path>.revision-prompt.md` if the operator named a path or auto-invoke mode is active.
-5. **Terse completion summary in chat** — per the standing `feedback_terse_completion_reports.md` memory:
+5. **External-research findings (when Mode 4 fires)** — appended as a `### External research (Mode 4)` sub-section to the artifact's per-artifact section in the folder log; elevation suggestions integrated into the revision prompt's "Elevation suggestions from auto-research" section; `auto-research-last-run:` + `auto-research-path:` added to artifact frontmatter.
+6. **Terse completion summary in chat** — per the standing `feedback_terse_completion_reports.md` memory:
    - Verdict + iteration count
    - 2-3 top fixes if revision needed
    - File paths touched
@@ -327,13 +472,17 @@ Before reporting completion to the operator:
 3. **Citation check** — every checklist item in the evaluation report cites its spec source by file + section.
 4. **Plain-language check** — pick the densest paragraph of the evaluation report and confirm it reads conversationally.
 5. **Cap check** — if this is iteration 3 and verdict ≠ PASS, the escalation report is emitted, not a new revision prompt.
-6. **Non-destructive check** — the artifact body is unchanged. Only the three frontmatter fields were touched.
+6. **Mode-4 budget check** — if Mode 4 ran, the per-artifact query count is at or under the cap in `references/research-budget-per-type.md`; the `Path used:` line is named (Path A vs Path B); the `Termination reason:` line is named; the elevation suggestions cite their Perplexity-surfaced URLs.
+7. **Mode-4 refusal check** — if `perplexity-refinement` returned the refusal message during Mode 4, the folder log records the refusal and the revision prompt does NOT include fabricated elevation suggestions sourced from vault-internal content.
+8. **Non-destructive check** — the artifact body is unchanged. Only the frontmatter fields (the three Mode-1 fields plus the two Mode-4 fields when applicable) were touched.
 
 ---
 
 ## Out of scope (v1.0)
 
-- **Auto-research / external benchmarking.** Phase 4 work. v1 evaluates against vault-resident specs only.
+- **Auto-research on PASS verdicts by default.** Mode 4 fires on NEEDS REVISION / FAIL by default. The operator can opt in for PASS via "with depth=deep" but the default skips it to keep the loop fast.
+- **Re-running auto-research within the same loop iteration.** One Mode 4 run per iteration. If iteration 2 surfaces fresh gaps, Mode 4 fires again on iteration 2 — but never twice within iteration 1.
+- **Cross-artifact cache reuse.** Mode 4's cache is per-iteration-on-one-artifact. Reusing a query result across separate artifacts would silently drop attribution discipline.
 - **Body editing.** v1 never touches the artifact body. Future phases may add a "body fix proposal" mode, but it would still be operator-gated.
 - **Multi-LLM verdict consensus.** Single evaluator. No parallel scoring across models.
 - **Cross-folder log consolidation.** The Dataview dashboard at `_meta/dashboards/quality-loop-dashboard.md` (skeleton shipped Phase 1) aggregates state; the skill itself doesn't reach across folders.
@@ -352,6 +501,7 @@ When you need them, read these:
 - `references/revision-prompt-template.md` — the template Mode 2 uses to produce revision prompts
 - `references/verdict-rollup-thresholds.md` — the per-verdict threshold rules (PASS / REVISION-minor / REVISION-substantive / FAIL)
 - `references/folder-quality-log-shape.md` — the folder-level `_quality-log.md` file structure, frontmatter, per-artifact section shape, and the artifact's own frontmatter pointer convention
+- `references/research-budget-per-type.md` — Mode 4 cost discipline: per-artifact-type query caps, top-N gap selection, cache reuse rules, termination conditions, audit-trail shape
 
 ---
 
@@ -380,6 +530,22 @@ When you need them, read these:
 **How it surfaces:** The folder log's frontmatter counters skew unusually. The Dataview dashboard at `_meta/dashboards/quality-loop-dashboard.md` shows lopsided distributions.
 
 **How to fix:** Re-calibrate the heuristics. Pull the last 10 evaluations across types, compare verdicts against the operator's manual judgment, adjust `references/evaluation-heuristics-by-type.md` and `references/verdict-rollup-thresholds.md` accordingly. Don't quietly drift the bar.
+
+### M5: Mode 4 budget creep (added 2026-05-28, v1.1)
+
+**The issue:** Mode 4 consistently spends the full per-type cap on artifacts that surface only 2-3 real gaps. Queries are being padded to fill the budget; elevation suggestions read as filler.
+
+**How it surfaces:** Folder log entries show "Queries run: 8 of cap 8" on most Mode 4 runs; elevation suggestions for the bottom 2-3 gaps add nothing concrete the producing chat can act on.
+
+**How to fix:** Reread `research-budget-per-type.md` § "Termination rules (when to stop auto-research within a single run)." Rule #1 is "Top-5 gaps already covered — if EVALUATE surfaced only 3 gaps, run only 3 queries." Mode 4 isn't honoring the rule. Calibrate by hand on the next 3 runs (force-stop after the real gaps); update the rule's wording if the rule itself is ambiguous.
+
+### M6: Cowork WebSearch substitution at the Mode 4 layer (added 2026-05-28, v1.1)
+
+**The issue:** Mode 4 silently fell back to Cowork `WebSearch` when `perplexity-refinement` refused. The folder log shows queries run but the source ranking doesn't match Perplexity Pro's curated AI-overview synthesis.
+
+**How it surfaces:** The `Path used:` line in the folder log says "Path A" but the cited sources are generic web results, not Perplexity-Pro-curated sources. Or the line is missing entirely.
+
+**How to fix:** The refusal step in `perplexity-refinement` is structural — it's supposed to make this impossible. If Mode 4 is bypassing the refusal, it's calling some other research tool directly. Find the call site, route it through `perplexity-refinement`, and verify the refusal cascades. This is the same failure mode that caused Wave 0 of `perplexity-refinement` to silently substitute Cowork `WebSearch` — the Phase 2 fix to `perplexity-refinement` doesn't help if Mode 4 dodges around it.
 
 ### M4: Iteration cap stalls (added 2026-05-27, v1.0)
 

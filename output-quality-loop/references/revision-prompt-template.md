@@ -44,6 +44,20 @@ Your previous output was evaluated and needs revision. Apply the following fixes
 - **Why this rule exists:** <one sentence — the operator-discipline precedent the rule encodes>
 - **Specific fix:** <concrete edit>
 
+## Elevation suggestions from auto-research (when Mode 4 ran)
+
+<This section is present only when Mode 4 (AUTO-RESEARCH) ran on this iteration. Mode 4 composes with `perplexity-refinement` to find the strongest published version of each gap and surfaces the comparison as concrete elevation suggestions. See SKILL.md § Mode 4 and `research-budget-per-type.md` for the cost/cap discipline that gates this section.>
+
+<For each elevation suggestion from Mode 4:>
+
+### <Gap name — matches a hard requirement, quality dimension, or discipline rule above>
+- **Linked to:** <which item above this suggestion strengthens — name the section + item>
+- **Strongest published source surfaced:** <URL + one-line characterization>
+- **Comparison:** <one sentence describing what the strongest published version does differently>
+- **Elevation edit:** <concrete edit beyond the basic fix above — add this citation, adopt this framing, expand this section to match the strongest published depth>
+
+<End of Mode 4 block. If Mode 4 didn't run on this iteration (operator opted out, or `perplexity-refinement` refused per the Pro contract), the section is omitted entirely rather than left empty.>
+
 ## Root cause (only when FAIL or substantive revision)
 
 <One paragraph summarizing the underlying issue — not a restatement of the gaps. Why did the producing chat miss the bar? Is it a misread of the spec, a missing input, a calibration issue with the producing skill itself?>
@@ -80,6 +94,16 @@ The "Specific fix" should be the smallest edit that elevates the dimension from 
 Discipline-rule violations are usually one-shot fixes (delete a line, change a frontmatter field, replace a non-canonical citation format). Name the rule, name the precedent that established it, name the fix.
 
 Discipline rules escalate verdicts: 3+ violations at any severity flips an otherwise-PASS verdict to NEEDS REVISION (substantive). Make the count clear.
+
+### Elevation suggestions from auto-research
+
+Present only when Mode 4 ran on this iteration. Each suggestion is **additive** — it elevates an item already named above (a hard requirement, a quality dimension, or a discipline rule) by surfacing what the strongest published version does. It is not a separate gap; it's a stronger version of the fix.
+
+The producing chat should treat elevation suggestions as **strongly encouraged but optional**. The basic fix above is the floor; the elevation edit is the bar. If the producing chat can implement both within the iteration, it should. If it can only implement one, the basic fix is what closes the verdict gap.
+
+For PASS verdicts where the operator forced Mode 4 (depth=deep), this section is the **whole revision prompt** — there are no failing items to revise, just elevation suggestions to consider. The prompt's framing in that case shifts from "apply these fixes and re-output" to "consider these elevation edits and re-output if you adopt any of them."
+
+Citation discipline is the same as the rest of the template: every elevation suggestion cites its Perplexity-surfaced source by URL. If Mode 4 stopped early (`inconclusive` results, refusal, operator override), the section reads "Auto-research stopped early — reason: [X]. No elevation suggestions for the remaining gaps."
 
 ### Root cause
 
@@ -120,5 +144,7 @@ In auto-invoke mode (Mode 3), the prompt is emitted to the producing chat direct
 ## See also
 
 - `~/workspace/skills/output-quality-loop/SKILL.md` § Mode 2 — the runtime behavior
+- `~/workspace/skills/output-quality-loop/SKILL.md` § Mode 4 — the auto-research mode whose findings populate the "Elevation suggestions from auto-research" section
 - `~/workspace/skills/output-quality-loop/references/verdict-rollup-thresholds.md` — the verdict tiers the prompt is calibrated against
-- `~/workspace/skills/output-quality-loop/references/evaluation-heuristics-by-type.md` — the per-type checklists that produce the gap list
+- `~/workspace/skills/output-quality-loop/references/evaluation-heuristics-by-type.md` — the per-type checklists that produce the gap list (each type also has an Auto-research strategy subsection that shapes Mode 4 queries)
+- `~/workspace/skills/output-quality-loop/references/research-budget-per-type.md` — the per-type cap and termination rules that gate the elevation-suggestions section

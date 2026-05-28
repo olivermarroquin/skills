@@ -4,6 +4,8 @@ Per-type breakdown of hard requirements (must-have for ship), quality dimensions
 
 Each checklist item is one bullet. Each bullet carries a one-line citation to the spec source that defines it.
 
+Each type also has an **Auto-research strategy** subsection used by Mode 4 (AUTO-RESEARCH). The strategy names the characteristic gap shapes for that type and the research-question templates Mode 4 uses to elevate them. All composition routes through Perplexity Pro (via `perplexity-refinement`, per the architecture-decision contract); the strategy specifies WHICH queries to ask, not which research tool to use. Per-type query caps live in `research-budget-per-type.md`.
+
 ## Source note (VIS ingestion)
 
 ### Hard requirements
@@ -32,6 +34,18 @@ Each checklist item is one bullet. Each bullet carries a one-line citation to th
 - Slug-only wikilinks (spec source: `conventions.md` § "Cross-task wikilink convention")
 - Tags follow the structural-not-topical convention (spec source: `conventions.md` § "Tag rules")
 
+### Auto-research strategy (Mode 4)
+
+**Cap:** 3 queries; top-3 gaps. The source note is already the operator's distillation of one piece of content — Mode 4 triangulates the 2-3 highest-tier extracted claims, not the whole VIS pass. For deeper refinement the operator invokes `perplexity-refinement` directly with `medium`/`deep` depth, which is its own contract.
+
+**Characteristic gap shapes:**
+
+- Tactic / tool / pattern candidates that the source asserts confidently but cites only the creator — Mode 4 asks "what's the strongest published version of [tactic / pattern / tool claim] in current work?"
+- Statistics quoted from the source without a primary-source citation — Mode 4 asks "what's the original source of [statistic] and is it still accurate?"
+- Cross-references claimed but missing wikilinks — Mode 4 doesn't research these; it flags them for direct vault grep instead
+
+**Compose-with skills:** None at v1. The recursive `perplexity-refinement` call is the only composed skill. Don't promote this strategy beyond triangulation queries; deep refinement is a different operator decision.
+
 ## Perplexity-refinement output
 
 ### Hard requirements
@@ -56,7 +70,19 @@ Each checklist item is one bullet. Each bullet carries a one-line citation to th
 - Per-claim confirmation visible in inline-merge mode (no batch-apply) (spec source: `perplexity-refinement/SKILL.md` Phase 4b)
 - Cap respected: light=3, medium=7, deep=15 queries (spec source: `perplexity-refinement/SKILL.md` Phase 2 caps)
 - No silent fallback to Cowork WebSearch when Perplexity Pro is unavailable (spec source: project-level architecture decision 2026-05-27)
-- Sister-file mode (when used): file at `<original>-perplexity-refined-YYYY-MM-DD.md` with frontmatter `type: perplexity-refinement` and `refines: <original-filename>` (spec source: `perplexity-refinement/SKILL.md` Phase 4c)
+- Sister-file mode (when used): file at `<original>-perplexity-refined-YYYY-MM-DD.md` with frontmatter `type: perplexity-refinement` and `refines: <original>-filename>` (spec source: `perplexity-refinement/SKILL.md` Phase 4c)
+
+### Auto-research strategy (Mode 4)
+
+**Cap:** 6 queries; top-5 gaps. Recursive composition with `perplexity-refinement` is the load-bearing move here.
+
+**Characteristic gap shapes:**
+
+- High-tier claims in the original artifact that the first refinement pass covered shallowly (one source cited; counter-evidence not surfaced) — Mode 4 asks "what's the counter-position to [claim] in current published work? Surface 3-5 expert viewpoints with citations."
+- Claims marked `inconclusive` in the first refinement pass — Mode 4 reformulates with a sharper question shape (e.g., narrowing date range, naming the entity more specifically) and re-asks
+- Claims marked `contradicted` where the counter-evidence summary is thin — Mode 4 asks "what's the strongest version of the counter-argument for [claim]?"
+
+**Compose-with skills:** Recursive call to `perplexity-refinement` is mandatory; depth defaults to `light` (3-query cap) for the recursive call so the combined run (6 + 3 = 9) stays under the type's 6-query Mode 4 cap (recursive `light` calls reuse the parent cap; they don't add to it). For deeper triangulation on a single high-stakes gap, the operator can override the recursive depth to `medium` per-gap; that single gap then consumes more of the parent cap.
 
 ## Cluster synthesis
 
@@ -84,6 +110,19 @@ Each checklist item is one bullet. Each bullet carries a one-line citation to th
 - Slug-only wikilinks (spec source: `conventions.md`)
 - Companion artifact path: reading guide via meta-document-primer + optional plain-language sister file (presence is a quality signal, absence is a minor flag)
 
+### Auto-research strategy (Mode 4)
+
+**Cap:** 6 queries; top-5 gaps. The premature-abstraction edge is where Mode 4 earns its keep on syntheses.
+
+**Characteristic gap shapes:**
+
+- Cluster claims with fewer than 3 sources cited (the premature-abstraction discipline edge per `multi-source-synthesis/SKILL.md` summarize-don't-promote) — Mode 4 asks "what current published work covers [claim]? Surface 3-5 sources triangulating the claim from independent creators."
+- Operator-actionable takeaways that read as generic ("consider exploring X") — Mode 4 asks "what's the strongest published recommendation for [takeaway topic]? Surface concrete actions other practitioners have published."
+- Contradictions between creators flagged but not adjudicated — Mode 4 asks "which position has stronger evidence in current published work — [position A] or [position B]?"
+- Cross-cluster connections asserted but unsourced — Mode 4 asks "what published work has explored the connection between [cluster A topic] and [cluster B topic]?"
+
+**Compose-with skills:** `multi-source-synthesis` review-agent mode (when shipped) for additional pattern-math triangulation on the cluster's 1/3 → 2/3 → 3/3 promotion math. Until shipped, Mode 4 stays in the Perplexity-only path and surfaces the missing review-agent composition as a known limitation in the folder log.
+
 ## Cross-cluster synthesis
 
 ### Hard requirements
@@ -105,6 +144,18 @@ Each checklist item is one bullet. Each bullet carries a one-line citation to th
 ### Discipline rules
 
 - Same as cluster synthesis: non-destructive, premature-abstraction avoidance, slug-only wikilinks, project-applicability frontmatter fields
+
+### Auto-research strategy (Mode 4)
+
+**Cap:** 8 queries; top-5 gaps. Higher cap than cluster synthesis — cross-cluster spans more topics and the anchor question benefits from broader triangulation.
+
+**Characteristic gap shapes:**
+
+- The anchor question itself, asked of current published work — Mode 4 asks "what current published work addresses [anchor question]? Surface 3-5 frameworks or recommendations."
+- Operator-decision-space options listed without pros/cons — Mode 4 asks "what are the trade-offs of [option X] vs [option Y] per current published work?"
+- "What this does NOT decide" section that hides actual unknowns — Mode 4 asks "what current published work has resolved [topic the synthesis explicitly leaves open]?"
+
+**Compose-with skills:** Same as cluster synthesis — `multi-source-synthesis` review-agent mode when shipped, Perplexity-only until then.
 
 ## Research brief (any tier)
 
@@ -131,6 +182,19 @@ Each checklist item is one bullet. Each bullet carries a one-line citation to th
 - AI-citation hardening checklist surfaced honestly (every checkbox either marked pass with evidence or marked gap) (spec source: `_template-service-brief.md` §4.5)
 - Honest about gaps (e.g., "GSC not connected — flagged in §15") rather than fabricating coverage (spec source: `service-seo-research/SKILL.md`)
 
+### Auto-research strategy (Mode 4)
+
+**Cap:** 5 queries; top-3 gaps. Briefs already came out of a research-heavy producing skill — Mode 4 closes specific named gaps, not the whole spec.
+
+**Characteristic gap shapes:**
+
+- Sections marked "operator follow-up pending" — Mode 4 asks the question the section names, directly
+- Sections marked "AI surfaces not reachable from Cowork" — those gaps are now reachable through Perplexity Pro, so Mode 4 asks them ("what is [topic] currently per [AI surface name]?"). This is a high-leverage gap shape; the producing skill deferred them as unreachable but Mode 4 closes them automatically.
+- AI-citation hardening checklist items marked as gap rather than pass-with-evidence — Mode 4 asks for the missing evidence ("what's the canonical published example of [checklist item topic] for [city / service / intersection]?")
+- Pricing-visibility decisions where the brief flagged the policy but didn't cite the source — Mode 4 asks "what's current best practice for pricing visibility on [client type] residential pages?"
+
+**Compose-with skills:** For service briefs: optional composition with `service-seo-research` if that skill ships a "refresh" mode. For city briefs: optional composition with `city-base-research` refresh mode. For intersection briefs: optional composition with `intersection-research` refresh mode. For client briefs: optional composition with `client-fact-research` refresh mode. At v1 these refresh modes don't exist; Mode 4 stays Perplexity-only.
+
 ## Tactic / tool / pattern / lesson note
 
 ### Hard requirements
@@ -155,6 +219,18 @@ Each checklist item is one bullet. Each bullet carries a one-line citation to th
 - Promotion math: 1/3 patterns don't claim 3/3 evidence; 2/3 patterns don't quietly promote (spec source: `multi-source-synthesis/SKILL.md`)
 - Project-applicability frontmatter fields present (spec source: `intel-routing-skill-spec.md`)
 
+### Auto-research strategy (Mode 4)
+
+**Cap:** 3 queries; top-2 gaps. Small artifacts; don't over-research.
+
+**Characteristic gap shapes:**
+
+- Tactic / pattern claim with only 1-2 cited sources — Mode 4 asks "what other current published work covers [tactic / pattern]? Surface 2-3 sources for promotion math."
+- Tool note where pricing or feature claims aren't time-stamped — Mode 4 asks "what's the current pricing and feature set of [tool] in 2026?"
+- Lesson where rule + **Why** + **How to apply** is present but the **Why** is thin — Mode 4 asks "what current published work justifies [lesson rule]?"
+
+**Compose-with skills:** None at v1. If more queries are warranted, the operator promotes to a full `perplexity-refinement` run on the note directly.
+
 ## Blueprint
 
 ### Hard requirements
@@ -177,6 +253,19 @@ Each checklist item is one bullet. Each bullet carries a one-line citation to th
 - Non-destructive on cited artifacts
 - Slug-only wikilinks
 - No premature commitment to implementation details (blueprints are spec-level)
+
+### Auto-research strategy (Mode 4)
+
+**Cap:** 8 queries; top-5 gaps. Blueprints are high-leverage architectural artifacts; the cap matches Core 30 pages.
+
+**Characteristic gap shapes:**
+
+- Components asserted without primary-source backing — Mode 4 asks "what's the canonical published implementation of [component] in [domain]?"
+- Data-flow edges where the mechanism isn't cited — Mode 4 asks "what's the standard mechanism for [edge] in current published architectures?"
+- Decision points listed without trade-off analysis — Mode 4 asks "what are the published trade-offs of [decision-point options]?"
+- Open questions that have actually been answered in current published work — Mode 4 asks the question directly
+
+**Compose-with skills:** When `perplexity-blueprint-research` (Wave 2) ships, that skill becomes the primary composer for blueprint Mode 4 runs (it's purpose-built for blueprint research at 30-50 query depth). Until then Mode 4 stays in the standard Perplexity-only path.
 
 ## SKILL.md (a new skill being evaluated)
 
@@ -204,6 +293,19 @@ Each checklist item is one bullet. Each bullet carries a one-line citation to th
 - Non-destructive on neighbor skills (the new skill doesn't claim authority over things a neighbor skill owns)
 - Plain-language compliance (spec source: `plain-language-conventions.md`)
 - Cost-management rules named where applicable (spec source: pattern across existing skills using external APIs)
+
+### Auto-research strategy (Mode 4)
+
+**Cap:** 4 queries; top-3 gaps. Skill-design literature returns diminishing returns past ~4 queries.
+
+**Characteristic gap shapes:**
+
+- Workflow phases without explicit stop conditions — Mode 4 asks "what's the canonical published pattern for stop conditions in [workflow phase topic]?"
+- Critical-behavior items that name a discipline without citing a source for it — Mode 4 asks "what's the published precedent for [discipline]?"
+- Trigger phrases that may miss common operator phrasings — Mode 4 asks "what are the natural-language phrasings users actually type when they want [skill purpose]?" (this draws on agent-skill design literature)
+- Maintenance notes section with zero entries — Mode 4 asks "what published failure modes are common for skills in this space?" and seeds 1-2 candidate maintenance notes
+
+**Compose-with skills:** None at v1. Perplexity Pro queries about skill-design literature, agent-skill conventions, related work in the agent-orchestration space.
 
 ## Core 30 page draft
 
@@ -253,6 +355,23 @@ Per `verdict-rollup-thresholds.md` § "high-stakes dimension at fail" rule, the 
 - **No invented facts at fail (a fabricated brand / code / permit reference)** → FAIL. Fabrication on a published page is a published-misinformation risk.
 - **Schema-checklist compliance at fail** → at minimum NEEDS REVISION (substantive). Schema is what AI engines parse to attribute citations; a fail here means the page is structurally invisible to the AI-search layer it's optimized for.
 
+### Auto-research strategy (Mode 4)
+
+**Cap:** 8 queries; top-5 gaps. The highest-stakes artifact type — per-page rank + AI-citation outcomes compound over months, so the cap matches the stakes. The page-level gap shapes are the most diverse in the routing table.
+
+**Characteristic gap shapes:**
+
+- **Cost ranges where the brief doesn't cite a primary source** — Mode 4 asks "what's the current published price range for [service] in [city / county] as of 2026? Surface 3-5 cited examples."
+- **Schema patterns where the JSON-LD validates but the field shapes feel templated** — Mode 4 asks "what's the canonical current Schema.org pattern for [LocalBusiness / Service / FAQPage] entities being cited by AI search? Surface examples from currently-cited pages."
+- **FAQ depth and attribute density where the page hits the minimum but feels thin** — Mode 4 asks "what's the highest-attribute-density published version of [service] in [city] currently ranking? Surface 3-5 examples with capsule-content shape analysis."
+- **Anti-tactics avoidance where the page might be drifting into AI-generated-meta-at-scale or PAA-derived FAQ blocks** — Mode 4 asks "what's the strongest published approach to [meta-description / FAQ authoring] that AI search rewards in 2026?"
+- **Citation density where the page cites fewer than 10 vault sources** — Mode 4 asks "what's the strongest published version of [page topic] in current work? Surface 3-5 primary-source candidates Mode 4 can add to the page."
+- **Plain-language compliance where the page is dense but could be more conversational** — Mode 4 doesn't research this; it's a vault-internal discipline. Mode 4 skips plain-language gaps and lets the standard `plain-language-translation` skill handle them.
+
+**Compose-with skills:** `competitor-deep-research` for SERP-level comparison (the skill that runs the per-page audit against top-10 ranking competitors and identifies the patterns the top-rankers use that the artifact misses). After Phase 5's convention rollout reaches `competitor-deep-research`, its own research step uses Perplexity Pro — those queries count against the per-artifact 8-query cap.
+
+**Special-case high-stakes path:** If the EVALUATE pass flagged a high-stakes dimension at fail (capsule-content, substitution-map, invented facts, or schema-checklist), Mode 4 prioritizes that gap first. The first 1-2 queries go to the high-stakes gap; remaining budget covers the top-N of the other gaps. The folder log's `### External research (Mode 4)` block names the high-stakes gap first.
+
 ## Update path
 
 When a new artifact type appears, add a block here mirroring the structure above:
@@ -260,5 +379,6 @@ When a new artifact type appears, add a block here mirroring the structure above
 - Hard requirements
 - Quality dimensions
 - Discipline rules
+- Auto-research strategy (Mode 4)
 
-Each item cites its spec source. The detection table and routing table update in lockstep.
+Each item cites its spec source. The detection table and routing table update in lockstep. The Auto-research strategy section names the type's characteristic gap shapes + the research-question templates + any compose-with skills; also add a corresponding row to `research-budget-per-type.md`.
