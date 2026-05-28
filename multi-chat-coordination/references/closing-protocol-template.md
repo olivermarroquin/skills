@@ -24,13 +24,21 @@ This protocol is **mandatory**. Do not declare the chat complete or hand control
 
 Walk back through the "What you're building" + "Files to create" sections above. For each named deliverable, confirm it exists on disk with non-placeholder content. If anything is incomplete or contains TODO/FILL markers that should have been filled, fix it before closing. Do not declare done with known gaps.
 
-**Step 2 — Update this handoff's frontmatter.**
+**Step 2 — Update this handoff's frontmatter (+ YAML re-check).**
 
 Edit `<HANDOFF_FILE_PATH>`:
 
 - Flip `status: active` → `status: consumed`
 - Add `consumed: YYYY-MM-DD` (today's date) below `created:`
-- Add an "Actual deliverable" note inside a blockquote at the top of the body summarizing what landed (file paths + one-line outcome per major deliverable)
+- Add an "Actual deliverable" note inside a **blockquote at the top of the body** (NOT in frontmatter — the body-blockquote pattern avoids the YAML colon-space trap entirely; free-form prose with colons like "Output:", "Result:", "Built at: path", etc all parse safely inside a `> ...` blockquote)
+
+**After editing, verify the handoff's OWN frontmatter still parses cleanly:**
+
+```
+python3 -c "import yaml, re; m = re.match(r'^---\n(.*?)\n---\n', open('<HANDOFF_FILE_PATH>').read(), re.DOTALL); yaml.safe_load(m.group(1)); print('OK')"
+```
+
+Expected output: `OK`. If it errors, the most common cause is an unquoted colon-space in the `purpose:` line, the `actual-deliverable:` line (if you put it in frontmatter — see above; prefer body blockquote), or an unwrapped apostrophe inside a single-quoted value (apostrophes inside single quotes must be doubled: `it''s`, `Catliff''s`). Re-wrap or move to body blockquote per `~/workspace/skills/multi-chat-coordination/references/handoff-frontmatter-spec.md`. The trap that bit `handoff-2026-05-26-anti-ai-slop-house-voice-skill.md` + `intel-routing-rollout/phase-2-deployment.md` (both broken until the 2026-05-28 sweep): prose values added directly to YAML frontmatter without single-quote wrapping. Body blockquote avoids the trap entirely; use it for `actual-deliverable:`.
 
 **Step 3 — Update the active-chats tracker.**
 

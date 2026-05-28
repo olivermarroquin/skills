@@ -9,7 +9,7 @@ The shape every handoff file follows. This is the data contract for the skill's 
 type: handoff
 status: active
 created: YYYY-MM-DD
-purpose: One-sentence description of what the chat will produce.
+purpose: 'One-sentence description of what the chat will produce. Wrap in single quotes — the value is free-form prose and may contain colons or apostrophes that break YAML parsing if unquoted.'
 tags: [handoff, <project-slug-or-domain>, <other-applicable-tags>]
 ---
 ```
@@ -22,8 +22,10 @@ Field-by-field:
   - `consumed` — the handoff has been used; the work has landed. Add a `consumed:` date.
   - `cancelled` — the handoff is no longer relevant (priorities shifted, approach changed, blocker became permanent). Add a `cancelled:` date and a `cancellation-reason:` line.
 - `created`: ISO date the handoff was first written.
-- `purpose`: one sentence. Names the deliverable concretely. Avoid "explore" or "investigate" — handoffs produce shipped artifacts.
+- `purpose`: one sentence. Names the deliverable concretely. Avoid "explore" or "investigate" — handoffs produce shipped artifacts. **Always wrap the value in single quotes** — free-form prose often contains colon-space sequences (e.g. `Output: ...`, `Reason: ...`) that YAML parses as nested mappings if unquoted, and apostrophes inside the value need to be doubled (`it''s`, `EV''s`) per standard YAML single-quote escaping. This trap has bitten the tracker `last-change:` field repeatedly and the same trap fires on `purpose:` for the same reason. The single-quote wrap is non-negotiable for safety.
 - `tags`: always includes `handoff` and the project slug (if part of a project) or the primary domain tag (if standalone). Other applicable tags follow.
+
+**Any new free-form prose field added to handoff frontmatter** (`actual-deliverable:`, `cancellation-reason:`, etc.) follows the same single-quote-wrap rule. Bare unquoted prose only works when the value is short and structurally simple (no colons, no apostrophes); when in doubt, wrap. Apostrophes inside single-quoted YAML strings double up: `it''s`, `EV''s`, `Oliver''s`.
 
 ## Adding `consumed:` when the work lands
 
