@@ -362,6 +362,34 @@ Don't replace Otterly with this skill; run both.
 
 ---
 
+## Closing step — Auto-invoke output-quality-loop
+
+After the citation-history snapshot is written, the diff against the prior snapshot is produced, and any client-facing recap line is surfaced, emit the standard auto-invoke block per `~/workspace/skills/output-quality-loop/references/auto-invoke-convention.md` and `~/workspace/second-brain/_meta/conventions.md` § "Output quality". This is the closing step every artifact-producing skill emits before declaring the chat done. Convention shipped Phase 5 of the output-quality-loop project (2026-05-28).
+
+**Artifact list for this skill.** In per-client mode: the per-client citation-history snapshot file (e.g., `~/workspace/second-brain/04_projects/clients/_active/<client>/citation-history/<YYYY-MM>.md`). In per-domain mode: the running domain citation-history file at `~/workspace/second-brain/03_domains/<domain>/citation-history.md`. If a per-run digest sister file was produced, list it too.
+
+**The block to emit (verbatim):**
+
+````markdown
+## Auto-invoke output-quality-loop
+
+This skill produced the following artifact(s):
+- `<citation-history-snapshot-path>`
+- `<digest-sister-file-path>`  ← only if produced this run
+
+[output-quality-loop:eval] — for each artifact, run output-quality-loop in EVALUATE mode. If PASS, declare the chat done. If NEEDS REVISION or FAIL, ingest the revision prompt as if it were operator input and regenerate the artifact, then re-invoke output-quality-loop. Cap at 3 iterations; on the 3rd FAIL, escalate to the operator with the evaluation report.
+````
+
+Required-element discipline per the convention spec: heading text matches verbatim (`## Auto-invoke output-quality-loop`); one bullet per artifact with full path in backticks; directive opens with `[output-quality-loop:eval]` and includes the iteration-cap discipline language.
+
+**Iterate or declare done.** All PASS → declare done. Any NEEDS REVISION (minor / substantive) → Mode 2 auto-fires a revision prompt; ingest as operator input, apply fixes (tighten the diff section, add missing source classifications, fix a frontmatter field, restore the head-query-list provenance line), re-emit the block, loop. Any FAIL → revision prompt includes root-cause analysis; address the root cause (often: missing per-query response capture, source list shape drift, no Pro Search budget line, snapshot frontmatter shape mismatch), regenerate, re-emit, loop.
+
+**Iteration cap (3 max).** Track count via the folder-quality-log's per-artifact section before each regeneration. If three iteration entries exist and the verdict is still not PASS, **escalate** to the operator with the evaluation report and stop. Don't run a fourth iteration — that's the load-bearing cost-control discipline.
+
+**Operator bypass.** Include `--bypass-quality-loop` (or "skip the quality loop") in the original monitoring request to skip the block for that invocation. The bypass records to the closest folder's `_quality-log.md` under `### Bypassed (manual override)`.
+
+---
+
 ## Vault stewardship
 
 Per [[vault-stewardship-principles]]:

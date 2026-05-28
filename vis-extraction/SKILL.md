@@ -1034,6 +1034,36 @@ The compound-primer workflow has its own approval gates (see that skill's Step C
 
 Even in `auto` mode, the compound-primer offer is operator-confirmable. `auto` mode for VIS suppresses the Phase 6 review gate; it does NOT suppress the Step 9 offer. The compound-primer skill has its own discipline around extending primers (read-only by default, conservative on extension) — that contract is preserved by requiring explicit operator confirmation here.
 
+## Closing step — Auto-invoke output-quality-loop
+
+After Step 9 resolves (compound-primer offer accepted, declined, or no domains touched), and after the final report has printed, emit the standard auto-invoke block per `~/workspace/skills/output-quality-loop/references/auto-invoke-convention.md` and `~/workspace/second-brain/_meta/conventions.md` § "Output quality". This is the closing step every artifact-producing skill emits before declaring the chat done. Convention shipped Phase 5 of the output-quality-loop project (2026-05-28).
+
+**Artifact list for this skill.** Always include: the source note. Optionally include (when actually written this run): newly created tactic notes, tool notes, opportunity notes, content-idea notes, pattern notes, task notes. Skip notes that were only linked or enhanced trivially (no new content). The block lists each artifact on its own bullet, full vault-relative or `~/`-prefixed path inside backticks.
+
+**The block to emit (verbatim):**
+
+````markdown
+## Auto-invoke output-quality-loop
+
+This skill produced the following artifact(s):
+- `<source-note-path>`
+- `<tactic-note-path>`         ← only if newly created this run
+- `<tool-note-path>`           ← only if newly created this run
+- `<opportunity-note-path>`    ← only if newly created this run
+- `<content-idea-note-path>`   ← only if newly created this run
+- `<pattern-note-path>`        ← only if newly created at 3/3 this run
+
+[output-quality-loop:eval] — for each artifact, run output-quality-loop in EVALUATE mode. If PASS, declare the chat done. If NEEDS REVISION or FAIL, ingest the revision prompt as if it were operator input and regenerate the artifact, then re-invoke output-quality-loop. Cap at 3 iterations; on the 3rd FAIL, escalate to the operator with the evaluation report.
+````
+
+Required-element discipline per the convention spec: heading text matches verbatim (`## Auto-invoke output-quality-loop`); one bullet per artifact with full path in backticks; directive opens with `[output-quality-loop:eval]` and includes the iteration-cap discipline language.
+
+**Iterate or declare done.** All PASS → declare done. Any NEEDS REVISION (minor / substantive) → Mode 2 auto-fires a revision prompt; ingest as operator input, apply fixes to the affected source / tactic / tool / etc. notes, re-emit the block, loop. Any FAIL → revision prompt includes root-cause analysis; address the root cause (often a missed extraction discipline rule — frontmatter shape, plain-language layer, action-log placeholder, etc.), regenerate, re-emit, loop.
+
+**Iteration cap (3 max).** Track count via the folder-quality-log's per-artifact section before each regeneration. If three iteration entries exist and the verdict is still not PASS, **escalate** to the operator with the evaluation report and stop. Don't run a fourth iteration — that's the load-bearing cost-control discipline.
+
+**Operator bypass.** Include `--bypass-quality-loop` (or "skip the quality loop") in the original VIS request to skip the block for that invocation. The bypass records to the closest folder's `_quality-log.md` under `### Bypassed (manual override)`.
+
 ## What this skill does NOT do
 
 - Does NOT commit to git. User runs the commit command after inspecting.

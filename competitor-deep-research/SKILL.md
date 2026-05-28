@@ -173,6 +173,36 @@ If the output folder is new, write a `_README.md` for it (template at `reference
 
 ---
 
+## Phase 5 — Closing step — Auto-invoke output-quality-loop
+
+After Phases 1-4 complete (per-competitor briefs written, cross-competitor synthesis landed, folder `_README.md` shipped or updated), emit the standard auto-invoke block per `~/workspace/skills/output-quality-loop/references/auto-invoke-convention.md` and `~/workspace/second-brain/_meta/conventions.md` § "Output quality". This is the closing step every artifact-producing skill emits before declaring the chat done. Convention shipped Phase 5 of the output-quality-loop project (2026-05-28).
+
+**Artifact list for this skill.** Always include: the per-competitor briefs written this run + the cross-competitor synthesis. In design-fingerprint mode also include the design dossier file written into `second-brain/03_domains/website-design/inspiration/high-performing/<reference>/`. The folder `_README.md` is NOT included in the evaluation (it's hygiene metadata, not a content artifact the spec-routing table covers).
+
+**The block to emit (verbatim):**
+
+````markdown
+## Auto-invoke output-quality-loop
+
+This skill produced the following artifact(s):
+- `<per-competitor-brief-1-path>`
+- `<per-competitor-brief-2-path>`
+- `<cross-competitor-synthesis-path>`
+- `<design-dossier-path>`  ← only in design-fingerprint mode
+
+[output-quality-loop:eval] — for each artifact, run output-quality-loop in EVALUATE mode. If PASS, declare the chat done. If NEEDS REVISION or FAIL, ingest the revision prompt as if it were operator input and regenerate the artifact, then re-invoke output-quality-loop. Cap at 3 iterations; on the 3rd FAIL, escalate to the operator with the evaluation report.
+````
+
+Required-element discipline per the convention spec: heading text matches verbatim (`## Auto-invoke output-quality-loop`); one bullet per artifact with full path in backticks; directive opens with `[output-quality-loop:eval]` and includes the iteration-cap discipline language.
+
+**Iterate or declare done.** All PASS → declare done. Any NEEDS REVISION (minor / substantive) → Mode 2 auto-fires a revision prompt; ingest as operator input, apply fixes to the affected brief or synthesis (tighten a section, add a missing source, fix a frontmatter field), re-emit the block, loop. Any FAIL → revision prompt includes root-cause analysis; address the root cause (often: shallow competitor coverage, no honest-strength assessment, paid-tool dependency assumed without surfacing, no plain-language layer), regenerate, re-emit, loop.
+
+**Iteration cap (3 max).** Track count via the folder-quality-log's per-artifact section before each regeneration. If three iteration entries exist and the verdict is still not PASS, **escalate** to the operator with the evaluation report and stop. Don't run a fourth iteration — that's the load-bearing cost-control discipline.
+
+**Operator bypass.** Include `--bypass-quality-loop` (or "skip the quality loop") in the original research request to skip the block for that invocation. The bypass records to the closest folder's `_quality-log.md` under `### Bypassed (manual override)`.
+
+---
+
 ## Working principles
 
 These shaped the EV Electric session and should shape every future use:
@@ -219,3 +249,159 @@ The EV Electric Services session is the canonical worked example. Files to refer
 - `~/workspace/second-brain/04_projects/clients/_active/ev-electric-services/admin-extracts/competitor-research/synthesis-2026-05-23.md` — synthesis with methodology section
 
 When in doubt about format, voice, depth, or section structure, read the worked example. It's the source of truth.
+
+---
+
+## Refinement — design-fingerprint mode (added 2026-05-23)
+
+**Status:** spec only. Implementation TBD as a follow-up project.
+
+### Why this mode exists
+
+The base `competitor-deep-research` skill is shaped for SEO + content + positioning analysis. The output is a per-competitor brief and a cross-competitor synthesis useful for page-build strategy.
+
+After the 2026-05-23 pivot to custom-coded Next.js sites built by emulating proven high-performing reference sites (see [[decision-2026-05-23-pivot-to-custom-coded-websites-via-nextjs]]), the skill also needs to produce a **design dossier** suitable for filing in `second-brain/03_domains/website-design/inspiration/high-performing/`. The base skill captures most of what a design dossier needs but is missing four things:
+
+1. **Color palette extraction** — hex codes for primary, secondary, accent, neutral, text colors
+2. **Typography extraction** — font family names + weights + size scale + line-height patterns
+3. **Layout pattern detection** — hero composition, section conventions, FAQ shape, CTA style, footer pattern
+4. **Performance scores** — Core Web Vitals (LCP, INP, CLS) from PageSpeed Insights API; not just lab data but real-user data when available
+
+The refinement adds a `--mode design-fingerprint` flag (or equivalent invocation pattern in skill-speak) that produces a dossier in the format spec'd at `second-brain/03_domains/website-design/inspiration/high-performing/_README.md`.
+
+### Trigger phrases for design-fingerprint mode
+
+In addition to the base skill's triggers, also use this mode when:
+
+- "Fingerprint the design of [site]"
+- "Add [site] to the design catalog"
+- "Build a design dossier for [site]"
+- "Run a design-emulation prep on [site]"
+- "Capture the visual fingerprint of [site]"
+- Any time a site is being prepared for emulation by Claude Code per the [[tactic-emulate-competitor-design-patterns-with-ai|emulate competitor patterns tactic]]
+
+### Inputs (in addition to the base skill's inputs)
+
+- **Reference site URL** — required. Single URL, not a list.
+- **Output mode** — `design-dossier` (default for this mode), or `dossier-plus-brief` (also writes the standard competitor brief)
+- **Target catalog folder** — defaults to `second-brain/03_domains/website-design/inspiration/high-performing/`
+- **Performance data source** — `lab` (Lighthouse), `field` (real-user CrUX), or `both` (preferred)
+
+### Output contract — the design dossier format
+
+Spec'd at `second-brain/03_domains/website-design/inspiration/high-performing/_README.md`. Reproduced here for skill-spec purposes:
+
+```
+dossier-<site-slug>.md
+
+Frontmatter:
+- type: design-dossier
+- status: verified | provisional
+- created, updated, domain, niche, geography
+- performance-verified-date
+- tags
+
+Content sections (in order):
+1. Business identity
+2. Why it performs (rankings + CWV + content + conversion proxies)
+3. Tools / code / framework fingerprint  ← base skill already covers this
+4. Visual design fingerprint            ← NEW; the refinement's main addition
+5. Patterns worth emulating
+6. Patterns to skip
+7. How we emulate without copying assets
+8. Verification notes
+```
+
+### New procedure for the visual design fingerprint section
+
+Beyond the base skill's tech-stack fingerprinting:
+
+#### A. Color palette extraction
+
+Procedure:
+
+1. Pull all CSS files referenced from the page via `web_fetch`
+2. Extract all hex codes via regex (`#[0-9a-fA-F]{3,6}`)
+3. Also extract rgb()/rgba() values and convert to hex
+4. Count frequency of each color; the top 5-7 most-used colors are usually the palette
+5. Cross-check against any explicit CSS custom properties (`--color-primary`, `--brand-blue`, etc.)
+6. Group by role: primary brand, secondary, accent, neutral background, neutral text
+7. Write the palette as a code block with each role + hex value
+
+Edge case: if the site uses Tailwind, palette colors often appear inline in the HTML as `bg-blue-500` etc. — convert to hex equivalents using a Tailwind palette reference.
+
+#### B. Typography extraction
+
+Procedure:
+
+1. Pull all `@font-face` declarations from CSS
+2. Pull all `font-family` declarations and count frequency
+3. Identify the primary font (most common in body), secondary (often headings), and any display font
+4. For each font, extract: weights used (300, 400, 500, 600, 700, etc.), sizes used (px, rem, em values; build a size scale), line-heights, letter-spacing
+5. Check whether fonts are loaded via Google Fonts, self-hosted, or a service like Typekit
+6. Write typography as: font name + weight + size scale + line-height pattern per role (body, headings, display, accent)
+
+#### C. Layout pattern detection
+
+Procedure:
+
+1. Parse the rendered DOM (via Claude in Chrome if available, or via web_fetch's returned HTML if JS-light)
+2. Identify the major sections of the home page in order: hero, services, about, testimonials, FAQ, footer, etc.
+3. For each section, capture: HTML structure (which tags / classes), visual position (above-fold, below-fold), content density (text-heavy, image-heavy, mixed), CTA presence and style
+4. Compare against an internal taxonomy of known section patterns (see `references/patterns-to-watch.md` — extend this file when new section patterns emerge)
+5. Write layout patterns as a list of section conventions with examples
+
+#### D. Performance scores
+
+Procedure:
+
+1. Call Google PageSpeed Insights API for both mobile and desktop variants of the site
+2. Capture both lab data (Lighthouse synthetic) AND field data (real-user CrUX) where available
+3. Capture all three Core Web Vitals: LCP, INP, CLS
+4. Capture additional metrics: FCP, Speed Index, Total Blocking Time
+5. Note whether each metric is "Good," "Needs Improvement," or "Poor" per Google's thresholds
+6. Write performance scores as a table with each metric, lab + field values, and the Good/NI/Poor classification
+
+#### E. Image format inventory
+
+Procedure:
+
+1. Extract all `<img>` `src` and `<source>` `srcset` attributes from the page
+2. Count format distribution: AVIF, WebP, PNG, JPG, SVG, GIF
+3. Note whether the site uses responsive images (`srcset`, `sizes`, `<picture>`)
+4. Note whether Next.js Image component is in use (often visible from `_next/image?url=` patterns in URLs)
+5. Modern format prevalence (AVIF + WebP) is a Pillar 2 SEO signal (image weight correlates with LCP)
+6. Write image format inventory as a short table
+
+### When to use base skill vs design-fingerprint mode
+
+| User intent | Mode |
+|---|---|
+| Understand competitor landscape for SEO strategy | Base skill |
+| Profile a competitor for client positioning | Base skill |
+| Lift design patterns from a high-performing reference | Design-fingerprint mode |
+| Build a catalog entry in `inspiration/high-performing/` | Design-fingerprint mode |
+| Cross-competitor synthesis for Core 30 build | Base skill |
+| Cross-reference synthesis for design catalog | Design-fingerprint mode |
+
+If both are needed for the same site, run base skill first, then design-fingerprint mode. They produce sibling files (one in `admin-extracts/competitor-research/`, one in `website-design/inspiration/high-performing/`).
+
+### Future implementation notes
+
+When this refinement gets implemented:
+
+- The color palette + typography extraction steps lend themselves to scripts (`scripts/extract_palette.py`, `scripts/extract_typography.py`) that take a URL and emit structured output
+- The layout pattern detection is harder to automate; likely stays as a Claude-driven analysis with a reference taxonomy that grows over time
+- The PageSpeed API call is a single HTTP request; cheap to wrap
+- Image format inventory is parseable from `web_fetch`'s returned HTML
+- Add a new template file `references/design-dossier-template.md` that mirrors the format spec'd in the website-design domain's `inspiration/high-performing/_README.md`
+- Add a new patterns file `references/visual-patterns-taxonomy.md` cataloging known section conventions (hero variants, services-grid variants, FAQ shapes, footer styles)
+
+The implementation work is a follow-up project. This spec captures what the refinement should produce.
+
+### Related
+
+- [[decision-2026-05-23-pivot-to-custom-coded-websites-via-nextjs]] — the canonical decision triggering this refinement
+- [[strategy-custom-coded-nextjs-via-ai-with-competitor-inspiration]] — the strategy the refinement supports
+- [[tactic-emulate-competitor-design-patterns-with-ai]] — the tactic that consumes design dossiers
+- `~/workspace/skills/design-emulation-verify/SKILL.md` — sister skill that verifies our build against the reference's dossier

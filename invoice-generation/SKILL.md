@@ -135,6 +135,31 @@ Oliver
 
 Personal opening lines are short and grounded in the actual conversation — "Great talking with you yesterday," "Glad we got the kickoff done," "Thanks again for the chat at the meeting." Avoid generic "I hope this email finds you well" filler.
 
+## Closing step — Auto-invoke output-quality-loop
+
+After the invoice PDF + vault record are written, but BEFORE handing off to the email-send step, emit the standard auto-invoke block per `~/workspace/skills/output-quality-loop/references/auto-invoke-convention.md` and `~/workspace/second-brain/_meta/conventions.md` § "Output quality". This is the closing step every artifact-producing skill emits before declaring the chat done. Convention shipped Phase 5 of the output-quality-loop project (2026-05-28).
+
+**Artifact list for this skill.** The vault invoice record file (e.g., `~/workspace/second-brain/07_business/keelworks-llc/finance/invoices/<invoice-number>.md`). The PDF in `~/workspace/repos/keelworks/ops/invoices/` is the deliverable to the client but is binary — it is NOT included in the quality-loop evaluation list. The evaluator inspects the vault record's frontmatter, scope language (per the action-verb standard), and numbering convention compliance.
+
+**The block to emit (verbatim):**
+
+````markdown
+## Auto-invoke output-quality-loop
+
+This skill produced the following artifact(s):
+- `<vault-invoice-record-path>`
+
+[output-quality-loop:eval] — for each artifact, run output-quality-loop in EVALUATE mode. If PASS, declare the chat done. If NEEDS REVISION or FAIL, ingest the revision prompt as if it were operator input and regenerate the artifact, then re-invoke output-quality-loop. Cap at 3 iterations; on the 3rd FAIL, escalate to the operator with the evaluation report.
+````
+
+Required-element discipline per the convention spec: heading text matches verbatim (`## Auto-invoke output-quality-loop`); one bullet per artifact with full path in backticks; directive opens with `[output-quality-loop:eval]` and includes the iteration-cap discipline language.
+
+**Iterate or declare done.** All PASS → proceed to the email-send step and declare done. Any NEEDS REVISION (minor / substantive) → Mode 2 auto-fires a revision prompt; ingest as operator input, apply fixes (fix invoice numbering, sharpen action-verb scope language, restore a missing frontmatter field, fix the PDF↔record number tie-out), regenerate the affected file (and re-render the PDF if scope language changed), re-emit the block, loop. Any FAIL → revision prompt includes root-cause analysis; address the root cause (often: scope language soft-padded with "various items" or "consulting" generic terms; invoice number collision with prior issue; missing client field for cross-Dataview queries), regenerate, re-emit, loop.
+
+**Iteration cap (3 max).** Track count via the folder-quality-log's per-artifact section before each regeneration. If three iteration entries exist and the verdict is still not PASS, **escalate** to the operator with the evaluation report and stop. Don't run a fourth iteration — that's the load-bearing cost-control discipline.
+
+**Operator bypass.** Include `--bypass-quality-loop` (or "skip the quality loop") in the original invoice request to skip the block for that invocation. The bypass records to the closest folder's `_quality-log.md` under `### Bypassed (manual override)`. Bypass is sometimes warranted for low-friction repeat-client invoices where scope language exactly matches the prior month's record.
+
 ## What lives where (file map)
 
 | Artifact | Path |

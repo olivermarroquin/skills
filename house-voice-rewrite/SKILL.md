@@ -315,6 +315,32 @@ If the rewritten draft is then heading to publish:
 
 Don't auto-invoke. Surface as follow-up options.
 
+### Step 7 — Closing step — Auto-invoke output-quality-loop
+
+After Steps 1-6 complete (artifact written, before/after surfaced, follow-ups listed), emit the standard auto-invoke block per `~/workspace/skills/output-quality-loop/references/auto-invoke-convention.md` and `~/workspace/second-brain/_meta/conventions.md` § "Output quality". This is the closing step every artifact-producing skill emits before declaring the chat done. Convention shipped Phase 5 of the output-quality-loop project (2026-05-28).
+
+**Artifact list for this skill.** In `init-personality` mode: the per-client personality file (e.g., `~/workspace/second-brain/04_projects/clients/_active/<client-slug>/personality-<client-slug>.md`). In `rewrite` mode: the rewritten draft file (e.g., `~/workspace/second-brain/04_projects/clients/_active/<client-slug>/website-archive/new/core-30/<page>/draft-<page>-v2-house-voice.md` — exact path per the filename + frontmatter rules above).
+
+**The block to emit (verbatim):**
+
+````markdown
+## Auto-invoke output-quality-loop
+
+This skill produced the following artifact(s):
+- `<personality-file-path>`  ← init-personality mode
+- `<rewritten-draft-path>`   ← rewrite mode
+
+[output-quality-loop:eval] — for each artifact, run output-quality-loop in EVALUATE mode. If PASS, declare the chat done. If NEEDS REVISION or FAIL, ingest the revision prompt as if it were operator input and regenerate the artifact, then re-invoke output-quality-loop. Cap at 3 iterations; on the 3rd FAIL, escalate to the operator with the evaluation report.
+````
+
+Required-element discipline per the convention spec: heading text matches verbatim (`## Auto-invoke output-quality-loop`); one bullet per artifact with full path in backticks; directive opens with `[output-quality-loop:eval]` and includes the iteration-cap discipline language.
+
+**Iterate or declare done.** All PASS → declare done. Any NEEDS REVISION (minor / substantive) → Mode 2 auto-fires a revision prompt; ingest as operator input, apply fixes (for personality files: tighten a voice-tilt section, add a missing anti-pattern from the existing site, fix corpus citations; for rewrite outputs: re-rewrite paragraphs flagged for voice drift, restore preserved structure, fix length budget overshoot), re-emit the block, loop. Any FAIL → revision prompt includes root-cause analysis; address the root cause (often: AI-slop phrases survived, structure not preserved, voice-tilt mismatch with personality file), regenerate, re-emit, loop.
+
+**Iteration cap (3 max).** Track count via the folder-quality-log's per-artifact section before each regeneration. If three iteration entries exist and the verdict is still not PASS, **escalate** to the operator with the evaluation report and stop. Don't run a fourth iteration — that's the load-bearing cost-control discipline.
+
+**Operator bypass.** Include `--bypass-quality-loop` (or "skip the quality loop") in the original request to skip the block for that invocation. The bypass records to the closest folder's `_quality-log.md` under `### Bypassed (manual override)`.
+
 ## What this skill is NOT
 
 - **Not a summarizer.** Rewrite preserves the full draft — same length

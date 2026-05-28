@@ -715,6 +715,37 @@ Mode 1 uses all five. Mode 2 uses tracker-row-shapes, handoff-frontmatter-spec, 
 
 **Surface the work, don't bury it.** Every mode ends with a clear summary of what landed (or what would land, in the case of DECOMPOSE's review gate). No buried decisions, no silent edits.
 
+## Closing step — Auto-invoke output-quality-loop
+
+After any mode's writes have landed (DECOMPOSE: handoff files + `_README.md` + tracker rows; AUDIT: drift report; NEXT-MOVE: next-move recommendation), emit the standard auto-invoke block per `~/workspace/skills/output-quality-loop/references/auto-invoke-convention.md` and `~/workspace/second-brain/_meta/conventions.md` § "Output quality". This is the closing step every artifact-producing skill emits before declaring the chat done. Convention shipped Phase 5 of the output-quality-loop project (2026-05-28).
+
+**Artifact list for this skill.**
+
+- **DECOMPOSE mode:** the per-phase handoff files written into the new project subfolder + the new `<project>/_README.md`. The tracker (`_active-chats-tracker.md`) is updated but is not itself the artifact being evaluated — it's the index. Modify-only edits to the tracker are not in the evaluation list.
+- **AUDIT mode:** the drift report (typically a chat-only output, optionally written to `_meta/handoffs/<project>/drift-report-YYYY-MM-DD.md` if the operator asks for a persisted version). When written to disk, the drift report goes in the list; chat-only outputs skip the auto-invoke block per the exemption rule for ephemeral artifacts.
+- **NEXT-MOVE mode:** the next-move recommendation (typically chat-only). Same rule — skip the auto-invoke block in chat-only mode; emit it when the recommendation is persisted to disk.
+
+**The block to emit (verbatim, in DECOMPOSE mode or when AUDIT / NEXT-MOVE persisted to disk):**
+
+````markdown
+## Auto-invoke output-quality-loop
+
+This skill produced the following artifact(s):
+- `<project-README-path>`
+- `<phase-1-handoff-path>`
+- `<phase-N-handoff-path>`
+
+[output-quality-loop:eval] — for each artifact, run output-quality-loop in EVALUATE mode. If PASS, declare the chat done. If NEEDS REVISION or FAIL, ingest the revision prompt as if it were operator input and regenerate the artifact, then re-invoke output-quality-loop. Cap at 3 iterations; on the 3rd FAIL, escalate to the operator with the evaluation report.
+````
+
+Required-element discipline per the convention spec: heading text matches verbatim (`## Auto-invoke output-quality-loop`); one bullet per artifact with full path in backticks; directive opens with `[output-quality-loop:eval]` and includes the iteration-cap discipline language.
+
+**Iterate or declare done.** All PASS → declare done. Any NEEDS REVISION (minor / substantive) → Mode 2 auto-fires a revision prompt; ingest as operator input, apply fixes (for handoffs: tighten a phase, fix a frontmatter field, restore the closing-protocol template; for the project README: improve dependency narrative, surface missing trigger conditions), re-emit the block, loop. Any FAIL → revision prompt includes root-cause analysis; address the root cause (often: closing-protocol template missing from a handoff body, broken dependency chain in `blocked-by:` fields, status drift between handoff frontmatter and tracker row, YAML parse failure), regenerate, re-emit, loop.
+
+**Iteration cap (3 max).** Track count via the folder-quality-log's per-artifact section before each regeneration. If three iteration entries exist and the verdict is still not PASS, **escalate** to the operator with the evaluation report and stop. Don't run a fourth iteration — that's the load-bearing cost-control discipline.
+
+**Operator bypass.** Include `--bypass-quality-loop` (or "skip the quality loop") in the original DECOMPOSE / AUDIT / NEXT-MOVE request to skip the block for that invocation. The bypass records to the closest folder's `_quality-log.md` under `### Bypassed (manual override)`.
+
 ## Out of scope (v1)
 
 - **Auto-spawning chats.** v1 is recommend-and-approve only. The operator still manually opens new Cowork chats. Auto-spawn (skill literally invokes a new chat session) is risky and out of scope.

@@ -258,6 +258,35 @@ Before declaring done, run a verification pass:
 4. **Currency check** — confirm no obviously stale dates or pricing slipped in (e.g., "$15/mo Frase Starter" would be wrong because Frase repriced to $45/mo in 2024–2025).
 5. **Plain-language check** — scan for unglossed jargon. AEO, GEO, NAP, LCP, CTR, CWV, GBP, SERP, etc. should be defined inline on first use.
 
+## Phase 6 — Closing step — Auto-invoke output-quality-loop
+
+After Phase 5 verification passes, emit the standard auto-invoke block per `~/workspace/skills/output-quality-loop/references/auto-invoke-convention.md` and `~/workspace/second-brain/_meta/conventions.md` § "Output quality". This is the closing step every artifact-producing skill emits before declaring the chat done. Convention shipped Phase 5 of the output-quality-loop project (2026-05-28).
+
+**Artifact list for this skill.** The full five-file output set: free-tools inventory, paid-tools inventory, AEO/GEO survey, per-task recommendations, tiered stack proposal. Plus the destination folder's `_README.md` if newly created (otherwise it's a hygiene update, not a content artifact).
+
+**The block to emit (verbatim):**
+
+````markdown
+## Auto-invoke output-quality-loop
+
+This skill produced the following artifact(s):
+- `<free-tools-inventory-path>`
+- `<paid-tools-inventory-path>`
+- `<aeo-geo-survey-path>`
+- `<per-task-recommendations-path>`
+- `<tiered-stack-proposal-path>`
+
+[output-quality-loop:eval] — for each artifact, run output-quality-loop in EVALUATE mode. If PASS, declare the chat done. If NEEDS REVISION or FAIL, ingest the revision prompt as if it were operator input and regenerate the artifact, then re-invoke output-quality-loop. Cap at 3 iterations; on the 3rd FAIL, escalate to the operator with the evaluation report.
+````
+
+Required-element discipline per the convention spec: heading text matches verbatim (`## Auto-invoke output-quality-loop`); one bullet per artifact with full path in backticks; directive opens with `[output-quality-loop:eval]` and includes the iteration-cap discipline language.
+
+**Iterate or declare done.** All PASS → declare done. Any NEEDS REVISION (minor / substantive) → Mode 2 auto-fires a revision prompt; ingest as operator input, apply fixes to the affected file (tighten an inventory entry, gloss missed jargon, fix pricing inconsistency, restore wikilinks), re-emit the block, loop. Any FAIL → revision prompt includes root-cause analysis; address the root cause (often: hype-vs-substance softening crept in, vertical calibration didn't fit the operator's context, paid-tool defaults assumed without surfacing), regenerate, re-emit, loop.
+
+**Iteration cap (3 max).** Track count via the folder-quality-log's per-artifact section before each regeneration. If three iteration entries exist and the verdict is still not PASS, **escalate** to the operator with the evaluation report and stop. Don't run a fourth iteration — that's the load-bearing cost-control discipline.
+
+**Operator bypass.** Include `--bypass-quality-loop` (or "skip the quality loop") in the original research request to skip the block for that invocation. The bypass records to the closest folder's `_quality-log.md` under `### Bypassed (manual override)`.
+
 ## Reporting back to the operator
 
 End with a terse summary (per `feedback_terse_completion_reports.md`):

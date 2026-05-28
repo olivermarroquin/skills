@@ -128,6 +128,31 @@ Example preamble note (one-liner under the H1, before the rest of the content):
 > Same content as [[original-doc-name]]. Rewritten in plain language so you can read it without translating jargon in your head.
 ```
 
+## Closing step — Auto-invoke output-quality-loop
+
+After the plain-language companion is written and the preamble note added under the H1, emit the standard auto-invoke block per `~/workspace/skills/output-quality-loop/references/auto-invoke-convention.md` and `~/workspace/second-brain/_meta/conventions.md` § "Output quality". This is the closing step every artifact-producing skill emits before declaring the chat done. Convention shipped Phase 5 of the output-quality-loop project (2026-05-28).
+
+**Artifact list for this skill.** The plain-language companion file (e.g., `<original-slug>-plain.md` in the same folder as the original). Do NOT include the original — it is not modified by this skill.
+
+**The block to emit (verbatim):**
+
+````markdown
+## Auto-invoke output-quality-loop
+
+This skill produced the following artifact(s):
+- `<plain-language-companion-path>`
+
+[output-quality-loop:eval] — for each artifact, run output-quality-loop in EVALUATE mode. If PASS, declare the chat done. If NEEDS REVISION or FAIL, ingest the revision prompt as if it were operator input and regenerate the artifact, then re-invoke output-quality-loop. Cap at 3 iterations; on the 3rd FAIL, escalate to the operator with the evaluation report.
+````
+
+Required-element discipline per the convention spec: heading text matches verbatim (`## Auto-invoke output-quality-loop`); one bullet per artifact with full path in backticks; directive opens with `[output-quality-loop:eval]` and includes the iteration-cap discipline language.
+
+**Iterate or declare done.** All PASS → declare done. Any NEEDS REVISION (minor / substantive) → Mode 2 auto-fires a revision prompt; ingest as operator input, apply fixes (re-translate paragraphs that drifted into summarization, restore lost wikilinks, restore lost pattern citations, tighten an over-glossed section, fix soft-rhetorical-edge drift), re-emit the block, loop. Any FAIL → revision prompt includes root-cause analysis; address the root cause (often: drift into advocacy / improvement / summarization, missing preamble, structural reordering), regenerate, re-emit, loop.
+
+**Iteration cap (3 max).** Track count via the folder-quality-log's per-artifact section before each regeneration. If three iteration entries exist and the verdict is still not PASS, **escalate** to the operator with the evaluation report and stop. Don't run a fourth iteration — that's the load-bearing cost-control discipline.
+
+**Operator bypass.** Include `--bypass-quality-loop` (or "skip the quality loop") in the original translation request to skip the block for that invocation. The bypass records to the closest folder's `_quality-log.md` under `### Bypassed (manual override)`.
+
 ## Failure modes to avoid
 
 - **Drift into summarization.** If your output is shorter than the original by more than ~10%, you summarized instead of translating. Go back and fill in.
@@ -149,3 +174,20 @@ The canonical worked example for this skill is the pair:
 - Plain version: `second-brain/_meta/decisions/phase-b-decisions-2026-05-11-plain.md`
 
 If you're uncertain about voice, output shape, or what "plain language" means in Oliver's vault context, read those two files side by side. The plain version is the anchor — match its voice and structural fidelity in any future translation.
+
+## See also: pairing with step-by-step-walkthrough
+
+If the doc you just translated is a process, SOP, setup flow, or anything else Oliver is about to execute (not just read), mention that [[step-by-step-walkthrough]] can guide him through the plain version one step at a time.
+
+The pattern:
+1. Translate the dense doc → readable version (this skill)
+2. Walk through the readable version one action at a time (step-by-step-walkthrough)
+
+Don't auto-invoke the walkthrough. Just surface it as a follow-up option after delivering the translation: "Want me to walk you through this step by step now?" Oliver decides.
+
+Trigger this suggestion when:
+- The translated doc reads as procedural — has numbered steps, sequential actions, setup instructions, or "do X then Y" structure
+- Oliver mentions he's about to execute it ("I need to do this," "let me run through this")
+- The original is an SOP, runbook, onboarding flow, or similar action-oriented artifact
+
+If the doc is purely analytical (a decision document, a synthesis, a strategy note) and there's nothing to execute, skip the suggestion.

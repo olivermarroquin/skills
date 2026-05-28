@@ -333,6 +333,34 @@ Next steps for you:
    cd /Users/olivermarroquin/workspace/second-brain && git add . && git commit -m "primer: compound from <scope> activity"
 ```
 
+## Closing step — Auto-invoke output-quality-loop
+
+After the per-document reading guide or compound-primer extension has been written and the final report has printed, emit the standard auto-invoke block per `~/workspace/skills/output-quality-loop/references/auto-invoke-convention.md` and `~/workspace/second-brain/_meta/conventions.md` § "Output quality". This is the closing step every artifact-producing skill emits before declaring the chat done. Convention shipped Phase 5 of the output-quality-loop project (2026-05-28).
+
+**Artifact list for this skill.** In single-doc primer mode: the reading guide written into the scope-appropriate `primer-readings/` folder (e.g., `~/workspace/second-brain/_meta/primers/readings/primer-reading-<topic>-<YYYY-MM-DD>.md` or domain/project equivalent per the conventions filing rule). In compound-primer mode: the primer file that was extended. Do NOT include the target document being read — this skill never modifies it.
+
+**The block to emit (verbatim):**
+
+````markdown
+## Auto-invoke output-quality-loop
+
+This skill produced the following artifact(s):
+- `<reading-guide-path>`        ← single-doc primer mode
+- `<extended-primer-path>`      ← compound-primer mode
+
+[output-quality-loop:eval] — for each artifact, run output-quality-loop in EVALUATE mode. If PASS, declare the chat done. If NEEDS REVISION or FAIL, ingest the revision prompt as if it were operator input and regenerate the artifact, then re-invoke output-quality-loop. Cap at 3 iterations; on the 3rd FAIL, escalate to the operator with the evaluation report.
+````
+
+Required-element discipline per the convention spec: heading text matches verbatim (`## Auto-invoke output-quality-loop`); one bullet per artifact with full path in backticks; directive opens with `[output-quality-loop:eval]` and includes the iteration-cap discipline language.
+
+**Note on reading guides.** If the spec-routing table at `~/workspace/skills/output-quality-loop/references/spec-routing-table.md` doesn't yet have a row for reading guides, Mode 1 will surface the gap explicitly ("no spec routing for type X"). The operator either names spec sources for that invocation, extends the routing table, or skips the evaluation per case. Don't fabricate spec sources.
+
+**Iterate or declare done.** All PASS → declare done. Any NEEDS REVISION (minor / substantive) → Mode 2 auto-fires a revision prompt; ingest as operator input, apply fixes (for reading guides: tighten the section-by-section guidance, add missing vocab gloss, fix a wikilink to the parent primer; for primer extensions: re-tier an entry's conceptual placement, adjust an alphabetical splice, fix a Part 1 anchor), re-emit the block, loop. Any FAIL → revision prompt includes root-cause analysis; address the root cause (often: primer extension drifted beyond compound-only scope, advocate-for-options leak in a decision-doc reading guide, comprehension scaffolding muddled with analysis), regenerate, re-emit, loop.
+
+**Iteration cap (3 max).** Track count via the folder-quality-log's per-artifact section before each regeneration. If three iteration entries exist and the verdict is still not PASS, **escalate** to the operator with the evaluation report and stop. Don't run a fourth iteration — that's the load-bearing cost-control discipline.
+
+**Operator bypass.** Include `--bypass-quality-loop` (or "skip the quality loop") in the original request to skip the block for that invocation. The bypass records to the closest folder's `_quality-log.md` under `### Bypassed (manual override)`.
+
 ## What this skill does NOT do
 
 - Does NOT modify the target document. Comprehension support only; never edits the doc being read.
