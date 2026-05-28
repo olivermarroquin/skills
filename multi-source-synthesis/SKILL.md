@@ -398,6 +398,23 @@ After synthesis file is written, executor invokes companion skills:
 
 The draft report stays in working memory — the chat does NOT declare done yet. Stage 7 follows.
 
+4. **Optional: surface intel-routing PUSH chaining (opt-in).** After companion skills complete and before quality-loop fires, surface the opt-in invitation:
+
+   ```
+   Optional next step: route this synthesis via intel-routing PUSH.
+   PUSH derives the five project-applicability frontmatter fields from the synthesis body
+   + project READMEs, surfaces a routing-decision proposal at Gate 1, and (on approval)
+   writes bridge notes to each applicable project folder.
+
+   Type "route this" or "PUSH-route this synthesis" to invoke.
+   Skip to commit by ignoring — PUSH does not auto-run.
+   ```
+
+   Default behavior is opt-out (no PUSH unless operator explicitly invokes). Per the
+   intel-routing skill's composition discipline: chained skills surface offers; they
+   don't run silently. See `~/workspace/skills/intel-routing/SKILL.md` for the full
+   PUSH specification.
+
 ### Stage 7 — Auto-invoke output-quality-loop on the synthesis (and companion artifacts)
 
 After Stage 6 completes (synthesis file written, companion skills invoked, all files in working memory), the skill hands off to [[output-quality-loop]] for a structured evaluation pass. This is the closing step. The synthesis gets quality-checked before the chat declares done.

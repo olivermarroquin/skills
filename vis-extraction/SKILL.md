@@ -590,6 +590,78 @@ Example entry shape (from Phase B source 34 Chris Parsons Ralph Loops):
 
 The principle: triage is where honest scope-discipline gets applied to Phase 7's output. Diminishing-returns is one specific scope-discipline pattern; surface honestly rather than mechanically apply every detected update.
 
+## Step 9 — Perplexity refinement hook (added 2026-05-27; auto-rec upgrade 2026-05-27)
+
+After triage lands and the source note is filed in its canonical destination, the executor runs the Perplexity refinement decision logic. Two paths:
+
+**Tier-1 sources → true auto-run.** Per Oliver's standing direction (2026-05-27), tier-1 sources auto-trigger perplexity-refinement at `deep` depth in `append` mode without an operator prompt. Reasoning: tier-1 is rare (Phase B had zero); when it lands, the stakes justify the cost; skipping the prompt removes friction on high-value sources. The executor runs the refinement and reports the result alongside the triage completion. Operator can still review/revert the appended section afterward.
+
+**Tier-2 and tier-3 sources → calibrated recommendation, default-yes prompt.** The executor always runs the Phase-1 parse-and-tier analysis on the source note (cheap; no Perplexity queries yet) and surfaces a calibrated recommendation. The operator's choice is the only gate before queries run.
+
+### When to offer (tier-2 / tier-3)
+
+The recommendation is always surfaced — what changes is the depth recommended and whether the default leans yes or skip.
+
+**Strongly recommend (default `medium`, lean yes):**
+
+- The source note carries dense factual claims (named tools with pricing, statistics, study citations, product-feature claims) that would benefit from external triangulation
+- The source note opens new-cluster territory and is the first cluster source — refining the first one deepens the cluster baseline
+- The source note's "Research questions" section names 3+ verification gaps Perplexity could close
+- The source was triaged tier-2 with relevance-5
+
+**Recommend (default `light`, lean yes):**
+
+- The source carries 2-4 high-tier claims
+- The source was triaged tier-2 with relevance-3 or 4
+- The source extends an established cluster with a new creator's angle (Path-B variant 2)
+
+**Skip-recommended (default skip; operator can still pick a depth if they want):**
+
+- The source is substrate-tutorial-archive shape (operator isn't adopting; refinement won't drive action)
+- The source is strict-minimal shape (teaching-creator on someone else's canonical framework; refinement adds noise)
+- The source's claims are mostly vault-internal operator-discipline observations (Perplexity can't validate vault-internal patterns)
+- The source's high-tier-claim count from Phase 1 parse is 0-1
+
+### How to offer (tier-2 / tier-3)
+
+After triage completion, the executor runs the Phase-1 parse and then says:
+
+> "Triage complete. Phase-1 parse on the source note found [N] high-tier claims, [M] medium-tier, [K] low-tier. Examples: [claim 1], [claim 2].
+>
+> **Recommendation: run perplexity-refinement at `<depth>` depth, `append` mode.** [One-sentence rationale citing the count + the calibration bucket the source fits.]
+>
+> Picks: yes (default) / light / medium / deep / sister-file / skip"
+
+The operator picks one. On confirmation, the executor invokes perplexity-refinement.
+
+If the operator just says "yes" or doesn't reply within the chat flow, the executor proceeds with the recommended depth and mode.
+
+### How to offer (tier-1)
+
+Tier-1 skips the prompt. The executor reports:
+
+> "Triage complete. Source note triaged tier-1; auto-running perplexity-refinement at `deep` depth per the tier-1 standing rule. Phase-1 parse found [N] high-tier claims. Refinement starting now."
+
+Then the executor runs refinement end-to-end and reports the result as part of the triage completion summary.
+
+The operator can override the auto-run by saying "skip refinement on this one" before triage closes. After triage closes, tier-1 refinement is in flight.
+
+### What the perplexity-refinement skill does from here
+
+See `[[perplexity-refinement]]/SKILL.md`. Briefly: Phase 1 (parse + tier claims), Phase 2 (run Pro Search queries via Claude in Chrome), Phase 3 (synthesize findings into six buckets), Phase 4 (write back per mode), Phase 5 (surface follow-ups).
+
+The refinement output lands inside the source note (append mode) or as a sister file. The source note's frontmatter gets `perplexity-refined: YYYY-MM-DD` so future invocations can see at a glance that refinement has happened.
+
+### What this does NOT change about VIS extraction
+
+- Triage still owns the tier / relevance / actionability / monetization frontmatter. Refinement does NOT modify those fields.
+- Pattern-promotion math is unaffected by refinement. Refinement may surface new candidate sources to ingest (Phase 5a), but those have to go through their own VIS extraction before they count for cross-creator math.
+- Commit timing is unchanged. Operator commits triage; refinement is a separate commit if it lands.
+
+### Multi-turn mode interaction
+
+In multi-turn mode, the Step-9 offer comes from the executor at the end of Phase E (Commit and continue). The review agent may pressure-test which items to refine before the operator confirms depth. Standard transcription rules apply.
+
 ## Commit message template
 
 This section defines the verbose-structured commit message format used in Phase B and subsequently. The format applies to ANY commit that captures substantive vault changes — extraction commits, triage commits, skill-update commits, build-plan-revision commits, task-closure commits. The format is configuration-specific to operator's git-based vault workflow; the underlying principles generalize.
@@ -901,6 +973,15 @@ Next steps for you:
 5. Commit (when ready, run yourself):
 
    cd /Users/olivermarroquin/workspace/second-brain && git add . && git commit -m "feat: extract <source-filename>"
+
+Optional follow-ups (opt-in; never auto-runs):
+- Route any newly extracted tactic / tool / pattern note via intel-routing PUSH.
+  Type "route <tactic-slug>" or "PUSH-route <tactic-slug>" to invoke. PUSH derives
+  the five project-applicability frontmatter fields, surfaces a routing-decision
+  proposal, and writes bridge notes to applicable project folders.
+  See ~/workspace/skills/intel-routing/SKILL.md.
+- After Step 9 compound-primer offer resolves, optionally run synthesis-readiness-scan
+  to detect cluster-ready / pattern-ready candidates in the domains touched by this run.
 ```
 
 ## Compound-primer offer
