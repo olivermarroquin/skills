@@ -73,15 +73,17 @@ For each repo touched, output **exactly** this format (no inline comments, no su
 
 \`\`\`
 cd ~/workspace/<repo-root>
+rm -f .git/index.lock
 git add <file1> <file2> <file3>
 git commit -m "<descriptive multi-line message>"
 \`\`\`
 
 Rules:
 
+- **`rm -f .git/index.lock` runs first defensively.** When Cowork sessions or background tools touch the repo, git often leaves a stale `index.lock` that blocks subsequent `git add` / `git commit` with the message `fatal: Unable to create '/path/.git/index.lock': File exists`. Including `rm -f .git/index.lock` (the `-f` flag means "no error if the file doesn't exist") at the top of every block clears this proactively, so the operator never hits the error mid-paste. The flag is safe — if no lock exists, the rm is a no-op.
 - **Stage files by name explicitly.** Never `git add .` — per Oliver's standing convention (memory: `feedback_git_add_specific_files.md`), the workspace has WIP across many files; `git add .` risks staging unrelated work.
 - **No inline comments** inside the command block — the operator copies the whole block as one unit. Explanatory prose goes ABOVE or BELOW the block, never inside.
-- **One block per repo.** If this chat edited both `~/workspace/second-brain/` and `~/workspace/skills/`, give TWO blocks.
+- **One block per repo.** If this chat edited both `~/workspace/second-brain/` and `~/workspace/skills/`, give TWO blocks. Each block opens with its own `cd` + `rm -f .git/index.lock`.
 - **Multi-line commit messages OK** via `-m "..."` syntax — describe what landed concretely (skill name, references shipped, downstream unblocks, pattern candidates). Avoid filler.
 - **Never push.** Per CLAUDE.md "What NOT to Do Without Explicit Approval" — commits only; Oliver pushes.
 
