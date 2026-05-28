@@ -3,19 +3,20 @@ name: intel-routing
 description: Route vault artifacts (tactics, patterns, tools, syntheses, opportunities, content ideas, source notes) to applicable projects, or pull applicable intel from the vault into a project, or bootstrap a new project from accumulated intel. Triggers on phrases like "route this," "route this synthesis," "route this tactic," "push this to applicable projects," "what's new for project X," "what intel applies to <client>," "pull intel for <project>," "triage the inbox for <project>," "promote this opportunity to a project," "create a new project from this," "bootstrap <slug> from <opportunity>," or invocation as a follow-on step after VIS extraction or after multi-source-synthesis. Reads and writes the five project-applicability frontmatter fields (`applies-to-projects`, `applies-to-archetypes`, `applicability-confidence`, `routed-at`, `based-on-clients`) defined in `_meta/conventions.md`. Composes with VIS Step 10 (synthesis-readiness-scan), `multi-source-synthesis` Stage 6, `knowledge-os-setup` add-project-vault mode, and app-factory `init-project`.
 ---
 
-# Intel-routing skill (v1.0 — PUSH mode)
+# Intel-routing skill (v1.1 — PUSH + PULL modes)
 
-The skill that closes the loop between vault artifacts and projects. Operates on the convention layer landed in Phase 1 of the intel-routing rollout and matured against friction observed in Phase 2. Phase 3 ships the skill itself across three sessions: PUSH first (this version), then PULL, then BOOTSTRAP.
+The skill that closes the loop between vault artifacts and projects. Operates on the convention layer landed in Phase 1 of the intel-routing rollout and matured against friction observed in Phase 2. Phase 3 ships the skill itself across three sessions: PUSH first (v1.0, shipped 2026-05-28), then PULL (v1.1, this version), then BOOTSTRAP.
 
 **Critical behavior (read this before anything else):**
 
-- **Approval gate is mandatory.** PUSH never writes without an explicit operator approve/modify/reject pass on the proposed routing AND on the proposed bridge notes. Two gates, not one — routing decision is upstream of bridge decision.
-- **PUSH does not promote, does not synthesize, does not triage.** It computes the five project-applicability fields and writes bridge notes per the operator's bridge-note discipline. Synthesis lives in `multi-source-synthesis`. Pattern promotion is vault-curation discipline (no skill yet). Triage of artifacts already routed is PULL mode.
-- **PUSH writes to the artifact's frontmatter and to project folders. Both writes happen on the same approval pass.** Operator approving "routing + bridges" is one decision, not two commits.
-- **Read existing frontmatter; do not blindly trust it.** PUSH re-derives the five fields from the artifact body + project READMEs + the convention spec. If existing frontmatter differs from re-derived values, PUSH surfaces the diff at the approval gate so the operator can choose: accept re-derivation (overwrite), keep existing (skip writes), or merge case-by-case.
-- **Default discipline: single-bridge-per-cluster, not per-artifact-match.** Phase 2 friction observation #4 (bridge note proliferation) confirmed in practice. PUSH on a synthesis that applies to 4 projects writes 4 bridges (one per project), not 4 × N tactic-match bridges. Per-tactic-bridge writing is operator-explicit opt-in at the approval gate.
-- **Situational archetypes are gates, not additive tags.** Phase 2 friction observation #11. If an artifact is post-launch-shaped (its body assumes a live site with measurement baselines), it does not route to pre-launch-only projects even when other archetypes overlap. Same in reverse. Operator can override at the gate.
-- **PUSH is the smallest of the three modes; PULL and BOOTSTRAP forward-referenced.** PULL ships in Session 2; BOOTSTRAP ships in Session 3. See `_meta/specs/intel-routing-skill-spec.md` for the full multi-mode plan.
+- **Approval gates are mandatory.** Every mode runs two gates: routing-or-triage decision (Gate 1), then bridge-note approval (Gate 2). PUSH and PULL never write without explicit operator approve/modify/reject passes on both.
+- **PUSH and PULL are inverses on the same convention.** PUSH operates on one artifact and proposes N projects; PULL operates on one project and proposes N artifacts. Both write the same five frontmatter fields and the same bridge-note shape. They share defaults (single-bridge-per-cluster, situational gating, low-default-confidence on bulk-migrated, no half-states).
+- **Neither mode promotes, synthesizes, or substitutes for vault curation.** They compute applicability and write bridges. Synthesis lives in `multi-source-synthesis`. Pattern promotion is vault-curation discipline. BOOTSTRAP (Session 3) handles new-project creation; PULL operates only on existing projects.
+- **PUSH re-derives frontmatter; PULL trusts the surfaced values.** PUSH's job is to fix bulk-migration drift on a single artifact at routing-time. PULL's job is to triage 50-100 already-routed artifacts against one project; re-deriving each would burn the operator's attention budget. If an operator suspects a surfaced item's frontmatter is inflated, the right move is to invoke PUSH on that item separately. PULL flags the suspicion and exits the surfaced item to a defer/keep bin.
+- **Default discipline: single-bridge-per-cluster, not per-artifact-match.** Phase 2 friction observation #4 (bridge note proliferation) confirmed in practice. In PUSH a "cluster" is the project; in PULL a "cluster" is the artifact. Per-tactic-bridge writing for synthesis artifacts is operator-explicit opt-in at Gate 2 in both modes.
+- **Situational archetypes are gates, not additive tags — but PUSH and PULL gate asymmetrically.** Phase 2 friction observation #11. PUSH excludes situationally-conflicted projects from routing entirely (with operator override) — it operates at routing-time and has no temporal commitment. PULL defers situationally-conflicted slug-named artifacts (rule 3 in Step A3) — it operates on cadence and the same conflict re-evaluates next triage as project state evolves. `not-applicable` in PULL is reserved for archetype-spurious matches (rule 2) or operator-explicit promotion from defer. Operator can override either default at Gate 1.
+- **PULL is the operator-facing mode.** Where PUSH typically fires opt-in after VIS or synthesis runs, PULL is what the operator invokes when they start a project review session ("what's new for EV"). Designed for the recurring monthly-client-cadence triage Phase 2 exercised manually.
+- **BOOTSTRAP still forward-referenced.** Ships in Session 3. See `_meta/specs/intel-routing-skill-spec.md`.
 
 ## Three modes (overview)
 
@@ -31,15 +32,15 @@ Output: five frontmatter fields written on the artifact + N bridge notes written
 
 PUSH is the focus of this v1.0. Full specification below.
 
-### PULL mode — project → applicable artifacts (Session 2, not yet shipped)
+### PULL mode — project → applicable artifacts (Session 2, shipped 2026-05-28)
 
-Trigger: operator says "what's new for project X," or invoked at the start of a project review session.
+Trigger: operator says "what's new for project X," "pull intel for <project>," "triage the inbox for <project>," or invoked at the start of a project review session.
 
 Input: a project slug.
 
-Output: updated `_intel-inbox.md` + N bridge notes + N artifact frontmatter updates.
+Output: updated `_intel-inbox.md` (Last triage section) + N bridge notes + N artifact frontmatter updates (`routed-at` on applied items; optional `applicability-confidence` lowering on deferred items; optional `applies-to-projects` slug removal on not-applicable items).
 
-Status: forward reference. The per-project `_intel-inbox.md` Dataview query currently handles PULL manually. When PULL ships, the skill compresses the manual triage loop Phase 2 exercised on EV and S&H. See spec for full operation.
+PULL is the focus of this v1.1. Full specification below the PUSH section.
 
 ### BOOTSTRAP mode — new project ← accumulated intel (Session 3, not yet shipped)
 
@@ -77,6 +78,8 @@ This skill supports two collaboration modes alongside single-agent execution. Th
 - The artifact being routed will be referenced extensively by downstream work, making routing precision matter
 
 PUSH's typical case is single-agent. The synthesis test case in this version's examples is multi-turn-flavored because the cluster synthesis touches four projects with mixed pre/post-launch profiles.
+
+**For PULL the typical case is also single-agent.** A monthly EV inbox triage with ~90 surfaced items reaches no contested calibration in most months — the operator skims bins, approves, done. Multi-turn becomes valuable when the project hits a state-change moment (S&H exiting the GBP-blocker; EV's Phase 2 Next.js pivot starting) and a large fraction of surfaced items shift bins simultaneously — having a review agent pressure-test the new bin assignments catches drift before bridge proliferation happens.
 
 ### Single-agent workflow
 
@@ -409,11 +412,346 @@ Situational gating: <applied | overridden for <project-slug-list> | not relevant
 Refs: _meta/specs/intel-routing-skill-spec.md"
 ```
 
-## PULL mode — forward reference (Session 2)
+## PULL mode — full specification
 
-Not yet shipped. Spec lives at `_meta/specs/intel-routing-skill-spec.md` section "PULL mode." Operator runs the per-project `_intel-inbox.md` Dataview query manually until PULL ships. The query handles the surface; the manual triage handles the apply/keep/defer/not-applicable decision per item.
+### Trigger phrases
 
-Per Phase 2 friction observations: PULL must default to single-bridge-per-cluster, validate project-README/inbox archetype sync at every invocation, default-lower confidence calibration on suspect-high inflated artifacts, and respect situational archetype gating in its query (operator can override per item).
+- "what's new for project <slug>" / "what intel applies to <client>"
+- "pull intel for <slug>" / "PULL-route <slug>"
+- "triage the inbox for <slug>" / "run the <slug> inbox triage"
+- "what's in <client>'s inbox" / "review <client>'s intel inbox"
+- Invocation at the start of a project review session (operator-cadence, typically monthly for clients)
+- Optional invocation parameter: `--lookback <days>` to override the default 14-day suppression window
+
+### Preconditions
+
+Before producing a surface, executor verifies:
+
+1. **Project folder resolves.** If `04_projects/<area>/<slug>/` doesn't exist for any `<area>` in {`clients/_active`, `clients/_private`, `personal`}, surface BLOCKED with the unresolved slug.
+2. **Project README exists with `archetypes:` declared.** PULL is archetype-driven; without README archetypes, the surface query cannot run. Surface BLOCKED naming the missing field.
+3. **Project is not archived.** If `archived: true` on the README, surface BLOCKED — PULL does not operate on archived projects (consistent with PUSH excluding archived projects from candidate sets).
+4. **`_intel-inbox.md` exists OR operator opts into scaffolding.** If the file is missing, surface a one-question gate at the top of Stage A: "no inbox file at `<path>`. Scaffold from `_meta/templates/template-intel-inbox.md` and proceed? (yes / no)." Default behavior on operator yes: scaffold (filling `project:` + `archetypes:` from the README), then continue. On no: BLOCKED.
+5. **Convention spec readable** at `_meta/conventions.md` Project applicability fields section.
+
+If any blocking precondition fails, emit:
+
+```
+PULL BLOCKED on precondition failure.
+
+Failed precondition: <name>
+Required: <what's needed>
+Suggested remediation: <what operator should do>
+
+PULL will NOT proceed until precondition is resolved.
+```
+
+### Inputs gathered before Stage A
+
+Executor reads, in this order:
+
+1. **Project README** — extract `archetypes:`, `applicability-confidence:` (project-level signal of how confident the project is in its own archetype declaration), `archived:` (already checked at precondition), and a body skim for current-state signals (active engagement / blocked / paused / pre-build) used in Stage A pre-classification.
+2. **Project `_intel-inbox.md`** — extract `archetypes:` (for sync validation against README), the most recent "Last triage" date (informs whether the operator is on cadence or catching up), the existing list of "Items applied" / "Items kept" / "Items deferred" / "Items marked not-applicable" (informs continuity).
+3. **The convention spec** — re-read on every invocation.
+4. **Query execution** against the vault. PULL runs the equivalent of the Dataview query embedded in `_intel-inbox.md`:
+   - Folders: `03_domains/`, `05_shared-intelligence/`, `00_inbox/decisions-pending/`
+   - Match: `applies-to-projects` contains `<this-project-slug>` OR any `applies-to-archetypes` overlaps any project README `archetypes:`
+   - Filter: artifact's `routed-at:` is missing OR `routed-at:` < `today - lookback`
+   - Exclude: artifacts with `archived: true`
+   - Sort: by `applicability-confidence` DESC, then `file.mtime` DESC
+
+   Default lookback is 14 days. Operator can override with `--lookback <days>` at invocation. Executor must use bash `find` + frontmatter parsing if Dataview isn't available in the execution environment; the result set must match what Obsidian's Dataview would surface from the inbox.
+
+5. **Existing bridge notes in the project folder** — read filenames matching `bridge-*.md`. Used to detect "already-bridged" artifacts at Stage B (avoids duplicate bridge writes; analogous to PUSH's existing-bridge detection).
+
+### Stage A — Surface computation
+
+PULL produces a single batched surface, not a per-item proposal. Three sub-steps.
+
+#### Step A1 — Project↔inbox archetype sync validation
+
+Compare README `archetypes:` against inbox `archetypes:`. Three outcomes:
+
+- **Matched** — proceed silently.
+- **Inbox is subset of README** (README has more archetypes than inbox) — surface as warning at Gate 1, offer to sync inbox to README before proceeding ("project README declares X; inbox declares Y; sync inbox? — yes / proceed-anyway / exit").
+- **Inbox has archetypes README doesn't** — same warning, opposite direction. Almost always means the README was updated without updating the inbox.
+
+If operator approves sync, executor writes the inbox `archetypes:` field to match the README and re-runs the query (the sync may change which artifacts surface). Sync is a single Edit call to the inbox file's frontmatter; no inbox-body changes.
+
+This is friction observation #5 baked into v1.1. Cheap check; surfaces drift before it propagates.
+
+#### Step A2 — Run the query and tag each surfaced artifact
+
+For each artifact in the result set, compute:
+
+- **Match type** — `slug-named` (artifact's `applies-to-projects` includes this project slug) or `archetype-overlap` (matched via archetype intersection only)
+- **Signal 2 status** — does the artifact embed a situational archetype that conflicts with the project's situational archetype? (Same Signal 2 logic as PUSH. Post-launch artifact + pre-launch-only project = conflict.)
+- **Existing confidence** — from the artifact's `applicability-confidence:` field; `not-set` if missing
+- **Bridge already exists** — boolean from the existing-bridge file list
+- **Routed-at** — from the artifact's `routed-at:` field; `not-set` if missing
+- **One-line body summary** — executor's read of what the artifact is about (used for the surface listing; ~one sentence per artifact)
+
+Items where bridge already exists are surfaced under a separate **ALREADY BRIDGED** bin — informational only, not a triage decision; operator can opt to refresh the bridge or skip.
+
+#### Step A3 — Pre-classify each surfaced artifact into a bin
+
+PULL pre-classifies bins as a *recommendation*; operator confirms or moves items at Gate 1. Pre-classification rules in order — first matching rule wins:
+
+1. **Bridge already exists** → `already-bridged` (no triage action).
+2. **Signal 2 conflict AND artifact is archetype-overlap-only** → `not-applicable` (default; operator can override). The slug isn't on the artifact to keep, so the only remediation is archetype-sharpening. Reason: "situational conflict (archetype-overlap-only): artifact <state>, project <state>; archetype-sharpen to suppress future surface."
+3. **Signal 2 conflict AND artifact is slug-named** → `defer` (default; operator can override). The slug is present because someone — operator or bulk-migration — decided this artifact would apply to this project. The situational conflict is typically temporal (project will exit the blocker eventually). Reason: "situational conflict: artifact <state>, project <state>; activate on project transition."
+4. **Slug-named AND body content directly actionable in current project state** → `apply`. "Directly actionable" means the artifact's body describes work that can ship under the project's current state (active deployment OR a known blocker-recovery path). Examples: a Core 30 tactic on EV (active deployment); a GSC self-takeover pattern on S&H (actionable via Haris-outreach despite pre-launch state). Reason: "slug-named + directly actionable in current state."
+5. **Slug-named AND project active AND body not immediately actionable (already in context)** → `keep`. Most slug-named artifacts on active client projects land here — the engagement context already contains them; bridge-noting each would be noise (friction #4). Reason: "slug-named + already in engagement context; revisit on next triage."
+6. **Slug-named AND project blocked/pre-deployment AND body not actionable now** → `keep`. Foundational tactics, syntheses, patterns that will apply when state changes but aren't doing work today. Reason: "applicable but project currently <blocker>; activate when <unblocker condition>." Examples: the SEO cluster synthesis on S&H — high confidence, slug-named, but lands in keep because S&H isn't deploying yet.
+7. **Slug-named AND project blocked AND artifact is a future-gated lane** → `defer`. The artifact names a future-pilot or future-lane that's gated on a known event. Operator typically deferred these in Phase 2 (Featured.com / Qwoted / image-link-building lanes on EV gated by Phase-1 audit). Reason: "slug-named but gated on <future event>."
+8. **Archetype-overlap only AND project active** → `defer` (default; operator can promote to `apply` if signal-3 actually applies). Reason: "archetype match, no body-content explicit naming; defer pending review."
+9. **Archetype-overlap only AND project blocked/pre-deployment** → `defer`. Combines weakening factors.
+10. **Existing confidence is `low`** → biases toward `defer` regardless of earlier rules (low-confidence is the operator's earlier "speculative routing" signal).
+
+Pre-classification is heuristic — operator reclassifies any item at Gate 1.
+
+**Note on rule 3 (slug-named situational conflict → defer).** This differs from PUSH's discipline (situational conflict → exclude from routing). The asymmetry is intentional: PUSH operates at routing-time and has no temporal commitment to update; PULL operates on a recurring cadence and the same conflict will re-evaluate every triage as the project state evolves. Defer-with-reason preserves the routing AND the temporal awareness. `not-applicable` for slug-named items is reserved for cases where the operator decides the slug shouldn't be there in the first place (which they can promote any defer-bin item to at Gate 1).
+
+### Gate 1 — Triage-decision approval gate (batched)
+
+Executor surfaces the bins together. Operator approves bins as proposed, or names individual items to move. No per-item gates — Phase 2's first triage at 98 candidates per project demonstrated that per-item gates burn operator attention; batched bins with movability is the right shape.
+
+```
+PULL TRIAGE — <project-slug>
+
+Project name: <project-name>
+Project README: <full path>
+Inbox file: <full path>
+Lookback window: <days> (suppressing items with routed-at after <date>)
+Last operator triage: <date from Last triage section, or "first triage">
+
+Sync status:
+  README archetypes: [...]
+  Inbox archetypes: [...]
+  Match: <matched | inbox-subset-of-readme | inbox-superset-of-readme>
+  (If mismatched, ask: sync inbox to README? yes / proceed-anyway / exit)
+
+Items surfaced: <total N>
+  slug-named: <count>
+  archetype-overlap-only: <count>
+Items suppressed (routed within lookback): <count>
+Items already bridged (informational): <count>
+
+==== APPLY (proposed: M) ====
+  - [[<artifact-slug>]] (<type>, confidence: <c>)
+    <one-line body summary + one-line reason for apply>
+  ...
+
+==== KEEP (proposed: M) ====
+  - [[<artifact-slug>]] (<type>, confidence: <c>)
+    <one-line body summary + reason for keep>
+  ...
+
+==== DEFER (proposed: M) ====
+  - [[<artifact-slug>]] (<type>, confidence: <c>)
+    <one-line body summary + reason for defer>
+  ...
+
+==== NOT APPLICABLE (proposed: M, situational conflict) ====
+  - [[<artifact-slug>]] (<type>)
+    <conflicting situational tag + reason>
+  ...
+
+==== ALREADY BRIDGED (informational: M) ====
+  - [[<artifact-slug>]] → <existing-bridge-filename>
+  ...
+
+Confirm bins as proposed / move <item> to <bin> / sharpen archetypes on <item> / reject?
+```
+
+### Gate 1 response handling
+
+Operator response options:
+
+- **Confirm bins as proposed** → proceed to Stage B
+- **Move <item-slug> to <bin>** (e.g., "move tactic-foo to apply") → executor moves; re-emits updated bins; waits for confirm
+- **Move all <bin-X> items to <bin-Y>** → bulk move (useful when operator wants e.g., "defer everything currently in keep because I won't get to it this month")
+- **Sharpen archetypes on <item-slug>: drop <archetype>** → only valid for items in `not-applicable` bin; executor records the archetype-sharpening for Stage C writes; surfaces updated proposal
+- **Lower confidence on <item-slug> to <level>** → only valid for items in `defer` bin; executor records the confidence write for Stage C
+- **Refresh bridge on <item-slug>** → only valid for items in `already-bridged` bin; moves the item back to `apply` with a "refresh existing" flag
+- **Reject** → exit without any writes
+
+### Stage B — Bridge-note proposal for "apply" items
+
+For each item operator placed in the `apply` bin, executor drafts a bridge note proposal. Same template as PUSH:
+
+```yaml
+---
+type: bridge-note
+status: draft
+created: <today>
+updated: <today>
+project: <project-slug>
+source-artifact: "[[<artifact-slug>]]"
+applies-to-projects: [<project-slug>]
+tags: [bridge-note, <project-slug>]
+---
+
+# Bridge: <artifact-title> → <project-name>
+
+**Source:** [[<artifact-slug>]]
+**Filed:** <today>
+
+## Why this applies to <project-name>
+
+<1-2 paragraph operational framing — what signal in artifact body makes it actionable for this project right now; reference current project state from README.>
+
+## Concrete action items
+
+1. <action item>
+2. <action item>
+3. <action item>
+(1-3 items typical)
+
+## Punchlist entry (proposed)
+
+> <one-line punchlist entry; goes into project's _punchlist.md>
+
+## See also
+
+- [[<artifact-slug>]] (source)
+- [[<project-slug>/README]] (project context)
+```
+
+Bridge filename: `bridge-<artifact-slug>-to-<project-slug>.md`. Truncate artifact-slug if filename exceeds 80 chars.
+
+**Default discipline: one bridge per applied artifact** (single-bridge-per-cluster — friction observation #4). If an apply item is a synthesis covering 5+ tactics, executor surfaces the per-tactic-bridge opt-in at Gate 2 (identical to PUSH's offer).
+
+### Gate 2 — Bridge-note approval gate
+
+Executor surfaces all proposed bridges:
+
+```
+BRIDGE-NOTE PROPOSALS — <project-slug>
+
+<N> bridges proposed (one per applied artifact):
+
+  1. <project-folder>/bridge-<artifact-1-slug>-to-<project-slug>.md
+     Action items: <count>
+     Punchlist: <one-line proposed entry>
+
+  2. <project-folder>/bridge-<artifact-2-slug>-to-<project-slug>.md
+     Action items: <count>
+     Punchlist: <one-line proposed entry>
+
+  ...
+
+Per-bridge content (expanded):
+  --- Bridge 1: ... ---
+  <full proposed bridge body>
+
+  --- Bridge 2: ... ---
+  <full proposed bridge body>
+
+  ...
+
+Per-tactic bridges (opt-in — default off):
+  <If any apply item is a synthesis covering 5+ tactics, surface the same per-tactic
+  opt-in as PUSH Gate 2. Default off.>
+
+Confirm all / modify per bridge / skip per bridge / reject all?
+```
+
+### Gate 2 response handling
+
+- **Confirm all** → proceed to Stage C; write everything as proposed
+- **Modify bridge <N>** → operator edits bridge content; accept edits; re-emit Gate 2
+- **Skip bridge <N>** → exclude that bridge from writes; the corresponding artifact's `routed-at:` still gets updated (apply was operator-confirmed at Gate 1; only the bridge write is skipped). Punchlist entry is also skipped.
+- **Add per-tactic bridges** → expand proposal; re-emit Gate 2
+- **Reject all** → no writes happen at all; not just bridges but also the per-item frontmatter changes from Gate 1 (no half-states). Inbox Last-triage section is also not updated. Exit.
+
+### Stage C — Writes (on Gate 2 approval)
+
+Executor performs writes in this order. All-or-nothing semantics: any write failure rolls back all touched files.
+
+1. **For each `apply` item with approved bridge:**
+   - Write bridge file to `<project-folder>/bridge-<artifact-slug>-to-<project-slug>.md`
+   - Append punchlist entry to `<project-folder>/_punchlist.md` (create with minimal scaffold if missing — same shape as PUSH)
+   - Update the artifact's `routed-at:` to today via Edit tool. If field doesn't exist, add it.
+
+2. **For each `apply` item where operator skipped the bridge at Gate 2:**
+   - Update artifact's `routed-at:` to today (apply decision still applied; just no bridge)
+
+3. **For each `defer` item where operator explicitly lowered confidence at Gate 1:**
+   - Update artifact's `applicability-confidence:` to the new level via Edit tool
+
+4. **For each `not-applicable` item:**
+   - Default: remove `<this-project-slug>` from the artifact's `applies-to-projects:` list. If the resulting list is empty, set the field to `[]` (do not remove the field).
+   - If operator chose archetype-sharpening instead: remove the named archetype(s) from the artifact's `applies-to-archetypes:` list. Do NOT touch `applies-to-projects:` in this case.
+
+5. **Update `_intel-inbox.md` "Last triage" section.** Use Edit tool with exact-match against the existing section. New section content:
+   ```
+   **Date:** <today>
+   **Items surfaced:** <total>
+   **Items applied:** <count> → bridge notes filed in this folder; punchlist entries appended
+     - [[<artifact-1-slug>]]
+     - [[<artifact-2-slug>]]
+     - ...
+   **Items kept:** <count>
+   **Items deferred:** <count>
+   **Items marked not-applicable:** <count>
+   ```
+   If operator surfaced a friction observation at Gate 1 or Gate 2 (e.g., "kept count is unsustainable"), include a one-paragraph friction observation block below the counts. Otherwise omit.
+
+6. **Verify all writes** by reading each touched file. On failure, revert.
+
+### Step 9 — Completion report
+
+```
+PULL COMPLETE — <project-slug>
+
+Triage outcome:
+  Applied: <count> (bridges + punchlist + routed-at updates)
+  Kept: <count> (no writes)
+  Deferred: <count> (<N> with confidence lowered)
+  Not-applicable: <count> (<N> via slug-removal, <N> via archetype-sharpening)
+  Already-bridged (skipped): <count>
+
+Files written:
+  Bridges: <N>
+    <bridge-1-path>
+    ...
+  Punchlist appends: <N>
+    <punchlist-path>
+  Artifact frontmatter updates: <N>
+    <list of artifact paths with field changed in parens>
+  Inbox Last-triage updated: <inbox-path>
+
+Suggested commit (stages by name):
+
+cd ~/workspace/second-brain
+git add \
+  <bridge-1-path> \
+  <bridge-2-path> \
+  <punchlist-path> \
+  <artifact-1-path> \
+  <artifact-2-path> \
+  ...
+  <inbox-path>
+git status  # verify nothing unintended is staged
+git commit -m "Triage <project-slug> intel inbox via intel-routing PULL
+
+<N> applied, <N> kept, <N> deferred, <N> not-applicable.
+<Optional one-line friction observation if surfaced.>
+
+Refs: _meta/specs/intel-routing-skill-spec.md"
+```
+
+Stop. Do not chain into PUSH or BOOTSTRAP. Operator commits manually after reviewing diffs.
+
+### PULL edge cases
+
+- **Zero items surfaced.** Emit a tight completion report with all counts at zero, still update the inbox Last-triage section with today's date and "0 items surfaced" so future triages know this date was on cadence. Don't BLOCK; an empty surface is a valid outcome.
+- **Operator approves bins but every apply has bridge-already-exists.** Already-bridged items can be operator-promoted back to apply with a "refresh existing" flag at Gate 1. If no apply items remain after de-duplication, Stage B emits nothing and Stage C only updates the inbox Last-triage section. Report PULL as completed with "no new bridges written."
+- **Surfaced item has `applies-to-projects: []` and is matched only by archetype-overlap.** Operator marks not-applicable → only archetype-sharpening is available (no slug to remove). Surface this constraint at Gate 1 when operator picks not-applicable.
+- **Inbox sync was approved at Gate 1.** Executor writes the sync to the inbox file BEFORE re-running the query, so the second run reflects the synced archetypes. The Stage C inbox-update at Step 5 still runs and overwrites only the Last triage section.
+- **Cadence detector — operator catches up after long gap.** If the inbox's last triage date is >60 days old (or never triaged), the surface count will be high. PULL surfaces a note above the bins: "long gap since last triage (<N> days). Surface size <count> reflects accumulation. Consider triaging in batches rather than all at once." Operator may exit and re-run with `--lookback 30` to filter to most-recent items only.
+- **`current-blocker:` field on project README (v1.1 forward reference).** Pre-launch projects produce heavy defer ratio (friction #11). The full v2.0 solution might surface a `current-blocker:` field on the project README that auto-defers archetype-overlap items not relevant to the blocker. v1.1 does not implement this — surfaces the friction observation in the Stage A pre-classification reason for operator awareness; the operator handles bulk-defer via "Move all <bin> to <bin>" at Gate 1. Capture as v1.2 candidate.
+- **Project has `_intel-inbox.md` but no archetypes set in inbox frontmatter** (likely manually-created or partially-instantiated). Sync validation surfaces as "inbox-superset-of-readme" if README has any archetypes; offer to sync. If both inbox and README are empty on archetypes, BLOCKED.
 
 ## BOOTSTRAP mode — forward reference (Session 3)
 
@@ -512,11 +850,45 @@ Operator can drop projects at Gate 1; archetype union recomputes. If the operato
 
 ### Project-archetype divergence (#5) — sync validation at every PULL invocation
 
-PULL (Session 2) will validate that project README `archetypes:` matches the project's `_intel-inbox.md` `archetypes:` at every invocation; warn on mismatch. Not applicable to PUSH.
+PULL (v1.1) validates that project README `archetypes:` matches the project's `_intel-inbox.md` `archetypes:` at every invocation. Mismatch surfaces at Gate 1 with operator options: sync inbox to README (default — single-Edit write before re-running the query), proceed anyway, or exit. Not applicable to PUSH (PUSH doesn't read inbox files).
 
 ### Sources-as-applicability question (#12) — open
 
 Sources got migrated to `applies-to-projects` during Phase 2 even though the convention spec lists the field as for "tactics, patterns, tools, syntheses, opportunities, and content ideas" — not sources. PUSH treats source notes as valid inputs (operator may want to PUSH-route a high-value source). The convention question (whether sources should carry applies-to-projects or just provenance) is operator-discipline territory; PUSH does not legislate.
+
+## Closing step — Auto-invoke output-quality-loop
+
+After both gates resolve and writes have landed (PUSH: artifact frontmatter five fields + per-project bridge notes; PULL: project punchlist additions + per-artifact `routed-at:` bumps + inbox `last-triaged:` update; BOOTSTRAP: project folder scaffolded + initial PULL run), emit the standard auto-invoke block per `~/workspace/skills/output-quality-loop/references/auto-invoke-convention.md` and `~/workspace/second-brain/_meta/conventions.md` § "Output quality". This is the closing step every artifact-producing skill emits before declaring the chat done. Convention shipped Phase 5 of the output-quality-loop project (2026-05-28).
+
+**Artifact list for this skill.**
+
+- **PUSH mode:** the bridge notes written into each selected project's folder (one per project per cluster by default). The artifact whose frontmatter got updated is NOT included — frontmatter-only edits don't trigger spec-routing re-evaluation; the artifact's own quality state is independent. If a per-tactic bridge was operator-opt-in at Gate 2, list each bridge.
+- **PULL mode:** any newly written bridge notes inside the target project's folder + the project's `punchlist.md` if it gained entries this run. The `_intel-inbox.md` last-triaged metadata is a state update, not an artifact in the evaluation sense.
+- **BOOTSTRAP mode:** the new project `_README.md` + `_intel-inbox.md` template + any bridge notes the inline PULL run created.
+
+**The block to emit (verbatim):**
+
+````markdown
+## Auto-invoke output-quality-loop
+
+This skill produced the following artifact(s):
+- `<bridge-note-1-path>`
+- `<bridge-note-2-path>`
+- `<project-README-path>`     ← BOOTSTRAP mode only
+- `<project-punchlist-path>`  ← PULL mode if punchlist gained entries
+
+[output-quality-loop:eval] — for each artifact, run output-quality-loop in EVALUATE mode. If PASS, declare the chat done. If NEEDS REVISION or FAIL, ingest the revision prompt as if it were operator input and regenerate the artifact, then re-invoke output-quality-loop. Cap at 3 iterations; on the 3rd FAIL, escalate to the operator with the evaluation report.
+````
+
+Required-element discipline per the convention spec: heading text matches verbatim (`## Auto-invoke output-quality-loop`); one bullet per artifact with full path in backticks; directive opens with `[output-quality-loop:eval]` and includes the iteration-cap discipline language.
+
+**Note on bridge notes.** Bridge notes are a young artifact type. If the spec-routing table at `~/workspace/skills/output-quality-loop/references/spec-routing-table.md` doesn't yet have a row for bridge notes, Mode 1 will surface the gap explicitly ("no spec routing for type bridge-note"). The operator either names spec sources for that invocation (likely the canonical bridge-note shape from `_meta/templates/template-bridge-note.md` or equivalent + the project's `_README.md` archetypes), extends the routing table, or skips the evaluation per case.
+
+**Iterate or declare done.** All PASS → declare done. Any NEEDS REVISION (minor / substantive) → Mode 2 auto-fires a revision prompt; ingest as operator input, apply fixes (for bridge notes: tighten the apply-action, restore the source-artifact backlink, fix the project-README cross-link; for project READMEs: realign archetypes after operator-confirmed Gate 1 changes), re-emit the block, loop. Any FAIL → revision prompt includes root-cause analysis; address the root cause (often: bridge note missing source backlink, archetype union not actually computed as mechanical union, situational gating violated, half-state write where Gate 2 should have killed Gate 1 writes), regenerate, re-emit, loop.
+
+**Iteration cap (3 max).** Track count via the folder-quality-log's per-artifact section before each regeneration. If three iteration entries exist and the verdict is still not PASS, **escalate** to the operator with the evaluation report and stop. Don't run a fourth iteration — that's the load-bearing cost-control discipline.
+
+**Operator bypass.** Include `--bypass-quality-loop` (or "skip the quality loop") in the original routing request to skip the block for that invocation. The bypass records to the closest folder's `_quality-log.md` under `### Bypassed (manual override)`. Useful for low-stakes batch routing where the operator already trusts the bridge-note shape.
 
 ## What this skill does NOT do
 
@@ -551,10 +923,12 @@ Composition skills:
 
 Worked examples for PUSH:
 
-- **Complex case (multi-project synthesis):** `examples/push-on-seo-cluster-synthesis.md` — PUSH against `03_domains/seo/cluster-synthesis-ai-era-seo-cluster-2026-05-27.md`. Routes to EV + S&H + Keelworks + dad-businesses. Validates the project-first algorithm + archetype union derivation + multi-project bridge discipline.
-- **Simple case (narrow source-note routing):** `examples/push-on-jono-claude-code-seo-masterclass.md` — PUSH against the Jono Catliff source. Validates situational archetype gating (excludes S&H + dad-businesses despite hierarchy overlap, because Jono is post-launch-shaped methodology).
+- **PUSH complex case (multi-project synthesis):** `examples/push-on-seo-cluster-synthesis.md` — PUSH against `03_domains/seo/cluster-synthesis-ai-era-seo-cluster-2026-05-27.md`. Routes to EV + S&H + Keelworks + dad-businesses. Validates the project-first algorithm + archetype union derivation + multi-project bridge discipline.
+- **PUSH simple case (narrow source-note routing):** `examples/push-on-jono-claude-code-seo-masterclass.md` — PUSH against the Jono Catliff source. Validates situational archetype gating (excludes S&H + dad-businesses despite hierarchy overlap, because Jono is post-launch-shaped methodology).
+- **PULL post-launch case (active engagement):** `examples/pull-on-ev-electric.md` — PULL against EV's inbox. Regression test reproducing Phase 2 manual triage outcome (99 candidates → 6 applies + 88 keeps + 5 defers + 0 not-applicable) exactly. Includes Window B idempotence walkthrough validating routed-at suppression prevents re-bridge churn the day after a triage runs. Validates batched Gate 1 + 10-rule pre-classification + single-bridge-per-cluster discipline at full inbox scale.
+- **PULL pre-launch case (GBP-blocked):** `examples/pull-on-s-and-h.md` — PULL against S&H's inbox. Reproduces Phase 2 manual triage outcome (99 candidates → 1 apply + 11 keeps + 87 defers + 0 not-applicable) exactly. Critical validation of rule 3 (slug-named situational conflicts default to defer, not not-applicable) against 87-item bulk situational-conflict scenario; rule 4 validated by GSC-self-takeover apply despite GBP blocker. Exercises the friction-observation-#11 "heavy defer ratio" shape and asymmetry-with-PUSH on situational gating.
 
-Read the worked examples to see Gate 1 + Gate 2 outputs in full for both cases.
+Read the worked examples to see Gate 1 + Gate 2 outputs in full for both PUSH and PULL.
 
 ## Self-application note
 
