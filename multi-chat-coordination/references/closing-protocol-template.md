@@ -97,13 +97,27 @@ Rules:
 
 **Step 7 — Declare the chat done.**
 
-Tell the operator the chat is complete. Surface in a short closing message:
+Tell the operator the chat is complete. Structure the closing message in this order (every section mandatory unless explicitly N/A):
 
-- One sentence on what landed
-- Any open follow-ups (operator-side manual tasks, scheduled crons to register, recommended next chats)
-- The git commands (from Step 6)
+1. **What landed.** One to three sentences naming the concrete deliverables (file paths + outcomes). Skip filler.
+2. **Open follow-ups (if any).** Operator-side manual tasks, scheduled crons to register, downstream-chat triggers that fired. Skip if none.
+3. **Git commands.** From Step 6. One block per repo touched. Each block opens with `cd ~/workspace/<repo>` + `rm -f .git/index.lock`.
+4. **What's next to spawn.** This is the load-bearing closing line every operator wants to see. Be **explicit and concrete** about the operator's next move:
+   - **If the chat completed a multi-session arc** (e.g. intel-routing P3 Session 1 of 3 ships PUSH), say: "Session 2 (PULL) ready to spawn next. Handoff stays `status: active` until Session N ships per the per-session protocol." Name the specific session by its label, not a vague "next session."
+   - **If the chat completed a single-chat handoff and unblocked a downstream chat**, say: "<downstream chat name> now ready to spawn — handoff at `<path/to/handoff>`. Estimated <time>." Don't be vague about which chat — name it.
+   - **If the chat completed work that doesn't directly unblock anything**, say: "Nothing immediately next. Spawnable when operator is ready: <list current Ready-to-spawn candidates>." Reference the tracker's Ready-to-spawn section.
+   - **If the chat completed and the operator needs to take a manual action before the next chat can spawn** (e.g. fill in a needs-confirmation field, register a credential, approve a strategic decision), say: "Next chat <chat name> blocked on operator action: <specific action>. Once action lands, paste prompt from `<path>` to spawn."
+   - **If the chat reveals a NEW chat that should be queued** (a follow-up the operator didn't plan for), say: "Recommend queuing a new handoff for <description>. Want me to draft it?"
 
-Only after all seven steps complete may you say the chat is done.
+Example closings from real chats that landed well:
+
+> Session 1 of 3 SHIPPED (PUSH mode). Two regression tests PASS (5/5 criteria each). Two upstream skills edited for opt-in PUSH chaining. **Session 2 (PULL) ready to spawn next.** Phase 3 handoff stays `status: active` until Session 3 ships per the per-session protocol.
+
+> S&H Core 30 priority matrix shipped (30 cells across 9 cities, Woodbridge anchor). **Next move: spawn `S&H intersection brief spot-check` chat** (handoff at `_meta/handoffs/handoff-2026-05-28-sh-intersection-brief-spot-check.md`) — runs in parallel with house-voice init. ~1-2 hours.
+
+> Skill shipped + 5 reference files + regression tests PASS. **Nothing immediately blocked on this** — Phase 2 of output-quality-loop already in flight (running in parallel). Tracker's Ready-to-spawn section is empty; Tier-2 has 4 outputquality-loop phases gated on the in-flight work landing.
+
+Only after all seven steps complete may you say the chat is done. The "what's next to spawn" line is what the operator actually reads and acts on — make it specific.
 ```
 
 ## Notes for the skill (not part of the inserted template)
