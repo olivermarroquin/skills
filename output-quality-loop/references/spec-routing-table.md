@@ -14,29 +14,62 @@ The routing table is the authoritative map. Don't borrow spec sources from a nei
 
 ### Core 30 page draft
 
-Spec sources to load:
+Page slug parses as `<service-slug>-<city-slug>` (e.g. `panel-upgrade-fairfax-va`, `panel-upgrade-vienna-va`). Page folder is `<NN>-<page-slug>` under the client's `website-archive/new/core-30/`. The detector reads the slug, the folder name, or the draft's frontmatter (`service:` + `city:` + `client:`) to resolve the three keys (service-slug, city-slug, client-slug) before walking this row.
 
-1. **Service brief** — `vault://05_shared-intelligence/research-briefs/services/<service-slug>.md`
-   - Drives: page identity, naming, hero copy, what-it-means paragraphs, problem cards, process steps, pricing pattern, FAQs, schema shape
-2. **Intersection brief** — `vault://05_shared-intelligence/research-briefs/intersections/<service-slug>--<city-slug>.md`
-   - Drives: city-specific competitive context, top-3 competitor citations, local FAQ wording, neighborhood phrasing
-3. **City data file** — `repos://ai-agency-core/scripts/data/cities/<city-slug>.json`
-   - Drives: permitting info, utility name, neighborhood list, service-keyed symptoms, ZIP codes
-4. **Client data file** — `repos://ai-agency-core/scripts/data/client-<client-slug>.json`
-   - Drives: business name, contact info, license number, brand colors, owner bio, trust signals
-5. **Plain-language conventions** — `vault://_meta/plain-language-conventions.md`
-   - Drives: voice rules, gloss conventions, sentence shape, tone calibration
-6. **SEO primer Section G** — `vault://03_domains/seo/primer.md` §G (AI-citation content discipline)
-   - Drives: attribute density, entity richness, capsule discipline, primary-source anchoring
-7. **AI-citation hardening checklist** — `vault://05_shared-intelligence/research-briefs/_template-service-brief.md` §4.5
-   - Drives: TL;DR rule, answer-first rule, key-takeaways rule, capsule discipline items A-G
-8. **Per-page ingestion / refinement notes** — auto-grep for source notes citing the page's service or city
-   - Drives: spot-check that the page reflects current vault knowledge (anti-staleness)
+Spec sources to load (eight required + two optional):
+
+1. **Service brief** (required) — `vault://05_shared-intelligence/research-briefs/services/<service-slug>.md`
+   - Discovery: the service-slug from the page slug; if a perplexity-refined sibling exists at `services/<service-slug>-perplexity-refined-YYYY-MM-DD.md`, load it as a supplementary source alongside the canonical brief.
+   - Drives: page identity, naming, hero copy, what-it-means paragraphs, problem cards, process steps, pricing pattern, FAQs, schema shape, §4.5 AI-citation hardening checklist (item A-G — TL;DR / answer-first / key-takeaways / capsule discipline / attribute density / entity richness / primary-source anchoring / schema markup / anti-tactics).
+   - Missing → hard requirement miss (a page can't be evaluated without its brief).
+
+2. **Intersection brief** (optional) — `vault://05_shared-intelligence/research-briefs/intersections/<service-slug>--<city-slug>.md`
+   - Discovery: double-hyphen separator is canonical (per `artifact-type-detection.md` intersection-tier row).
+   - Drives: city-specific competitive context, top-3 competitor citations, local FAQ wording, neighborhood phrasing.
+   - Missing → flag in the evaluation report (`spec source skipped: no intersection brief for <service>--<city>; city-specificity heuristics will rely on city data only`) and proceed. Not a hard requirement — most Core 30 pages get city-specificity from the city data file. The intersection brief is the depth layer when it exists.
+
+3. **City data file** (required) — `repos://ai-agency-core/scripts/data/cities/<city-slug>.json`
+   - Drives: permitting info, utility name, neighborhood list, service-keyed symptoms, ZIP codes, the substitution values the scaffolder feeds into `build_context()`.
+   - Missing → hard requirement miss (the scaffolder could not have produced the page without it).
+
+4. **Client data file** (required) — `repos://ai-agency-core/scripts/data/client-<client-slug>.json`
+   - Discovery: client-slug from the page folder's parent path (e.g. `clients/_active/<client-slug>/website-archive/...`) or from draft frontmatter `client:` field.
+   - Drives: business name, contact info, license number, brand colors, owner bio, trust signals, schema LocalBusiness identity, `{client_name}` / `{phone_display}` / `{owner_name}` / `{license_state}` substitutions.
+   - Missing → hard requirement miss.
+
+5. **Plain-language conventions** (required) — `vault://_meta/plain-language-conventions.md`
+   - Drives: voice rules, gloss conventions, sentence shape, tone calibration.
+   - Missing → surface as a vault-state problem and proceed with the standing `feedback_plain_language_default.md` memory as the fallback rule set.
+
+6. **SEO primer §D — AI-citation hardening tactics** (required) — `vault://03_domains/seo/primer.md` § "Section D — AI-citation hardening tactics"
+   - Drives: the named tactics list (capsule-content / attribute-match / entity-optimization / content-freshness / schema-markup / anti-AI-slop) and the cross-references each tactic carries to a `tactic-*.md` file.
+   - This replaces the legacy "SEO primer Section G" reference Phase 1 documented. The SEO primer has no Section G; the tactics live in §D. The conceptual companion (next item) is in the marketing primer.
+   - Missing → degrade to the per-tactic notes (`tactic-capsule-content-technique-for-ai-citation`, etc.) and surface the primer gap.
+
+7. **Marketing primer §G — Content discipline for AI citation** (required) — `vault://03_domains/marketing/primer-marketing-vocabulary-and-concepts.md` § "Section G — Content discipline for AI citation"
+   - Drives: the conceptual basis — pluckable units, capsule-content shape (Nico's framing), attribute density vs keyword stuffing, content freshness cadence, anti-slop discipline, primary-source citation.
+   - This is the "what shape your content has to take to get cited" doc the service-brief §4.5 checklist operationalizes. Pairs with item 6.
+
+8. **AI-citation hardening checklist** (required) — `vault://05_shared-intelligence/research-briefs/_template-service-brief.md` §4.5 (subsections A through G)
+   - Drives: the actual checklist items the evaluation runs. A = structural patterns (TL;DR / answer-first / key-takeaways); B = capsule-content discipline; C = attribute density; D = entity-rich language; E = primary-source anchoring; F = schema markup; G = anti-tactics avoided.
+   - The same checklist appears (operationalized into JSON-field assertions) at the bottom of the panel-upgrade service brief. Whichever is the more-recent canonical version wins on conflict; the template is the spec of last resort.
+
+9. **Per-page ingestion / refinement notes** (auto-discovered) — auto-grep for source notes citing the page's service or city
+   - Discovery: `grep -li "<service-slug>\|<service-name>\|<city-name>" vault://03_domains/seo/insights/source-*.md` produces the candidate list. For every source note that hits, also load any sibling refinement output (path matches `<source-stem>-perplexity-refined-YYYY-MM-DD.md` in the same folder, or check the source note's frontmatter `perplexity-refined:` field for the append-mode refinement).
+   - Drives: spot-check that the page reflects current vault knowledge. If a refinement output validates a claim and the page contradicts it, the page is stale. Anti-staleness layer.
+   - Missing (no source notes mention the service/city) → not a defect; the page just hasn't been informed by VIS ingestions yet.
+
+10. **House-voice personality file** (optional, per-client) — `vault://04_projects/clients/_active/<client-slug>/personality-<client-slug>.md`
+    - Discovery: per-client personality file from the house-voice-rewrite skill (Phase 1 of 2026-05-27).
+    - Drives: client-voice-match dimension (voice consistency across pages for the same client).
+    - Missing → skip the voice-match dimension and note in the report; do not flag as a defect because not every client has had personality init run.
 
 Notes:
 
-- All eight sources are typically needed; skipping any one weakens the evaluation. If a source is missing (e.g., no intersection brief for the city), surface the gap and proceed with the rest.
-- For Core 30 pages produced by `scaffold-core-30-page.py`, the data files (#3, #4) are the contract between the brief and the page. Mismatches between brief and data file surface as discipline-rule violations, not quality dimensions.
+- Sources #1, #3, #4 are the contract between the brief and the scaffolder. Mismatches between brief and data file (e.g., brief says pricing is "estimate-only" but the data file embeds a published-pricing block) surface as **discipline-rule violations**, not quality dimensions, because they violate the spec-feeds-scaffolder contract.
+- Sources #2, #9, #10 are best-effort. Their absence reduces evaluation depth but does not block the verdict. The evaluation report names every source actually loaded so the audit trail is honest about what depth the evaluation reached.
+- Sources #6 and #7 are conceptually overlapping — SEO primer §D names the tactics, marketing primer §G explains the underlying content discipline. Both are loaded because the checklist (source #8) cites both as its parent specs.
+- For Core 30 pages produced by `scaffold-core-30-page.py`, the routing assumes the page slug parses cleanly. If the slug doesn't end in a known city-slug or the prefix doesn't match a known service-slug template, surface "spec routing failed: page slug doesn't decompose into known service + city" before attempting evaluation.
 
 ### Perplexity-refinement output
 

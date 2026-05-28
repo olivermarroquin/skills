@@ -207,34 +207,51 @@ Each checklist item is one bullet. Each bullet carries a one-line citation to th
 
 ## Core 30 page draft
 
+The Core 30 page is the highest-stakes artifact type the routing supports — pages get published to live client sites where ranking + AI-citation outcomes compound over months. The hard-requirement bar is correspondingly tight: schema validity, placeholder resolution, and section completeness are non-negotiable. Quality dimensions cover the §4.5 AI-citation hardening checklist + the plain-language layer + citation density to vault sources. Discipline rules cover scaffolder-contract integrity (substitution-map honesty, no invented facts).
+
 ### Hard requirements
 
-- Frontmatter (if `.md`) or JSON-LD `@graph` block (if `.html`) with required entities
-- LocalBusiness + Service + FAQPage schema entities present, linked via `@id` references (spec source: `_template-service-brief.md` §4.5 F)
-- TL;DR paragraph at the top (1-2 sentences, stands alone) (spec source: `_template-service-brief.md` §4.5 A)
-- Hero section with city-specific heading
-- What-it-means paragraphs, problem cards (6-8), process steps (5-7), FAQ block (6-8), about section, related-cards grid
-- Key takeaways at the end (3-5 bullets) (spec source: `_template-service-brief.md` §4.5 A)
-- AggregateRating in LocalBusiness schema (spec source: `_template-service-brief.md` §4.5 F)
+- **Frontmatter present and well-formed on the `.md` companion** — `client:`, `page-slug:`, `target-url:`, `target-keyword:`, `service:`, `city:`, `core-30-position:`, `tags:` all present (spec source: `_template-service-brief.md` §6 + scaffolder's `render_markdown()` output contract)
+- **All FILL placeholders resolved** — no `FILL:`, `TODO:`, `XXX:`, or `NEEDS_AUTHORING:` markers anywhere in the HTML body or markdown draft. The scaffolder may have written placeholders for data fields the brief didn't fill; the page can't ship with any of them left behind. (spec source: `scaffold-service-data.py` `needs_authoring` field convention)
+- **All `{placeholder}` substitutions resolved** — no orphan `{xyz}`, `{city_name}`, `{client_name}`, etc., anywhere in the rendered HTML or markdown. Run `grep -E '\{[a-z_]+\}' draft-v1-WP-WRAPPED.html` — must return zero matches. (spec source: `scaffold-core-30-page.py` `build_context()` substitution map)
+- **JSON-LD validates** — exactly three entities in `@graph`: `LocalBusiness` + `Service` + `FAQPage`, each with `@id` references that resolve. JSON parses cleanly; required schema-org fields present. (spec source: `_template-service-brief.md` §4.5 F + `publish-core-30-page.py` `validate_jsonld()`)
+- **AggregateRating in LocalBusiness schema** — `ratingValue`, `reviewCount`, `bestRating`, `worstRating` all populated from `client-<slug>.json` `review_rating` and `review_count` (spec source: `_template-service-brief.md` §4.5 F)
+- **LocalBusiness + Service + FAQPage entities linked via `@id`** — Service block references `{client_website_url}#business`; FAQPage references `{page_url}#faq`. No dangling references. (spec source: `_template-service-brief.md` §4.5 F)
+- **Required section skeleton present** — TL;DR paragraph at the top (1-2 sentences, stands alone); hero section with city-specific heading; what-it-means paragraphs; problem cards (6-8); process steps (5-7); FAQ block (6-8); about section; key takeaways at the end (3-5 bullets); related-cards grid (spec source: `_template-service-brief.md` §4.5 A + §10 page structure)
+- **Word count within ±10% of target** — target = median of top-10 SERP results +20%, rounded to nearest 200. For panel-upgrade/troubleshooting/EV-charger pages on EV Electric's site, target is ~2,500 words per `target-word-count:` frontmatter. (spec source: SEO primer §E.5 "Word-count target — 2,000-2,400, not 3,500-4,000" + per-page frontmatter)
 
 ### Quality dimensions
 
-- Attribute density: 3+ named brands per major section (e.g., Federal Pacific, Zinsco, Siemens, Square D for panel-upgrade pages) (threshold: pass per section; spec source: `_template-service-brief.md` §4.5 C)
-- Entity richness: 3+ named entities per major section (brands, neighborhoods, code names, permit offices, utility companies) (threshold: pass per section; spec source: §4.5 D)
-- Capsule discipline: every FAQ answer's first sentence stands alone if extracted (threshold: pass per FAQ; spec source: §4.5 B)
-- Plain-language compliance (threshold: pass; spec source: `plain-language-conventions.md`)
-- City-specific specificity: neighborhoods, permit office, utility company named (not "your local utility") (threshold: pass)
-- Word count: median of top 10 SERP results +20%, rounded to nearest 200 (threshold: within ±10% of target)
-- Primary-source citations: statistics cite .gov / .edu / NFPA / NEC / utility company data (threshold: 100% of statistics)
+- **Capsule-content discipline** — every FAQ answer's first sentence stands alone if extracted; ~70% of body content follows H2-as-question + answer-in-first-sentence shape (threshold: 100% on FAQ first sentences, pass overall on body sections; spec source: `_template-service-brief.md` §4.5 B + marketing primer §G "Capsule Content Technique"). **High-stakes dimension** — a single fail here flips an otherwise-PASS verdict to NEEDS REVISION (substantive) per `verdict-rollup-thresholds.md`.
+- **Attribute density** — 3+ named brands per major section (e.g., Federal Pacific, Zinsco, Siemens, Square D for panel-upgrade pages); time qualifiers ("same-day", "weekday morning") + service-area cities + customer-language phrasings (threshold: pass per major section; spec source: `_template-service-brief.md` §4.5 C + SEO primer §D)
+- **Entity richness** — 3+ named entities per major section (brands, neighborhoods, code/article names, permit offices, utility companies); owner name in about section + alt text; county references in service-area copy; license jurisdiction phrase (e.g., "Master Electrician licensed in Virginia") appears 2+ times on the page (threshold: pass per major section + ≥2 license-jurisdiction mentions; spec source: §4.5 D)
+- **TL;DR + key-takeaways structure** — TL;DR (1-2 sentences) renders at the top; key-takeaways block (3-5 self-contained bullets) renders at the bottom; both stand alone if extracted (threshold: pass both; spec source: §4.5 A)
+- **Schema-checklist compliance** — every checkbox in §4.5 F passes: LocalBusiness AggregateRating, Service areaServed + termsOfService, FAQPage mainEntity wraps each Q&A exactly, all three @type entities linked via @id (threshold: 100% of checklist items; spec source: `_template-service-brief.md` §4.5 F)
+- **Anti-tactics avoidance** — no AI-generated meta at scale (each title/description hand-tuned per page), no bolt-on PAA-derived FAQ blocks, no paid-link references in content, no more than ~30 pages in the services × locations matrix per the cluster discipline (threshold: pass; spec source: §4.5 G + SEO primer §D anti-tactics)
+- **Citation density to vault** — ≥10 inline citations to source notes + refinement outputs (the per-page ingestion notes loaded by routing item #9). Format: wikilinks to source notes in the SEO insights folder, or footnote-style references to refinement-output sister files. (threshold: 10+ citations from the body to vault sources; spec source: SEO primer §D + intel-routing convention)
+- **Plain-language compliance** — body prose reads conversationally per `_meta/plain-language-conventions.md`. Short sentences, "you/your" voice in customer-facing sections, no jargon-density without inline gloss. (threshold: ≥85% of body paragraphs honor the conventions; spec source: `plain-language-conventions.md`)
+- **Primary-source citations** — every statistic cites a primary source (.gov, .edu, NFPA, NEC article number, utility company data) — not aggregator articles. The `dateModified` schema field carries a current timestamp; the page visibly shows a recency cue (threshold: 100% of statistics; spec source: §4.5 E + SEO primer §D content-freshness)
+- **City-specific specificity** — neighborhoods named (not "your area"), permit office named (not "your local permit office"), utility company named (e.g., "Dominion Energy" not "your power company), county references present (threshold: pass; spec source: §4.5 D + city data file consumption contract)
 
 ### Discipline rules
 
-- Pricing-visibility matches client policy (estimate-only for Keelworks residential clients) (spec source: decision-2026-05-26-no-pricing)
-- No AI-generated meta titles/descriptions at scale (each hand-tuned) (spec source: §4.5 G)
-- No bolt-on PAA-derived FAQ blocks (spec source: §4.5 G)
-- No paid-link references in content (HARO/editorial only) (spec source: §4.5 G)
-- License jurisdiction appears 2+ times (spec source: §4.5 D)
-- Owner name + owner face on the page (differentiation discipline) (spec source: §4.5 D + §8 image-style observations)
+- **Non-destructive editing of the draft body** — the quality-loop never edits the draft HTML or markdown body. It updates `last-verdict:` + `last-evaluated:` + `quality-log:` frontmatter only. Producing chats own body revisions. (spec source: `SKILL.md` § Critical behavior)
+- **No invented facts** — every claim about pricing, brands, permits, code references, neighborhoods, utility companies, response times, or owner credentials traces to a named source: the service brief, the city data file, the client data file, the intersection brief (if present), or a vault source note (per routing item #9). If a fact is in the HTML body but not in any spec source, flag it as invented. (spec source: `vis-extraction/SKILL.md` no-fabricated-citation principle + scaffolder spec-feeds-contract)
+- **Substitution-map honesty** — every `{client_name}`, `{city_name}`, `{owner_name}`, `{phone_display}`, etc., resolves to the value in `client-<slug>.json` / `city-<slug>.json` exactly. No silently substituted defaults, no client-A name appearing on client-B's page. (spec source: `scaffold-core-30-page.py` `build_context()`)
+- **Pricing-visibility matches client policy** — estimate-only for Keelworks residential clients per the 2026-05-26 decision; no published price grids in the body for residential-electrical clients (spec source: `decision-2026-05-26-no-pricing-on-residential-contractor-core-30-pages` + service brief §11)
+- **License jurisdiction discipline** — license jurisdiction phrase (e.g., "Master Electrician licensed in Virginia") appears at minimum twice on the page in distinct sections (spec source: `_template-service-brief.md` §4.5 D)
+- **Owner identity discipline** — owner name appears in the about-section paragraphs AND the alt text of the owner portrait. Owner face image present (or placeholder marked clearly with `needs_authoring`). (spec source: §4.5 D + §8 image-style observations + client data file `owner_name` field)
+- **Per-page meta hand-tuning** — `aioseo_meta_description` and `aioseo_page_title` are not the scaffolder's default template output without per-page calibration. They carry the page's specific value proposition, the target keyword phrasing, and the calibrated character counts. (spec source: §4.5 G anti-AI-meta-at-scale rule)
+- **No bolt-on PAA-derived FAQ blocks** — FAQs are authored from the brief's §4d "questions our page must answer" list, not scraped from "people also ask" data and answered generically. (spec source: §4.5 G + SEO primer §D anti-tactics)
+
+### High-stakes dimensions (verdict-elevation flags)
+
+Per `verdict-rollup-thresholds.md` § "high-stakes dimension at fail" rule, the following Core 30 dimensions elevate the verdict regardless of overall percentage:
+
+- **Capsule-content discipline at fail** → at minimum NEEDS REVISION (substantive). Capsule discipline is the page's reason for ranking + getting cited; a fail here means the page won't perform even if everything else is clean.
+- **Substitution-map honesty at fail (e.g., a wrong client name on the page)** → FAIL. A page published with another client's name is a load-bearing trust violation, not a polish concern.
+- **No invented facts at fail (a fabricated brand / code / permit reference)** → FAIL. Fabrication on a published page is a published-misinformation risk.
+- **Schema-checklist compliance at fail** → at minimum NEEDS REVISION (substantive). Schema is what AI engines parse to attribute citations; a fail here means the page is structurally invisible to the AI-search layer it's optimized for.
 
 ## Update path
 
