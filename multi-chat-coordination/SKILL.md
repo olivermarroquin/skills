@@ -91,6 +91,12 @@ Expected output: `OK`. Any other output is a frontmatter error to fix before dec
 
 **Check folder structure before writing.** Per the standing memory `feedback_check_folder_structure_before_writing`, run `ls` of the parent directory before writing any new file into established vault areas. The `_meta/handoffs/` folder has an intentional structure (root-level standalone handoffs + per-project subfolders); don't drift from it.
 
+**Every generated handoff includes BOTH Opening Protocol AND Closing Protocol.** Established by the nineteenth-pass tracker reorganization (2026-05-28) after the operator observed manually instructing every chat at start AND end. The Opening Protocol (verbatim from `references/opening-protocol-template.md`) runs FIRST inside the prompt fence — before any work — and moves the chat's row from queued → in-flight in the tracker. The Closing Protocol (verbatim from `references/closing-protocol-template.md`) runs LAST inside the prompt fence — before declaring done — and moves the chat's row from in-flight → recently-closed plus all the other status updates. DECOMPOSE inserts both verbatim into every generated handoff body.
+
+**Move, don't strikethrough.** When a row leaves a tracker section (chat spawns, ships, or promotes between tiers), MOVE it. **Never** leave a strikethrough'd pointer (~~row~~) in the prior section. The destination section is the canonical location. This rule is established in `references/tracker-row-shapes.md` and enforced by both protocols. AUDIT mode treats strikethrough rows as drift.
+
+**Visual conventions on every tracker section.** Each actionable section opens with a one-line Obsidian callout immediately after the `##` header: `[!warning]` (active/yellow), `[!info]` (spawnable/blue), `[!note]` (queued/blue), `[!question]` (decisions/yellow), `[!success]` (closed/green), `[!danger]` (escalated/red — reserved for future). Each callout includes the section's row count for at-a-glance section sizing. Full mapping in `references/tracker-row-shapes.md`.
+
 ## Mode 1 — DECOMPOSE
 
 ### What DECOMPOSE produces
@@ -210,6 +216,8 @@ tags: [handoff, <project-slug>, <other-applicable-tags>]
 
 --- start prompt ---
 
+<inserted verbatim from references/opening-protocol-template.md — Opening Protocol runs FIRST, before any other work>
+
 <full prompt body — context to read, what you're building, success criteria, deliverables, out of scope. Generated from the operator's source documents + the unit's specific scope.>
 
 ## Status
@@ -219,7 +227,7 @@ tags: [handoff, <project-slug>, <other-applicable-tags>]
 - Spawn-readiness: <Ready / Tier-2 / Tier-3 with explanation>
 - Estimated build time: <range from Step 2>
 
-<inserted verbatim from references/closing-protocol-template.md, with <HANDOFF_FILE_PATH> and <TRACKER_PATH> substituted>
+<inserted verbatim from references/closing-protocol-template.md, with <HANDOFF_FILE_PATH> and <TRACKER_PATH> substituted — Closing Protocol runs LAST, before declaring done>
 
 --- end prompt ---
 

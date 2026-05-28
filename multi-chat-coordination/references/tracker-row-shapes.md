@@ -2,6 +2,65 @@
 
 The active-chats tracker at `~/workspace/second-brain/_meta/handoffs/_active-chats-tracker.md` has **six tables plus a "Hot decisions" bulleted list**. Each table has a fixed column shape. This file is the data contract the multi-chat-coordination skill uses when reading existing rows and writing new ones. Match these shapes exactly — Dataview queries elsewhere in the vault may depend on the column order.
 
+## Section order (canonical)
+
+The tracker's sections appear in this order, locked at the nineteenth-pass reorganization (2026-05-28):
+
+1. `## How to use this file` (operator instructions — Opening + Closing Protocols + visual conventions)
+2. `## Active / in-flight chats` (yellow [!warning])
+3. `## Ready to spawn next (blockers cleared)` (blue [!info])
+4. `## Queued — Tier 2 (spawn after Tier 1 lands, within ~1 week)` (blue [!note])
+5. `## Queued — Tier 3 (wait for explicit triggers, do NOT spawn yet)` (blue [!note])
+6. `## Scheduled Cowork tasks (background work, automated)` (blue [!info])
+7. `## Hot decisions sitting on Oliver's plate` (yellow [!question])
+8. `## Recently closed chats` (green [!success])
+9. `## Recently completed (past 7 days)` (green [!success])
+10. `## Update protocol`
+11. `## Related`
+
+Active and queue sections are at the top because they're what the operator scans first. Long sections (Recently closed = full audit trail, Recently completed = one-line summaries) sit at the bottom so they don't push the active state below the fold.
+
+## Visual conventions (emoji header + Obsidian callout)
+
+Every actionable section opens with **two visual signals** working in tandem:
+
+1. **Color emoji in the section header** (renders everywhere — Obsidian, VS Code preview, GitHub, etc.) — universal at-a-glance scanning
+2. **Obsidian callout block** on the line after the header (renders as a colored box in Obsidian Reading mode / Live Preview; appears as a plain blockquote in other markdown viewers) — rich visual block in Obsidian + scannable count line in any viewer
+
+Both are mandatory. The emoji solves the cross-tool rendering gap the operator caught at the twentieth pass (2026-05-28) — Obsidian callouts only render colored in Obsidian itself; emojis render colored in every markdown viewer.
+
+| Section | Emoji | Callout type | Color | Purpose |
+|---|---|---|---|---|
+| Active / in-flight | 🟡 | `[!warning]` | yellow | Work in progress, attention needed |
+| Ready to spawn next | 🔵 | `[!info]` | blue | Ready, awaiting operator action |
+| Queued — Tier 2 | 🔵 | `[!note]` | blue | Queued, near-term spawn |
+| Queued — Tier 3 | 🔵 | `[!note]` | blue | Queued, gated on external triggers |
+| Scheduled Cowork tasks | 🔵 | `[!info]` | blue | Automated, no operator action |
+| Hot decisions | 🟡 | `[!question]` | yellow | Open decisions awaiting operator |
+| Recently closed | 🟢 | `[!success]` | green | Done, archived (no action) |
+| Recently completed | 🟢 | `[!success]` | green | Done, scannable summary |
+| (reserved) | 🔴 | `[!danger]` | red | Escalated / failed — use for future escalation queues |
+
+Canonical section format (emoji on header, callout on next line, table after blank line):
+
+```markdown
+## 🟡 Active / in-flight chats
+
+> [!warning] 2 chats currently in flight
+
+| Started | Chat name | ... |
+```
+
+The callout line includes a count of items so the operator can scan section sizes without reading every row. Update the count line whenever rows move in or out of the section.
+
+Update protocol — Opening Protocol Step 3 and Closing Protocol Step 3 both bump the section's count line when they add or remove a row.
+
+## Move-don't-strikethrough rule
+
+When a row leaves its section (chat spawns, ships, or is promoted between tiers), MOVE it. **Never** leave a strikethrough'd pointer (~~row~~) in the prior section. The destination section is the canonical location for that row.
+
+Pre-nineteenth-pass tracker had this anti-pattern: a shipped chat would appear in `Recently closed` with full detail AND struck through in `Ready to spawn next` AND struck through in `Tier 3 queued` — three rows for one chat. The reorganization removed all 18 strikethrough rows in one pass. Going forward, the rule is enforced at every row-move operation.
+
 ## Table 1 — Active / in-flight chats
 
 ```markdown

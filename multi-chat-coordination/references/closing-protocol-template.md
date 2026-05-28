@@ -36,8 +36,10 @@ Edit `<HANDOFF_FILE_PATH>`:
 
 Edit `<TRACKER_PATH>`:
 
-- Move this chat's row from "Active / in-flight" (or "Queued — Tier 2" if it was promoted directly) to "Recently closed" with a full outcome paragraph (deliverables, decisions, gotchas, downstream unblocks, pattern candidates)
-- Add a one-liner to "Recently completed (past 7 days)"
+- **Move** this chat's row from "Active / in-flight" to "Recently closed" with a full outcome paragraph (deliverables, decisions, gotchas, downstream unblocks, pattern candidates). The destination section is the canonical location — **do not** leave a strikethrough'd pointer in "Active / in-flight" per the move-don't-strikethrough rule established at the nineteenth-pass reorganization.
+- Add a scannable one-liner to "Recently completed (past 7 days)"
+- If this chat cleared a downstream chat's blocker, **move** that downstream chat from Tier-2 or Tier-3 to "Ready to spawn next" — again, move, don't strikethrough
+- Update the section's callout-line item count (e.g., "1 chat currently in flight" → "0 chats currently in flight" when you remove the last in-flight row)
 - If the chat cleared any other chat's blocker, promote that chat (move from queue → Ready-to-spawn OR strike-through and add a pointer)
 - Bump frontmatter `last-change` value — **keep the single-quote wrapper around the value** per the "How to use this file" convention (the YAML colon-space trap has bitten the file repeatedly)
 
