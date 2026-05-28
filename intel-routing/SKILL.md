@@ -3,20 +3,21 @@ name: intel-routing
 description: Route vault artifacts (tactics, patterns, tools, syntheses, opportunities, content ideas, source notes) to applicable projects, or pull applicable intel from the vault into a project, or bootstrap a new project from accumulated intel. Triggers on phrases like "route this," "route this synthesis," "route this tactic," "push this to applicable projects," "what's new for project X," "what intel applies to <client>," "pull intel for <project>," "triage the inbox for <project>," "promote this opportunity to a project," "create a new project from this," "bootstrap <slug> from <opportunity>," or invocation as a follow-on step after VIS extraction or after multi-source-synthesis. Reads and writes the five project-applicability frontmatter fields (`applies-to-projects`, `applies-to-archetypes`, `applicability-confidence`, `routed-at`, `based-on-clients`) defined in `_meta/conventions.md`. Composes with VIS Step 10 (synthesis-readiness-scan), `multi-source-synthesis` Stage 6, `knowledge-os-setup` add-project-vault mode, and app-factory `init-project`.
 ---
 
-# Intel-routing skill (v1.1 — PUSH + PULL modes)
+# Intel-routing skill (v1.2 — PUSH + PULL + BOOTSTRAP modes)
 
-The skill that closes the loop between vault artifacts and projects. Operates on the convention layer landed in Phase 1 of the intel-routing rollout and matured against friction observed in Phase 2. Phase 3 ships the skill itself across three sessions: PUSH first (v1.0, shipped 2026-05-28), then PULL (v1.1, this version), then BOOTSTRAP.
+The skill that closes the loop between vault artifacts and projects. Operates on the convention layer landed in Phase 1 of the intel-routing rollout and matured against friction observed in Phase 2. Phase 3 shipped the skill itself across three sessions: PUSH (v1.0, shipped 2026-05-28), then PULL (v1.1, shipped 2026-05-28), then BOOTSTRAP (v1.2, this version, shipped 2026-05-28).
 
 **Critical behavior (read this before anything else):**
 
-- **Approval gates are mandatory.** Every mode runs two gates: routing-or-triage decision (Gate 1), then bridge-note approval (Gate 2). PUSH and PULL never write without explicit operator approve/modify/reject passes on both.
+- **Approval gates are mandatory.** Every mode runs two gates: a decision gate (Gate 1: routing / triage / scaffold) and an output approval gate (Gate 2: bridge notes for PUSH/PULL, PULL pre-population pass-through for BOOTSTRAP). None of the modes write without explicit operator approve/modify/reject passes on both.
 - **PUSH and PULL are inverses on the same convention.** PUSH operates on one artifact and proposes N projects; PULL operates on one project and proposes N artifacts. Both write the same five frontmatter fields and the same bridge-note shape. They share defaults (single-bridge-per-cluster, situational gating, low-default-confidence on bulk-migrated, no half-states).
-- **Neither mode promotes, synthesizes, or substitutes for vault curation.** They compute applicability and write bridges. Synthesis lives in `multi-source-synthesis`. Pattern promotion is vault-curation discipline. BOOTSTRAP (Session 3) handles new-project creation; PULL operates only on existing projects.
-- **PUSH re-derives frontmatter; PULL trusts the surfaced values.** PUSH's job is to fix bulk-migration drift on a single artifact at routing-time. PULL's job is to triage 50-100 already-routed artifacts against one project; re-deriving each would burn the operator's attention budget. If an operator suspects a surfaced item's frontmatter is inflated, the right move is to invoke PUSH on that item separately. PULL flags the suspicion and exits the surfaced item to a defer/keep bin.
-- **Default discipline: single-bridge-per-cluster, not per-artifact-match.** Phase 2 friction observation #4 (bridge note proliferation) confirmed in practice. In PUSH a "cluster" is the project; in PULL a "cluster" is the artifact. Per-tactic-bridge writing for synthesis artifacts is operator-explicit opt-in at Gate 2 in both modes.
-- **Situational archetypes are gates, not additive tags — but PUSH and PULL gate asymmetrically.** Phase 2 friction observation #11. PUSH excludes situationally-conflicted projects from routing entirely (with operator override) — it operates at routing-time and has no temporal commitment. PULL defers situationally-conflicted slug-named artifacts (rule 3 in Step A3) — it operates on cadence and the same conflict re-evaluates next triage as project state evolves. `not-applicable` in PULL is reserved for archetype-spurious matches (rule 2) or operator-explicit promotion from defer. Operator can override either default at Gate 1.
-- **PULL is the operator-facing mode.** Where PUSH typically fires opt-in after VIS or synthesis runs, PULL is what the operator invokes when they start a project review session ("what's new for EV"). Designed for the recurring monthly-client-cadence triage Phase 2 exercised manually.
-- **BOOTSTRAP still forward-referenced.** Ships in Session 3. See `_meta/specs/intel-routing-skill-spec.md`.
+- **BOOTSTRAP creates new projects; PUSH and PULL operate on existing ones.** BOOTSTRAP consumes a source artifact (usually an opportunity from `00_inbox/decisions-pending/`), scaffolds a new project folder, and pre-populates the new project's intel inbox by chaining into PULL. The 8-step manual flow in `_meta/intel-opportunities-inbox.md` compresses to one skill invocation.
+- **None of the modes promote, synthesize, or substitute for vault curation.** They compute applicability, scaffold projects, and write bridges. Synthesis lives in `multi-source-synthesis`. Pattern promotion is vault-curation discipline.
+- **PUSH re-derives frontmatter; PULL trusts the surfaced values; BOOTSTRAP re-derives from the source.** PUSH's job is to fix bulk-migration drift on a single artifact at routing-time. PULL's job is to triage 50-100 already-routed artifacts against one project; re-deriving each would burn the operator's attention budget. BOOTSTRAP treats the source the same way PUSH treats any artifact: never trust existing frontmatter blindly; surface a recommendation and let operator confirm.
+- **Default discipline: single-bridge-per-cluster, not per-artifact-match.** Phase 2 friction observation #4 (bridge note proliferation) confirmed in practice. In PUSH a "cluster" is the project; in PULL a "cluster" is the artifact. Per-tactic-bridge writing for synthesis artifacts is operator-explicit opt-in at Gate 2 in PUSH and PULL.
+- **Situational archetypes are gates, not additive tags — but PUSH and PULL gate asymmetrically.** Phase 2 friction observation #11. PUSH excludes situationally-conflicted projects from routing entirely (with operator override) — it operates at routing-time and has no temporal commitment. PULL defers situationally-conflicted slug-named artifacts (rule 3 in Step A3) — it operates on cadence and the same conflict re-evaluates next triage as project state evolves. `not-applicable` in PULL is reserved for archetype-spurious matches (rule 2) or operator-explicit promotion from defer. Operator can override either default at Gate 1. BOOTSTRAP doesn't gate situationally during scaffolding — it asks the operator to declare the new project's situational archetypes; the chained PULL then applies the gating during pre-population.
+- **PULL is the operator-facing mode.** Where PUSH typically fires opt-in after VIS or synthesis runs, PULL is what the operator invokes when they start a project review session ("what's new for EV"). Designed for the recurring monthly-client-cadence triage Phase 2 exercised manually. BOOTSTRAP is operator-initiated when an opportunity in the global intel-opportunities-inbox warrants a new project.
+- **BOOTSTRAP can exit cleanly to PUSH.** If the source artifact's archetype signal overlaps heavily with an existing project's archetypes AND body content aligns with that project's scope, BOOTSTRAP recommends apply-to-existing at Gate 1 (default per spec open question #6) and exits with a paste-ready PUSH invocation for the named existing project. No scaffolding happens; the source artifact stays where it is. This is the right outcome for "opportunity belongs to an existing project's scope" — Phase 2 friction observation territory rather than friction-from-skill territory.
 
 ## Three modes (overview)
 
@@ -42,15 +43,15 @@ Output: updated `_intel-inbox.md` (Last triage section) + N bridge notes + N art
 
 PULL is the focus of this v1.1. Full specification below the PUSH section.
 
-### BOOTSTRAP mode — new project ← accumulated intel (Session 3, not yet shipped)
+### BOOTSTRAP mode — new project ← accumulated intel (Session 3, shipped 2026-05-28)
 
-Trigger: operator says "create a new project from opportunity X."
+Trigger: operator says "create a new project from opportunity X," "bootstrap a project from this," "promote opportunity X to project," or invocation as the follow-on to "Promote to project" triage in the global `_meta/intel-opportunities-inbox.md`.
 
-Input: an opportunity artifact path (or any artifact + a proposed project slug and archetype list).
+Input: an opportunity artifact path (or any artifact). Operator gives a starting hint at invocation (e.g., "bootstrap from `opportunity-onboarding-agent-productized-service`"); the skill reads the source, proposes scaffolding parameters at Gate 1, then composes with PULL for pre-population.
 
-Output: new project folder + project README + new `_intel-inbox.md` + initial inbox population (via PULL on the new project) + source artifact frontmatter updates.
+Output: new project folder under `04_projects/<area>/<slug>/` (either as a `.kos/` symlink from a repo or as a direct vault folder for knowledge-only projects) + project README with `archetypes:` + `founding-artifact:` + `applicability-confidence:` populated + `_intel-inbox.md` instantiated + initial inbox pre-population (zero or more bridge notes via chained PULL) + source artifact frontmatter updates (`applies-to-projects: [<new-slug>]` + `routed-at: <today>` + `promoted-to-project: <today>`).
 
-Status: forward reference. The `_meta/intel-opportunities-inbox.md` global queue currently documents an 8-step manual flow; BOOTSTRAP collapses it to one skill invocation. See spec.
+BOOTSTRAP is the focus of this v1.2. Full specification below the PULL section.
 
 ## Multi-turn collaboration protocol
 
@@ -753,11 +754,406 @@ Stop. Do not chain into PUSH or BOOTSTRAP. Operator commits manually after revie
 - **`current-blocker:` field on project README (v1.1 forward reference).** Pre-launch projects produce heavy defer ratio (friction #11). The full v2.0 solution might surface a `current-blocker:` field on the project README that auto-defers archetype-overlap items not relevant to the blocker. v1.1 does not implement this — surfaces the friction observation in the Stage A pre-classification reason for operator awareness; the operator handles bulk-defer via "Move all <bin> to <bin>" at Gate 1. Capture as v1.2 candidate.
 - **Project has `_intel-inbox.md` but no archetypes set in inbox frontmatter** (likely manually-created or partially-instantiated). Sync validation surfaces as "inbox-superset-of-readme" if README has any archetypes; offer to sync. If both inbox and README are empty on archetypes, BLOCKED.
 
-## BOOTSTRAP mode — forward reference (Session 3)
+## BOOTSTRAP mode — full specification
 
-Not yet shipped. Spec lives at `_meta/specs/intel-routing-skill-spec.md` section "BOOTSTRAP mode." Operator runs the 8-step manual flow in `_meta/intel-opportunities-inbox.md` until BOOTSTRAP ships.
+### Trigger phrases
 
-Per spec composition points: BOOTSTRAP delegates project-folder scaffolding to the `knowledge-os-setup` add-project-vault mode and optionally invokes the app-factory `init-project` flow for the repo side. Once BOOTSTRAP ships, the manual 8-step flow in the opportunities inbox compresses to one skill invocation.
+- "create a new project from opportunity X" / "bootstrap a project from this opportunity"
+- "promote opportunity X to project" / "promote this to a project"
+- "bootstrap <slug> from <source-artifact>"
+- "create new project: <slug>" (when operator has slug + source in mind)
+- Invocation as follow-on to "Promote to project" triage in `_meta/intel-opportunities-inbox.md`
+
+### Preconditions
+
+Before producing a scaffold proposal, executor verifies:
+
+1. **Source artifact exists and is readable.** If the path doesn't resolve, BLOCKED with the unresolved path.
+2. **Source artifact has frontmatter.** Minimum `type:`, `status:`, `created:`, `tags:`. If missing or malformed, BLOCKED.
+3. **At least one existing project README exists with `archetypes:` declared.** Needed for the apply-to-existing detection (Stage A1) — without any project to compare against, BOOTSTRAP can't recommend the alternative.
+4. **Convention spec readable** at `_meta/conventions.md` Project applicability fields section + Archetype hierarchy section.
+5. **KOS-setup skill present** at `~/workspace/skills/knowledge-os-setup/` (specifically `scripts/init-project-vault.sh` and `assets/templates/project/`). BOOTSTRAP delegates scaffolding to this script for projects that need a repo. If the skill isn't present, knowledge-only projects can still be scaffolded directly into the vault, but the operator must opt into knowledge-only mode at Gate 1.
+
+If any precondition fails, emit:
+
+```
+BOOTSTRAP BLOCKED on precondition failure.
+
+Failed precondition: <name>
+Required: <what's needed>
+Suggested remediation: <what operator should do>
+
+BOOTSTRAP will NOT proceed until precondition is resolved.
+```
+
+### Inputs gathered before Stage A
+
+Executor reads, in this order:
+
+1. **Source artifact full content** — frontmatter + body. Body is the load-bearing input for archetype recommendations and for apply-to-existing detection.
+2. **Every existing project README** under `04_projects/clients/_active/`, `04_projects/clients/_private/`, `04_projects/personal/` — extract `archetypes:`, body purpose statements, `archived:`. Archived projects excluded from comparison.
+3. **The convention spec** at `_meta/conventions.md` Project applicability fields + Archetype hierarchy. Re-read on every invocation so spec changes are picked up. Note any archetypes the recommended set would draw from that are flagged `(future)` in the hierarchy — surface as a friction observation at Gate 1.
+4. **Vault reconnaissance for pre-population estimate.** Run an archetype-based query against `03_domains/`, `05_shared-intelligence/`, `00_inbox/decisions-pending/` using the recommended archetype set; count artifacts that would surface in PULL Stage A pre-classification. Surface the count at Gate 1 so operator can right-size expectations (friction observation #8 maturation).
+
+### Stage A — Scaffold-decision computation
+
+Two sub-steps. A1 produces the promote-vs-apply-to-existing recommendation; A2 produces the scaffold-parameters proposal (assuming promote).
+
+#### Step A1 — Apply-to-existing detection
+
+For each non-archived existing project, compute:
+
+- **Archetype overlap** — count of intersected archetypes between the source's `applies-to-archetypes:` (or executor-inferred archetype set from body) and the project's `archetypes:`. If `applies-to-archetypes:` is empty or stale, infer from body the same way PUSH Stage A Step 1 does.
+- **Body alignment** — does the source's body describe work that fits within the existing project's scope (per the project's README purpose statement)?
+
+Three signal grades:
+
+- **Strong overlap** — ≥3 archetypes match AND body alignment is clear. The source likely belongs to this existing project as an applies-to-existing target, not a new project. BOOTSTRAP recommends apply-to-existing with a PUSH invocation hint.
+- **Partial overlap** — 1-2 archetypes match OR body alignment is partial. Source could go either way; BOOTSTRAP recommends promote-to-project but surfaces the partial-overlap project(s) as "consider also: applying to <project>" alternatives.
+- **No overlap** — Source is genuinely new project territory; BOOTSTRAP recommends promote-to-project unambiguously.
+
+Per spec open question #6: default to recommending apply-to-existing when any project hits strong overlap. Operator can override at Gate 1 with "promote anyway."
+
+#### Step A2 — Scaffold parameters proposal (when promote path taken)
+
+For the promote-to-project path, executor proposes:
+
+**Slug** — derived from the source's filename slug, stripped of `opportunity-` prefix, kebab-case. Operator may rename at Gate 1. Slug must be unique under all `04_projects/<area>/`.
+
+**Area** — `personal/` or `clients/_active/` or `clients/_private/`. Inferred from source body:
+- Body explicitly names client / NDA / contract → `clients/_active` (or `clients/_private` if NDA-flagged)
+- Body describes operator-internal infrastructure or operator-personal initiative → `personal/`
+- Body describes a productized service Oliver builds (not a client engagement) → `personal/`
+- Ambiguous → default to `personal/`; operator may modify
+
+**Archetypes** — derived from source's `applies-to-archetypes:` (if present and current) OR executor-inferred from body content. Cross-check against the conventions Archetype hierarchy:
+- For each proposed archetype, verify it's listed as live in conventions
+- For any archetype listed as `(future)` — surface as friction observation: "the recommended set draws from <archetype-list> which is currently `(future)` in conventions. Promotion to live requires a one-line conventions.md edit. Options: (1) propose the conventions edit alongside the scaffold; (2) use the closest live archetype; (3) hold." Default: recommend option 1 (propose the edit alongside).
+- Compound-tag every applicable hierarchy level (per conventions discipline).
+- Add applicable situational archetypes (`wordpress-site` / `pre-launch-seo` / `post-launch-seo` / `gbp-dependent`) if relevant.
+
+**Repo-side scaffold** — opt-in flag. Default rules:
+- If any archetype is `saas-product`, `b2b-saas`, `b2c-saas`, `ai-tooling`, or otherwise tooling-shaped → default `yes-repo`. Project lives under `~/workspace/repos/<slug>/`; `.kos/` is symlinked into the vault via KOS-setup script.
+- If archetypes are `services-business` / `home-services-trade` / `professional-services` / similar service-archetypes → default `yes-repo` (uniform vault shape; client engagements have `.kos/` repos for execution-logs and lessons even when no code lives in the repo).
+- If archetypes are `personal-system` or `infrastructure-tooling` with no concrete code surface yet → default `yes-repo`; the repo exists to hold execution-logs and lessons even if no code is committed.
+- Override: operator can pick `knowledge-only` at Gate 1 if the project is purely vault-resident with no repo (rare — current vault has zero knowledge-only projects; both `keelworks` and `dad-businesses` use `repos/<slug>/.kos/` symlinks).
+
+**Applicability-confidence on the project README** — defaults to `medium` (matches conventions guidance: `medium = inferred`). Operator may upgrade to `high` at Gate 1 if they have validated the archetype fit.
+
+**Founding-artifact** — `[[<source-slug>]]`. Records the originating artifact in the new project's README frontmatter; bidirectional with the source's eventual `applies-to-projects: [<new-slug>]`.
+
+**Purpose statement** — one-paragraph project purpose. Executor drafts from the source's body; operator confirms or edits at Gate 1. Lands in the README's "Purpose" section.
+
+**Pre-population estimate** — count from input gathering step 4. Surface as: "Initial PULL on the new project would surface ~<N> archetype-matched artifacts. Of those, ~<M> are slug-named to existing projects (would surface as archetype-overlap-only here). Operator should expect a Gate 1 surface with <total> items in PULL pre-population."
+
+### Gate 1 — Scaffold-decision approval gate
+
+Executor surfaces the proposal in this format:
+
+```
+BOOTSTRAP SCAFFOLD PROPOSAL — <source-slug>
+
+Source artifact: <full path>
+Type: <type from frontmatter>
+Body summary (1-2 sentences): <executor's read of what the source is about>
+
+Existing source frontmatter:
+  applies-to-projects: <existing value or "not set">
+  applies-to-archetypes: <existing value or "not set">
+  applicability-confidence: <existing value or "not set">
+  routed-at: <existing value or "not set">
+
+Apply-to-existing detection:
+  Strong overlap with: <project-slug-list, or "none">
+  Partial overlap with: <project-slug-list, or "none">
+
+Recommendation: <PROMOTE-TO-PROJECT | APPLY-TO-EXISTING>
+Reason: <one-paragraph reason — for apply-to-existing, names the target project and the overlap-strength signal; for promote, names why no existing project is a strong fit>
+
+==== PROMOTE-TO-PROJECT proposal (default path if recommendation is promote) ====
+
+Slug:       <proposed-slug>
+Area:       <personal | clients/_active | clients/_private>
+Archetypes: [<list>]
+  Conventions check: <all live | promote-needed for <archetype-list>>
+Confidence: <medium | high>
+Founding-artifact: [[<source-slug>]]
+Repo scaffold: <yes-repo | knowledge-only>
+  (yes-repo: KOS-setup will create ~/workspace/repos/<slug>/.kos/ and symlink into vault)
+  (knowledge-only: project folder created directly under 04_projects/<area>/<slug>/)
+
+Purpose (proposed; operator edits or accepts):
+  <one-paragraph purpose statement, drafted by executor from source body>
+
+Friction observations:
+  - <if any (future) archetypes: name them + propose conventions.md edit>
+  - <if repo scaffold yes-repo: note that operator will need to run app-factory init separately
+     after the repo is created; BOOTSTRAP will surface the paste-prompt at Stage B>
+  - <any other observation>
+
+Pre-population estimate:
+  PULL on the new project would surface ~<N> artifacts at first triage.
+  Slug-named to other projects (archetype-overlap-only for the new project): ~<M>
+  Speculative routings (low confidence by default per PULL pre-classification): ~<K>
+  Operator should expect Gate 1 on PULL with <total> items, mostly archetype-overlap.
+
+==== APPLY-TO-EXISTING alternative (always shown when any project hit overlap) ====
+
+If you'd rather route this source to an existing project, the strongest match is:
+  Target project: <project-slug>
+  Overlap rationale: <reason>
+  Suggested invocation: "PUSH-route <source-path> to <project-slug>"
+  (exit BOOTSTRAP; the source artifact stays in 00_inbox/decisions-pending/ and gets routed
+   via PUSH instead)
+
+Confirm promote / confirm apply-to-existing / modify <field> / reject?
+```
+
+Operator response options:
+
+- **Confirm promote** — proceed to Stage B with proposed parameters
+- **Confirm apply-to-existing for <project-slug>** — exit BOOTSTRAP; emit the paste-ready PUSH invocation; report "BOOTSTRAP exited cleanly; route via PUSH instead"; no scaffolding writes occur
+- **Modify <field>** — operator names the field to change (slug / area / archetypes / repo / confidence / purpose). Executor accepts the change; re-emits the proposal with updated field; waits for confirm.
+- **Promote anyway** (when recommendation was apply-to-existing) — operator overrides the default; proceed with promote path. BOOTSTRAP records the override in the source artifact's eventual `routed-at:` context.
+- **Promote conventions edit for <future-archetype>** — when proposal flagged a `(future)` archetype, this confirms the inline conventions.md edit. Executor stages the convention edit for Stage B writes.
+- **Reject** — exit without writes
+
+### Stage B — Scaffolding (after Gate 1 confirm-promote)
+
+All-or-nothing semantics: any write failure rolls back to pre-Stage-B state.
+
+#### Step B1 — Optional repo scaffold (conditional, default per archetype rules)
+
+If `yes-repo`:
+
+**B1a.** Check if `~/workspace/repos/<slug>/` already exists.
+- If yes, skip to B1c (KOS-setup will detect the existing repo and only add `.kos/` if missing).
+- If no, surface the app-factory paste-prompt:
+
+```
+The new project needs a repo at ~/workspace/repos/<slug>/.
+App-factory init-project is the right way to create it. Paste the prompt below into a
+fresh Claude Code session opened in the new directory:
+
+  cd ~/workspace/repos/
+  mkdir <slug> && cd <slug>
+  # Open Claude Code in this directory
+  # Then paste:
+
+---
+You are my senior developer helping me bootstrap a new app.
+
+**App name:** <slug>
+**Description:** <purpose statement from Gate 1>
+**Stack:** <proposed stack — executor picks reasonable default per archetypes; operator may edit before pasting>
+**Date started:** <today>
+**Stage:** MVP
+
+(remainder of prompt from ~/workspace/repos/app-factory/prompts/init-project.md)
+---
+
+When the repo is created and Claude Code has scaffolded the docs/ + initial config, type
+"repo created" to continue. To skip the app-factory step (e.g., project is purely
+knowledge-shaped and you'll add code later), type "skip repo init."
+```
+
+Wait for operator confirm-repo-created OR skip-repo-init.
+
+**B1b.** If operator typed "skip repo init" — knowledge-only fallback: create the repo directory at `~/workspace/repos/<slug>/` empty (so the KOS-setup script's `[ ! -d "$REPO" ]` precondition passes). Add a stub README.md to the repo root noting "repo scaffolded by intel-routing BOOTSTRAP; app-factory init not yet run; run later when project needs code."
+
+**B1c.** Proceed to B2.
+
+If `knowledge-only`:
+
+**B1d.** Skip the repo creation entirely. Stage B2's KOS-setup invocation also skips. BOOTSTRAP creates the project folder directly under `04_projects/<area>/<slug>/` in B3 (no `.kos/` symlink; the project is vault-resident).
+
+#### Step B2 — KOS-setup invocation (if yes-repo)
+
+Execute the KOS-setup `init-project-vault.sh` script:
+
+```bash
+bash ~/workspace/skills/knowledge-os-setup/scripts/init-project-vault.sh \
+  ~/workspace/repos/<slug> \
+  <area-arg> \
+  ~/workspace/second-brain \
+  ~/workspace/skills/knowledge-os-setup/assets
+```
+
+Where `<area-arg>` maps:
+- `personal/` → `personal`
+- `clients/_active/` → `clients`
+- `clients/_private/` → `clients-private`
+
+The script:
+- Creates `~/workspace/repos/<slug>/.kos/{specs,scopes,execution-logs,lessons}/`
+- Installs `.kos/README.md` and `.kos/.vault-config.md` from templates (with Templater placeholders substituted)
+- Symlinks `~/workspace/repos/<slug>/.kos/` into `~/workspace/second-brain/04_projects/<area>/<slug>`
+
+BOOTSTRAP does NOT pass a `fork-from` argument by default. If operator wants to fork from a prior project (e.g., new client engagement that should inherit specs/ from a similar past engagement), operator can name the source at Gate 1 via "modify fork-from: <prior-slug>".
+
+If the script reports an error, abort Stage B and roll back any partial scaffolding.
+
+#### Step B3 — README customization
+
+The KOS-setup script installed a template README at `~/workspace/repos/<slug>/.kos/README.md` (or for knowledge-only path: BOOTSTRAP creates the file directly at `04_projects/<area>/<slug>/README.md`).
+
+Customize via Edit tool. Replace the template frontmatter block with the operator-confirmed values from Gate 1:
+
+```yaml
+---
+type: project-readme
+project-name: <slug>
+status: active
+created: <today>
+updated: <today>
+client: <true | false>
+sensitivity: <standard | nda | sensitive>
+archetypes: [<list from Gate 1>]
+applicability-confidence: <medium | high from Gate 1>
+founding-artifact: "[[<source-slug>]]"
+tags: [project, vault-root, <slug>]
+---
+```
+
+(`client: true` if area = `clients/_active` or `clients/_private`. `sensitivity: nda` if `clients/_private`; otherwise `standard`.)
+
+Then replace the README body's Purpose section with the operator-confirmed purpose statement from Gate 1. Add to the Promotion log section:
+
+```
+- <today> — project bootstrapped from [[<source-slug>]] via intel-routing BOOTSTRAP
+```
+
+Other body sections (Status, Sensitivity tier, Vault contents, Promotion log, Links, Dataview block) stay as-is from the template.
+
+#### Step B4 — Inbox file instantiation
+
+Copy `~/workspace/second-brain/_meta/templates/template-intel-inbox.md` to `<project-folder>/_intel-inbox.md`. Via Read + Write tools (the template uses Templater placeholders that need substitution).
+
+Substitutions (sed-style, applied during write):
+- `<% tp.date.now("YYYY-MM-DD") %>` → `<today>` (both occurrences in frontmatter `created:` + `updated:`)
+- `<project-slug>` → `<slug>` (in frontmatter `project:` + `tags:`)
+- `<Project name>` → `<slug>` (in H1 — operator can edit to "EV Electric Services" style display name later)
+- `archetypes: []` → `archetypes: [<list>]` (from Gate 1)
+
+#### Step B5 — Conditional conventions.md edit (if operator confirmed at Gate 1)
+
+If the proposal flagged a `(future)` archetype and operator approved the inline promotion: Edit `~/workspace/second-brain/_meta/conventions.md` to remove the `(future)` marker on the named archetype. Single Edit per archetype. Preserve all other content.
+
+For tracking, record the convention edit in the BOOTSTRAP completion report so the suggested commit includes conventions.md.
+
+### Stage C — Pre-population (compose with PULL)
+
+After Stage B writes are verified, invoke PULL on the new project slug. PULL runs its standard workflow:
+
+1. **PULL Stage A** — sync validation (matched by construction since BOOTSTRAP just instantiated both README + inbox from the same archetype list); query; tag; pre-classify into bins
+2. **PULL Gate 1** — batched triage decision; operator confirms bins or moves items
+3. **PULL Stage B** — bridge-note proposals for apply items
+4. **PULL Gate 2** — bridge approval gate
+5. **PULL Stage C** — writes (bridges + punchlist + per-artifact `routed-at:` + inbox Last-triage)
+6. **PULL completion report** — emitted as part of BOOTSTRAP's overall completion
+
+BOOTSTRAP does NOT intercept PULL's gates. Operator may approve everything, defer everything (legitimate — pre-population establishes the baseline; first real triage can happen at operator's chosen cadence), or reject (in which case no bridges are written but the project folder + README + inbox still exist from Stage B).
+
+If PULL surfaces zero items (rare; would happen only if the recommended archetype set has zero archetype-overlap matches in the vault), pre-population emits "0 items surfaced; inbox is empty until vault grows" and proceeds to Stage D.
+
+### Stage D — Source artifact update + completion report
+
+After PULL completes (whether items were applied or not):
+
+#### Step D1 — Source artifact frontmatter writes
+
+Update the source artifact's frontmatter via Edit tool:
+
+- `applies-to-projects: [<new-slug>]` — overwrite or add. If source previously had `applies-to-projects: []` or absent, becomes `[<new-slug>]`. If source had other slugs already, append `<new-slug>` (operator can sharpen via PUSH later).
+- `routed-at: <today>` — set or overwrite.
+- `promoted-to-project: <today>` — set or add. New field per conventions.md v1.2.
+
+Do NOT move the source out of `00_inbox/decisions-pending/`. The inbox file is a workflow surface, not a permanent home; future vault-hygiene may relocate promoted opportunities into the new project's folder or `99_archive/`, but that's a separate operation. BOOTSTRAP just sets the frontmatter signal.
+
+#### Step D2 — Completion report
+
+```
+BOOTSTRAP COMPLETE — <new-slug>
+
+Source: <source-path>
+  Frontmatter updated:
+    applies-to-projects: [<new-slug>]
+    routed-at: <today>
+    promoted-to-project: <today>
+
+Project scaffolded: <area>/<slug>
+  Path: 04_projects/<area>/<slug>/
+  Repo: <repo-path or "knowledge-only">
+  Symlink: <vault-path → repo-path or "n/a">
+
+README written: <readme-path>
+  Archetypes: [<list>]
+  Applicability-confidence: <level>
+  Founding-artifact: [[<source-slug>]]
+  Purpose: <one-line summary>
+
+Inbox instantiated: <inbox-path>
+
+Pre-population (PULL outcome):
+  Applied: <count>
+  Kept: <count>
+  Deferred: <count>
+  Not-applicable: <count>
+  Already-bridged: <count>
+
+Bridges written: <N>
+  <bridge-1-path>
+  <bridge-2-path>
+  ...
+
+Conventions.md edit: <yes — promoted <archetype> from future to live | no>
+
+Suggested commit (stages by name):
+
+cd ~/workspace/second-brain
+git add \
+  04_projects/<area>/<slug>/README.md \
+  04_projects/<area>/<slug>/_intel-inbox.md \
+  <bridge-paths from PULL> \
+  <punchlist-path from PULL if created> \
+  <artifact-paths with routed-at updates from PULL> \
+  <source-artifact-path> \
+  _meta/conventions.md  # only if convention edit landed
+git status  # verify nothing unintended is staged
+git commit -m "Bootstrap project <new-slug> from <source-slug> via intel-routing BOOTSTRAP
+
+Scaffolded under 04_projects/<area>/<slug>/. Archetypes: <list>. Confidence: <level>.
+Pre-population PULL: <N> applied, <M> kept, <K> deferred.
+<Optional: conventions.md edit promoted <archetype> from future to live.>
+
+Refs: _meta/specs/intel-routing-skill-spec.md"
+
+(If yes-repo: also commit in the repo for the .kos/ scaffold + .vault-config.md.)
+
+cd ~/workspace/repos/<slug>
+git add .kos/README.md .kos/.vault-config.md
+git status
+git commit -m "Scaffold .kos/ for intel-routing BOOTSTRAP'd project <slug>
+
+Bootstrapped from [[<source-slug>]] via intel-routing BOOTSTRAP.
+
+Refs: ~/workspace/second-brain/_meta/specs/intel-routing-skill-spec.md"
+```
+
+Stop. Do not chain into PUSH (the source's promotion to project IS the routing).
+
+### BOOTSTRAP edge cases
+
+- **Source artifact is not an opportunity.** BOOTSTRAP accepts any artifact type, but the apply-to-existing detection in Stage A1 may flag the source's likely fit with existing projects. Pattern artifacts, tool notes flagged `new-business-direction: true`, and content-idea notes flagged `could-become-project: true` are the most common non-opportunity inputs.
+- **Source artifact is already routed to projects.** If source's `applies-to-projects:` is non-empty, BOOTSTRAP surfaces a friction note at Gate 1: "source is already routed to <N> projects. Promote-to-project would add a new project to that list. Consider whether the source belongs in any of the existing target projects' scope first." Operator can proceed (BOOTSTRAP adds the new slug; source's prior project relationships preserved) or exit.
+- **Recommended slug collides with an existing project.** Slug uniqueness is checked across all `04_projects/<area>/`. On collision, executor surfaces the conflict at Gate 1: "slug `<slug>` already exists at `04_projects/<area>/<slug>/`. Choose a different slug or modify the existing project instead."
+- **Repo at `~/workspace/repos/<slug>/` exists but has no `.kos/`.** KOS-setup script handles this idempotently (creates `.kos/` inside the existing repo + symlinks). No special handling.
+- **Repo exists AND has `.kos/` already symlinked.** KOS-setup script is idempotent and skips. BOOTSTRAP's B3 README customization may overwrite the existing README — surface a warning at Gate 1: "repo's `.kos/README.md` already exists with content. BOOTSTRAP will overwrite. Proceed? (yes / use-existing-README / exit)". Default: ask.
+- **Operator chose knowledge-only but the area is `clients/_active`.** Unusual (client engagements typically have repos for execution-logs). Surface as Gate 1 confirmation: "client engagements typically use yes-repo for execution-log + lessons capture. Confirm knowledge-only? (yes / switch-to-yes-repo)". No hard block; operator-discipline question.
+- **Multiple `(future)` archetypes in the proposal.** Surface all at Gate 1; operator can promote each one independently or fall back to live alternatives. Single conventions.md edit can cover multiple promotions.
+- **Source's body doesn't yield a clear purpose statement.** Executor surfaces "purpose statement could not be drafted with confidence; suggest one or accept placeholder ('TBD — fill in after scaffolding')" at Gate 1.
+- **App-factory paste-prompt step is skipped via "skip repo init" but archetypes include `saas-product`.** Unusual but valid (operator may want to set up the project shell first and run app-factory later). Stub README left in the repo with reminder; no warning beyond that. App-factory paste-prompt is operator-discretion territory; BOOTSTRAP doesn't enforce.
+- **PULL pre-population surfaces a contested bin.** Pass-through to PULL's gates; BOOTSTRAP doesn't intercept. If operator rejects PULL entirely at PULL Gate 1, BOOTSTRAP still completes (project folder + README + inbox exist; just no bridges written). Source artifact still gets its `promoted-to-project:` update at Stage D since the scaffolding succeeded.
 
 ## Metadata contract
 
@@ -768,9 +1164,9 @@ Per spec composition points: BOOTSTRAP delegates project-folder scaffolding to t
 - `applicability-confidence: high | medium | low` — existing value (for diff display)
 - `routed-at: YYYY-MM-DD` — existing value (for diff display)
 - `based-on-clients: [project-slug, ...]` — provenance, carried forward unchanged
-- `new-business-direction: true` (on tool notes) — flag for BOOTSTRAP mode candidate (forward reference)
+- `new-business-direction: true` (on tool notes) — flag surfaced in `_meta/intel-opportunities-inbox.md`; valid BOOTSTRAP input
 - `could-become-project: true` (on content-idea notes) — same as above
-- `archived: true` (any artifact) — excludes from PUSH
+- `archived: true` (any artifact) — excludes from PUSH and PULL; BOOTSTRAP surfaces a friction note if a source is archived
 
 ### Reads (does not write) — from project README frontmatter
 
@@ -778,8 +1174,9 @@ Per spec composition points: BOOTSTRAP delegates project-folder scaffolding to t
 - `applicability-confidence: high | medium | low` — informs the operator's calibration sanity but does not directly drive routing
 - `archived: true` (if present) — excludes the project from routing
 
-### Writes — only on Gate 2 approval
+### Writes — only on Gate 2 approval (PUSH and PULL) or Gate 1 confirm-promote (BOOTSTRAP)
 
+**PUSH writes:**
 - `applies-to-projects: [...]` — overwritten with re-derived value
 - `applies-to-archetypes: [...]` — overwritten with archetype union
 - `applicability-confidence: high | medium | low` — overwritten with re-derived value
@@ -788,7 +1185,24 @@ Per spec composition points: BOOTSTRAP delegates project-folder scaffolding to t
 - New file: `<project-folder>/bridge-<artifact-slug>-to-<project-slug>.md` per approved project
 - Appends to: `<project-folder>/_punchlist.md` per approved project
 
-PUSH never touches any other frontmatter field. Status, tags, type, created, updated, and all other fields are left alone.
+**PULL writes** (additionally):
+- `routed-at: <today>` on each applied artifact
+- `applicability-confidence: <new>` on deferred items where operator lowered
+- `applies-to-projects: [<list minus project-slug>]` on not-applicable items (default) or `applies-to-archetypes: [<list minus sharpened>]` (alternate)
+- New bridge files per applied artifact
+- Appends to `_punchlist.md`
+- Edit to `_intel-inbox.md` Last triage section
+
+**BOOTSTRAP writes** (atomic on Gate 1 confirm-promote, plus PULL chained writes if pre-population produces applies):
+- New repo `.kos/` structure (via KOS-setup script) OR new project folder under `04_projects/<area>/<slug>/` for knowledge-only
+- New `<project-folder>/README.md` with `archetypes:`, `applicability-confidence:`, `founding-artifact:`, customized purpose
+- New `<project-folder>/_intel-inbox.md` instantiated from template
+- Symlink `<project-folder>` → `<repo>/.kos/` (via KOS-setup) for yes-repo path
+- Source artifact frontmatter: `applies-to-projects: [<new-slug>]` (append if other slugs exist), `routed-at: <today>`, `promoted-to-project: <today>`
+- Optional `_meta/conventions.md` edit promoting `(future)` archetype to live
+- All PULL writes (bridges + punchlist + per-artifact routed-at + inbox Last triage) from chained pre-population pass
+
+None of the modes touch frontmatter fields outside the named set. Status, tags, type, created, updated, and other fields are left alone unless the operation explicitly creates a new file (where all frontmatter is authored).
 
 ## Composition with existing skills
 
@@ -814,11 +1228,11 @@ PUSH then takes the synthesis path as input and runs its standard two-gate flow.
 
 ### `knowledge-os-setup` add-project-vault mode
 
-BOOTSTRAP mode (Session 3) delegates project-folder scaffolding to `knowledge-os-setup`'s init-project-vault.sh script. Not relevant to v1.0 PUSH.
+BOOTSTRAP mode (Session 3, shipped 2026-05-28) delegates repo-side project-folder scaffolding to `knowledge-os-setup`'s `scripts/init-project-vault.sh`. The script creates `.kos/{specs,scopes,execution-logs,lessons}/` inside the repo, installs README + .vault-config.md from the templates in `assets/templates/project/`, and symlinks `.kos/` into the second-brain vault under `04_projects/<area>/<slug>/`. BOOTSTRAP's Step B2 invokes the script; B3 then customizes the just-installed README with operator-confirmed archetypes + founding-artifact + purpose statement. Knowledge-only projects (no repo) bypass the script and create the project folder directly in the vault.
 
 ### app-factory `init-project`
 
-BOOTSTRAP mode (Session 3) optionally invokes `repos/app-factory/prompts/init-project.md` for repo-side scaffolding when the new project needs code. Not relevant to v1.0 PUSH.
+BOOTSTRAP mode optionally surfaces the app-factory paste-prompt at Step B1 when the new project needs a code repo and the repo doesn't yet exist. BOOTSTRAP does NOT execute app-factory's init-project flow directly — that flow is a paste-prompt for a Claude Code session inside the new repo. Operator confirms repo-created (or skips) and BOOTSTRAP proceeds. This keeps app-factory's invocation paradigm intact (operator + Claude Code in the repo) while integrating cleanly into the BOOTSTRAP flow.
 
 ## Friction-point-driven defaults (Phase 2 observations)
 
@@ -834,7 +1248,7 @@ Bulk-set high-confidence on migrated artifacts is inflation. PUSH default: high 
 
 ### Phase 1 reconnaissance was 7-10x off (#8) — pre-flight reconnaissance
 
-For PUSH, the artifact is one file; reconnaissance is cheap (read the file). For BOOTSTRAP (Session 3), pre-flight will produce an accurate "files to be touched" estimate before approval so operator can right-size batches.
+For PUSH, the artifact is one file; reconnaissance is cheap (read the file). For BOOTSTRAP (v1.2, shipped 2026-05-28), input gathering step 4 runs the archetype-based query against the vault and counts artifacts that would surface in PULL pre-population. The count is surfaced at Gate 1 so operator can right-size expectations (e.g., "PULL would surface ~120 archetype-matched artifacts at first triage" tells operator whether to scope the new project's first PULL pass tight or wide).
 
 ### Pre-launch projects produce heavy defer ratio (#11) — situational archetype gating
 
@@ -894,11 +1308,11 @@ Required-element discipline per the convention spec: heading text matches verbat
 
 - Does NOT promote patterns from 1/3 to 2/3 or 2/3 to 3/3 (vault-curation discipline; no skill yet)
 - Does NOT write or modify synthesis documents (that's `multi-source-synthesis`)
-- Does NOT triage already-routed artifacts inside project inboxes (that's PULL, Session 2)
-- Does NOT scaffold new project folders (that's BOOTSTRAP, Session 3; delegates to `knowledge-os-setup`)
+- Does NOT execute app-factory's init-project flow directly — BOOTSTRAP surfaces the paste-prompt for operator + Claude Code in the new repo
+- Does NOT move source artifacts out of `00_inbox/decisions-pending/` after BOOTSTRAP promotes them (frontmatter signals the promotion; physical relocation is a separate vault-hygiene operation)
 - Does NOT auto-run after VIS or `multi-source-synthesis` (composition is opt-in only)
 - Does NOT commit to git (operator commits manually after reviewing diffs)
-- Does NOT touch frontmatter fields outside the five named ones (type, status, tags, etc. are left alone)
+- Does NOT touch frontmatter fields outside the five named ones plus the new `promoted-to-project:` and `founding-artifact:` fields (type, status, tags, etc. are left alone)
 - Does NOT touch archived projects or archived artifacts
 
 ## Reference files
@@ -921,21 +1335,23 @@ Composition skills:
 - **Knowledge OS setup:** `~/workspace/skills/knowledge-os-setup/SKILL.md`
 - **App-factory init-project:** `~/workspace/repos/app-factory/prompts/init-project.md`
 
-Worked examples for PUSH:
+Worked examples:
 
 - **PUSH complex case (multi-project synthesis):** `examples/push-on-seo-cluster-synthesis.md` — PUSH against `03_domains/seo/cluster-synthesis-ai-era-seo-cluster-2026-05-27.md`. Routes to EV + S&H + Keelworks + dad-businesses. Validates the project-first algorithm + archetype union derivation + multi-project bridge discipline.
 - **PUSH simple case (narrow source-note routing):** `examples/push-on-jono-claude-code-seo-masterclass.md` — PUSH against the Jono Catliff source. Validates situational archetype gating (excludes S&H + dad-businesses despite hierarchy overlap, because Jono is post-launch-shaped methodology).
 - **PULL post-launch case (active engagement):** `examples/pull-on-ev-electric.md` — PULL against EV's inbox. Regression test reproducing Phase 2 manual triage outcome (99 candidates → 6 applies + 88 keeps + 5 defers + 0 not-applicable) exactly. Includes Window B idempotence walkthrough validating routed-at suppression prevents re-bridge churn the day after a triage runs. Validates batched Gate 1 + 10-rule pre-classification + single-bridge-per-cluster discipline at full inbox scale.
 - **PULL pre-launch case (GBP-blocked):** `examples/pull-on-s-and-h.md` — PULL against S&H's inbox. Reproduces Phase 2 manual triage outcome (99 candidates → 1 apply + 11 keeps + 87 defers + 0 not-applicable) exactly. Critical validation of rule 3 (slug-named situational conflicts default to defer, not not-applicable) against 87-item bulk situational-conflict scenario; rule 4 validated by GSC-self-takeover apply despite GBP blocker. Exercises the friction-observation-#11 "heavy defer ratio" shape and asymmetry-with-PUSH on situational gating.
+- **BOOTSTRAP promote-to-project case:** `examples/bootstrap-on-onboarding-agent-opportunity.md` — BOOTSTRAP against `opportunity-onboarding-agent-productized-service`. Validates the full happy path: Gate 1 scaffold proposal → repo + KOS-setup invocation → README customization → inbox instantiation → chained PULL pre-population → source artifact update. Surfaces the `(future)` archetype promotion friction (proposal recommends `professional-services` + `productized-service`, latter of which is `(future)`).
+- **BOOTSTRAP apply-to-existing exit case:** `examples/bootstrap-exits-to-push-on-higgsfield-opportunity.md` — BOOTSTRAP against `opportunity-higgsfield-predict-virality-as-cro-deliverable-tier`. Validates the Stage A1 apply-to-existing detection: source's archetype overlap with existing Keelworks project is strong (Keelworks-CRO pricing tier mechanism), so BOOTSTRAP recommends apply-to-existing and exits with a paste-ready PUSH invocation. No scaffolding occurs.
 
-Read the worked examples to see Gate 1 + Gate 2 outputs in full for both PUSH and PULL.
+Read the worked examples to see Gate 1 + Gate 2 outputs in full for PUSH, PULL, and BOOTSTRAP.
 
 ## Self-application note
 
-PUSH v1.0 was built in Session 1 of Phase 3 of the intel-routing rollout. Sessions 2 (PULL) and 3 (BOOTSTRAP) follow. Each session lands one mode end-to-end, including composition with existing skills.
+The skill shipped across three sessions of Phase 3 of the intel-routing rollout (Sessions 1 and 2 on 2026-05-28, Session 3 on 2026-05-28). Each session landed one mode end-to-end, including composition with existing skills.
 
-The design responds to friction Phase 2 surfaced — bridge-note proliferation, confidence inflation, situational archetype gating, dual-field artifacts — by encoding the right discipline as defaults rather than retrofitting them after PUSH ships. The project-first routing-decision algorithm (vs spec's archetype-first) was a refinement surfaced during the Session 1 design pass; the original spec assumed PUSH would trust existing frontmatter, but the Phase 2 migration-induced over-tagging proved the assumption wrong. PUSH re-derives from body and surfaces the diff against existing.
+The design responds to friction Phase 2 surfaced — bridge-note proliferation, confidence inflation, situational archetype gating, dual-field artifacts, recon-was-7-10x-off — by encoding the right discipline as defaults rather than retrofitting after each session ships. The project-first routing-decision algorithm (vs spec's archetype-first) was a refinement surfaced during the Session 1 design pass; the original spec assumed PUSH would trust existing frontmatter, but the Phase 2 migration-induced over-tagging proved the assumption wrong. PUSH re-derives from body and surfaces the diff against existing. PULL inherits the discipline by skipping per-item re-derivation (which would burn operator attention at 90+ candidates) and trusting surfaced values — operators suspecting inflated values invoke PUSH on suspect items separately. BOOTSTRAP returns to the PUSH discipline of re-deriving (source-artifact-shaped, not project-shaped) and surfacing the recommendation for operator confirmation.
 
-The two-gate structure (routing decision + bridge proposal) is the load-bearing discipline. Operator decisions on routing are upstream of and orthogonal to operator decisions on bridge content; conflating them at one gate would force the operator to think about both at once and produce worse decisions on both.
+The two-gate structure (decision gate + output gate) is the load-bearing discipline across all three modes. Operator decisions on routing/triage/scaffold-parameters are upstream of and orthogonal to operator decisions on output content (bridges or pre-population outcomes); conflating them at one gate would force the operator to think about both at once and produce worse decisions on both. BOOTSTRAP's Gate 1 is composite (promote-vs-apply-to-existing + scaffold parameters) — the two sub-decisions are heavily coupled, so surfacing them together is appropriate; PUSH/PULL's two-gate split applies where the decisions are orthogonal.
 
-After Session 1 ships, the `_meta/specs/intel-routing-skill-spec.md` "Build outcomes" section gets a PUSH-shipped entry noting what was built differently from the original spec and why (the project-first algorithm + the two-gate structure + the situational-archetype-as-gate semantics are the load-bearing differences).
+After Session 3 ships, the `_meta/specs/intel-routing-skill-spec.md` "Build outcomes" section captures what was built differently from the original spec and why across all three modes — the project-first algorithm + two-gate structure + situational-archetype-as-gate semantics (PUSH); the batched Gate 1 + 10-rule pre-classification + slug-named-defer asymmetry (PULL); the apply-to-existing exit path + composite Gate 1 + PULL-chained pre-population (BOOTSTRAP).
