@@ -3,7 +3,7 @@ name: output-quality-loop
 description: Evaluate a finished Knowledge OS artifact against the specs that define what "good" looks like for its type, produce a structured verdict (PASS / NEEDS REVISION minor or substantive / FAIL), generate a revision prompt the producing chat can ingest to regenerate, and (Mode 4) compose with `perplexity-refinement` to research the strongest published version of each gap and feed those elevation suggestions back into the revision prompt. Triggers on phrases like "quality-check <artifact-path>," "evaluate <artifact-path>," "run output-quality-loop on <artifact-path>," "is this draft ready to ship," "does this brief meet the spec," "did the refinement pass actually elevate the source note," "audit this synthesis against its sources," "elevate this draft against the strongest published version," "what's the best version of this artifact in the world," or any time the operator wants a structured fitness evaluation of an artifact already on disk. Also fires via the auto-invoke convention block other skills emit at completion (see references/auto-invoke-convention.md). The keystone of the output-quality-loop system; Phases 2-6 of the roadmap build on top of this skill.
 ---
 
-# Output Quality Loop Skill (v1.1)
+# Output Quality Loop Skill (v1.2)
 
 The quality-evaluation layer of the Knowledge OS. Runs after an artifact lands. Reads the artifact, walks the spec-routing table to gather every spec source that applies to that artifact type, builds an evaluation checklist from the specs, scores the artifact against the checklist, lands a verdict, writes the verdict to the folder-level quality log, and — when the verdict is NEEDS REVISION or FAIL — produces a revision prompt the producing chat can ingest to regenerate.
 
@@ -41,7 +41,7 @@ Do **not** use this skill for:
 
 ---
 
-## Four invocation modes
+## Five invocation modes
 
 ### Mode 1 — EVALUATE (the core mode)
 
@@ -331,6 +331,141 @@ Per `references/folder-quality-log-shape.md` and `references/research-budget-per
 
 ---
 
+### Mode 5 — AUTO-APPROVE-AND-ESCALATE (the operator-bottleneck mode)
+
+The judgment mode. Modes 1–4 evaluate fit and elevate quality; Mode 5 decides what happens with the verdict. High-confidence PASS verdicts ship without operator review. Low-confidence PASS, NEEDS REVISION, FAIL, and 3-iteration stalls escalate to the operator on two paths (light vs hard) with full diagnostic.
+
+Mode 5 turns the loop from "operator reviews every verdict" into "operator reviews only the verdicts that need judgment." The cost of being wrong is bounded — operator can override any auto-approve, any escalation, any threshold.
+
+**Trigger phrases:**
+
+- Auto-fires as the third step of Mode 1, after the verdict + folder-log write (and after Mode 4 if Mode 4 ran)
+- Manual: "Run Mode 5 on `<artifact-path>`" — re-evaluates the auto-approve decision against the current calibration table without re-running Mode 1
+
+**Critical behavior for Mode 5:**
+
+- **Confidence is per-type, not global.** A PASS at 95 on a refinement output is a different decision than a PASS at 95 on a Core 30 page. Read `references/confidence-calibration.md` for the per-type thresholds; don't apply a uniform cutoff.
+- **The auto-approve gate reads the artifact's own frontmatter, not the folder log.** Same pointer pattern as Phase 3's publish gate. Mode 5 writes `last-confidence-score:` into frontmatter; downstream gates read it from there. The folder log holds the archaeology, not the gate signal.
+- **Operator overrides are first-class events, not edge cases.** `--bypass-confidence`, `--force-escalate`, `--escalate "<reason>"` all leave audit records in the folder log under `### Operator override`. The Phase 5 `--bypass-quality-loop` pre-existing flag continues to skip the whole loop with its own audit record. See `references/operator-controls.md` for the full flag set.
+- **Light vs hard escalation are different surfaces.** Light escalation surfaces in the producing folder's `_escalation-queue.md` — borderline PASS verdicts and NEEDS REVISION verdicts that came in below the auto-revise threshold land there for operator review. Hard escalation surfaces in `_meta/escalations/escalation-YYYY-MM-DD-<artifact-slug>.md` PLUS as a tracker row in `_active-chats-tracker.md` § "Hot decisions sitting on Oliver's plate" — FAIL verdicts and 3-iteration stalls land there.
+- **Conservative-by-default during the calibration window.** The starter thresholds in `references/confidence-calibration.md` are intentionally tight (Core 30 95 / cluster 90 / SKILL.md 90 / tactic 85 / brief 85 / refinement 80). Quarterly refresh tunes them based on real operator-agreement rates. Skewing toward more escalations during the early-data window is the right trade-off.
+
+**Workflow:** 5 steps. Each step has a stop condition; honor it.
+
+#### Step 1 — Compute the confidence score
+
+Inputs (per `references/confidence-calibration.md` § "How the score is computed"):
+
+1. **Hard-requirement margin** — how comfortably the artifact cleared (or missed) hard requirements
+2. **Quality-dimension margin** — how far above (or below) the verdict's quality-dimension threshold
+3. **Discipline-rule cleanliness** — zero violations vs minor vs severe
+4. **Iteration position** — first-iteration verdict vs third-iteration verdict
+5. **Spec-routing coverage** — all routed spec sources loaded cleanly vs missing or stale sources
+
+Weighted average per the per-type weights in the calibration table. Rounded to nearest integer. Result is a number 0–100.
+
+Apply the elevation rules from `references/confidence-calibration.md` § "How the score elevates or de-elevates":
+
+- Spec-routing coverage gap → score capped at 70 (regardless of weighted average)
+- Third-iteration PASS verdicts capped at PASS-confidence anchor minus 5
+- Mode 4 "validates" on every gap → +5
+- Mode 4 "inconclusive" on 3+ gaps → −10
+
+**Stop condition.** Final confidence score computed.
+
+#### Step 2 — Write the score to frontmatter + folder log
+
+1. **Artifact frontmatter** gains a fourth quality-tracking field:
+
+   ```yaml
+   last-confidence-score: 95
+   ```
+
+   This sits alongside the three Mode 1 fields (`quality-log:`, `last-evaluated:`, `last-verdict:`).
+
+2. **Folder log per-artifact section's Latest line** extends with confidence:
+
+   ```markdown
+   **Latest:** PASS (2026-05-28) — iteration 1 of 3 — confidence 95
+   ```
+
+3. **Folder log iteration entry metadata block** gains a Confidence line:
+
+   ```markdown
+   **Confidence:** 95 (PASS anchor 80; +10 hard-requirement margin; +5 spec-routing coverage clean; +0 iteration position; +0 Mode 4 not run)
+   ```
+
+   The breakdown is one line per non-zero input contribution. If a contribution was zero, omit it from the breakdown (don't pad).
+
+**Stop condition.** Frontmatter updated, Latest line updated, iteration metadata block updated.
+
+#### Step 3 — Apply the auto-approve gate
+
+Read the per-type auto-approve threshold from `references/confidence-calibration.md` § "Per-artifact-type calibration."
+
+For the artifact:
+
+- **Verdict is PASS AND confidence ≥ threshold** → auto-ship. Skip to Step 5.
+- **Verdict is PASS AND confidence < threshold** → light escalation. Continue to Step 4 with the light path.
+- **Verdict is NEEDS REVISION (minor) AND iteration < 3** → not Mode 5's problem (Mode 2 loops it; Mode 5 fires next iteration).
+- **Verdict is NEEDS REVISION (substantive) AND iteration < 3** → not Mode 5's problem (Mode 2 loops it).
+- **Verdict is NEEDS REVISION (any tier) AND iteration = 3** → hard escalation (3-iter stall). Continue to Step 4 with the hard path.
+- **Verdict is FAIL** → hard escalation regardless of iteration. Continue to Step 4 with the hard path.
+- **Operator flagged `--force-escalate`** → light escalation regardless of confidence.
+- **Operator flagged `--bypass-confidence`** → auto-ship regardless of confidence; record the override.
+- **Operator flagged `--escalate "<reason>"`** → hard escalation regardless of verdict; record the reason.
+
+**Stop condition.** Auto-approve decision made; the artifact is routed to ship / light / hard.
+
+#### Step 4 — File the escalation (light or hard)
+
+##### Light escalation path
+
+1. **Locate or create `<folder>/_escalation-queue.md`.** Same folder as the artifact. Same convention as `_quality-log.md` — underscore prefix.
+2. **Append a row to the "Awaiting review" section** per the shape in `references/operator-controls.md` § 5:
+
+   ```markdown
+   ### <artifact-slug>
+   - **Verdict:** PASS | NEEDS REVISION (minor) | NEEDS REVISION (substantive)
+   - **Confidence:** 78 (threshold 85 for type `tactic-note` — below by 7)
+   - **Path:** `<absolute-path>`
+   - **Folder log:** [[_quality-log#<artifact-slug>]]
+   - **Revision prompt:** `<artifact-path>.revision-prompt.md` (when verdict ≠ PASS)
+   - **Recommended action:** ship | revise | regenerate
+   - **Why escalated:** confidence below auto-approve threshold | high-stakes dimension partial | operator forced
+   ```
+
+3. **Emit a stdout notification** to the operator naming the artifact + revision prompt path + recommended action.
+
+##### Hard escalation path
+
+1. **Create `_meta/escalations/escalation-YYYY-MM-DD-<artifact-slug>.md`** per the file shape in `_meta/escalations/_README.md`. Includes full verdict summary quoted verbatim from the folder log + iteration history when 3-iter stall + recommended next steps.
+2. **Add a row to `_meta/handoffs/_active-chats-tracker.md` § "Hot decisions sitting on Oliver's plate"** with a one-line summary referencing the escalation file. Bump tracker `last-change:` per the standard tracker-edit pattern.
+3. **Emit a stdout notification** naming both files.
+
+**Stop condition.** Escalation files written, tracker updated (hard path only), operator notified.
+
+#### Step 5 — Record the auto-approve audit (when auto-shipped)
+
+When the artifact auto-ships (Step 3 decision was "auto-ship"), append a `### Auto-ship audit — YYYY-MM-DD` H3 section to the artifact's per-artifact section in the folder log. Shape:
+
+```markdown
+### Auto-ship audit — YYYY-MM-DD HH:MM
+
+**Verdict:** PASS
+**Confidence:** 95
+**Threshold:** 95 (type: Core 30 page draft)
+**Decision:** auto-ship — confidence at or above threshold
+**Override flag:** none | `--bypass-confidence` | `--force-escalate` (but suppressed because... — only fires when an override is in play)
+**Downstream gate:** publish-core-30-page.py reads `last-verdict: PASS` + `last-confidence-score: 95` from frontmatter
+```
+
+This is the auto-ship paper trail. The Phase 5 dashboard's "auto-shipped vs escalated" distribution Dataview-queries this section across folders.
+
+**Stop condition.** Audit section appended. Mode 5 done.
+
+---
+
 ## Evaluation report format
 
 Every Mode 1 run produces a report in this exact shape (mirrors what gets written to the folder log):
@@ -439,9 +574,9 @@ Adds the "what's the strongest version of this in the world?" pass as Mode 4 abo
 
 Every artifact-producing skill in the vault emits the auto-invoke block at completion. The convention becomes the default; this skill is the universal evaluator.
 
-### Phase 6 auto-approve thresholds
+### Phase 6 auto-approve thresholds (shipped as Mode 5 in v1.2, 2026-05-28)
 
-Adds a confidence score per evaluation. High-confidence PASS verdicts ship without operator review; everything else queues for human judgment. The frontmatter field set grows to include `quality-confidence:` (high / medium / low).
+Adds a numeric confidence score per evaluation. High-confidence PASS verdicts ship without operator review; everything else queues for human judgment on one of two surfaces (light escalation in the producing folder's `_escalation-queue.md`; hard escalation in `_meta/escalations/escalation-*.md` plus a row in the master tracker's "Hot decisions" section). Frontmatter gains `last-confidence-score: <0-100>` alongside the Mode 1 three-field set. Per-type thresholds + score math + calibration history live in `references/confidence-calibration.md`; operator override flags and clearing workflows live in `references/operator-controls.md`. Conservative starter thresholds (Core 30 95 / cluster 90 / SKILL.md 90 / tactic 85 / brief 85 / refinement 80) anchor against the sparse Phase 1–5 calibration data; quarterly refresh tunes them against accumulated operator-agreement signal.
 
 ---
 
@@ -454,8 +589,13 @@ Every Mode 1 invocation produces exactly these artifacts:
 3. **Artifact frontmatter update** — `quality-log:`, `last-evaluated:`, `last-verdict:` fields added or updated on the artifact being evaluated.
 4. **Revision prompt (when verdict ≠ PASS)** — emitted to stdout; written to `<artifact-path>.revision-prompt.md` if the operator named a path or auto-invoke mode is active.
 5. **External-research findings (when Mode 4 fires)** — appended as a `### External research (Mode 4)` sub-section to the artifact's per-artifact section in the folder log; elevation suggestions integrated into the revision prompt's "Elevation suggestions from auto-research" section; `auto-research-last-run:` + `auto-research-path:` added to artifact frontmatter.
-6. **Terse completion summary in chat** — per the standing `feedback_terse_completion_reports.md` memory:
-   - Verdict + iteration count
+6. **Confidence score (when Mode 5 fires)** — `last-confidence-score: <0-100>` added to artifact frontmatter; folder log Latest line and iteration metadata block both name the score; auto-approve decision routed to ship / light-escalate / hard-escalate.
+7. **Auto-ship audit (when Mode 5 decides auto-ship)** — `### Auto-ship audit — YYYY-MM-DD` sub-section appended to the artifact's per-artifact section in the folder log naming the threshold + decision + downstream gate.
+8. **Light escalation queue (when Mode 5 light-escalates)** — row added to `<folder>/_escalation-queue.md` § "Awaiting review" naming the artifact + confidence + recommended action + revision prompt path. File created if absent.
+9. **Hard escalation file (when Mode 5 hard-escalates)** — `_meta/escalations/escalation-YYYY-MM-DD-<artifact-slug>.md` created with full diagnostic; row added to `_active-chats-tracker.md` § "Hot decisions sitting on Oliver's plate"; tracker `last-change:` bumped.
+10. **Terse completion summary in chat** — per the standing `feedback_terse_completion_reports.md` memory:
+   - Verdict + iteration count + confidence score (Mode 5)
+   - Auto-ship / light-escalate / hard-escalate decision (Mode 5)
    - 2-3 top fixes if revision needed
    - File paths touched
 
@@ -474,7 +614,9 @@ Before reporting completion to the operator:
 5. **Cap check** — if this is iteration 3 and verdict ≠ PASS, the escalation report is emitted, not a new revision prompt.
 6. **Mode-4 budget check** — if Mode 4 ran, the per-artifact query count is at or under the cap in `references/research-budget-per-type.md`; the `Path used:` line is named (Path A vs Path B); the `Termination reason:` line is named; the elevation suggestions cite their Perplexity-surfaced URLs.
 7. **Mode-4 refusal check** — if `perplexity-refinement` returned the refusal message during Mode 4, the folder log records the refusal and the revision prompt does NOT include fabricated elevation suggestions sourced from vault-internal content.
-8. **Non-destructive check** — the artifact body is unchanged. Only the frontmatter fields (the three Mode-1 fields plus the two Mode-4 fields when applicable) were touched.
+8. **Non-destructive check** — the artifact body is unchanged. Only the frontmatter fields (the three Mode-1 fields plus the two Mode-4 fields when applicable plus the `last-confidence-score:` field when Mode 5 ran) were touched.
+9. **Mode-5 confidence check** — if Mode 5 ran, the artifact's frontmatter has `last-confidence-score: <0-100>`; the folder log's Latest line names the confidence; the iteration metadata block has a Confidence breakdown line. The score is consistent across the three places.
+10. **Mode-5 escalation check** — if Mode 5 escalated (light or hard), the relevant escalation surface exists (`<folder>/_escalation-queue.md` for light; `_meta/escalations/escalation-*.md` PLUS a tracker row for hard); the operator notification was emitted to stdout. If Mode 5 auto-shipped, the `### Auto-ship audit` section was appended to the artifact's folder-log section.
 
 ---
 
@@ -486,7 +628,9 @@ Before reporting completion to the operator:
 - **Body editing.** v1 never touches the artifact body. Future phases may add a "body fix proposal" mode, but it would still be operator-gated.
 - **Multi-LLM verdict consensus.** Single evaluator. No parallel scoring across models.
 - **Cross-folder log consolidation.** The Dataview dashboard at `_meta/dashboards/quality-loop-dashboard.md` (skeleton shipped Phase 1) aggregates state; the skill itself doesn't reach across folders.
-- **Confidence-score auto-approval.** Phase 6 work. v1 emits verdicts; the operator decides what to do with NEEDS REVISION outputs.
+- **Auto-tuning thresholds based on operator overrides.** Phase 6 v1.2 calibrates manually via the quarterly refresh in `references/confidence-calibration.md`. Auto-tuning (learning new thresholds from override patterns) is future work.
+- **Operator-side escalation UI.** Escalations surface as markdown files (`_escalation-queue.md` per folder; `_meta/escalations/escalation-*.md` for hard escalations) and tracker rows. A dedicated UI for managing the queue is future work.
+- **Cross-artifact-type confidence generalizations.** Each artifact type carries its own calibration row; no shared confidence-anchor logic. Generalizing across types is future work.
 
 ---
 
@@ -502,6 +646,8 @@ When you need them, read these:
 - `references/verdict-rollup-thresholds.md` — the per-verdict threshold rules (PASS / REVISION-minor / REVISION-substantive / FAIL)
 - `references/folder-quality-log-shape.md` — the folder-level `_quality-log.md` file structure, frontmatter, per-artifact section shape, and the artifact's own frontmatter pointer convention
 - `references/research-budget-per-type.md` — Mode 4 cost discipline: per-artifact-type query caps, top-N gap selection, cache reuse rules, termination conditions, audit-trail shape
+- `references/confidence-calibration.md` — Mode 5 score math + per-artifact-type auto-approve thresholds + score-elevation rules + calibration history (updated quarterly)
+- `references/operator-controls.md` — Mode 5 operator override flags + manual escalation + threshold-adjustment workflow + escalation-clearing workflow
 
 ---
 
@@ -546,6 +692,22 @@ When you need them, read these:
 **How it surfaces:** The `Path used:` line in the folder log says "Path A" but the cited sources are generic web results, not Perplexity-Pro-curated sources. Or the line is missing entirely.
 
 **How to fix:** The refusal step in `perplexity-refinement` is structural — it's supposed to make this impossible. If Mode 4 is bypassing the refusal, it's calling some other research tool directly. Find the call site, route it through `perplexity-refinement`, and verify the refusal cascades. This is the same failure mode that caused Wave 0 of `perplexity-refinement` to silently substitute Cowork `WebSearch` — the Phase 2 fix to `perplexity-refinement` doesn't help if Mode 4 dodges around it.
+
+### M7: Calibration drift on confidence scores (added 2026-05-28, v1.2)
+
+**The issue:** Mode 5's confidence scores drift away from operator-agreement rates over time. The auto-approve gate ships artifacts the operator would have escalated, or escalates artifacts the operator would have shipped.
+
+**How it surfaces:** Per-type override rate (operator manually flipping the Mode 5 decision via `--bypass-confidence` or `--force-escalate`) exceeds 10% over a trailing 30-day window. The dashboard at `_meta/dashboards/quality-loop-dashboard.md` surfaces the threshold-tune candidate. Or: an auto-shipped artifact gets reverted within 48 hours of publish.
+
+**How to fix:** Trigger a non-quarterly calibration refresh per `references/confidence-calibration.md` § "When to recalibrate." Either retune the auto-approve threshold (column 1 of the calibration table) or retune the per-type anchors (columns 2-4) depending on whether the issue is gate-level or score-level. Add the refresh to the calibration history table at the bottom of the file.
+
+### M8: Auto-shipped artifact reverted post-ship (added 2026-05-28, v1.2)
+
+**The issue:** Mode 5 auto-shipped an artifact at high confidence; downstream consumer (publish gate, scaffolder, deployment) revealed a problem the loop didn't catch.
+
+**How it surfaces:** The artifact's `last-confidence-score:` is at or above the per-type threshold, but the operator reverted the publish or rolled back the deploy within 48 hours. The folder log's `### Auto-ship audit` section is now misleading.
+
+**How to fix:** (1) Append a `### Post-ship correction` H3 section under the artifact's per-artifact section in the folder log naming what the loop missed and how the issue was discovered. (2) Trigger M7 — calibration drift — and lower the per-type auto-approve threshold by 5 points (Core 30 95 → 100, etc.) until the next quarterly refresh. The dataset is now telling us the prior threshold was too low. (3) If the gap the loop missed is a spec-source gap (the artifact passed every loaded spec, but a relevant spec wasn't in the routing table), trigger M1 — spec-routing gaps — and extend the routing table.
 
 ### M4: Iteration cap stalls (added 2026-05-27, v1.0)
 
