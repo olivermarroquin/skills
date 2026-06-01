@@ -70,11 +70,11 @@ The skill operates against **two tiers of trackers**:
 
 **Per-project trackers** at `~/workspace/second-brain/04_projects/<area>/<active>/<project-slug>/_chat-tracker.md` (with companion machine-readable digest at `_chat-status.md`). Project-scoped mirror of the master tracker — same visual conventions, same row shapes, scoped to one project. Tier-2 and Tier-3 collapse into one "Queued (project-scoped)" table at project scale (the master tracker keeps the tier discipline vault-wide). Shape specs at `references/project-chat-tracker-shape.md` (human-readable) and `references/project-status-digest-shape.md` (machine-readable digest).
 
-**Phase 2 aggregator (planned).** The `master-tracker-aggregator` skill (vault-orchestrator Phase 2, not yet shipped) will walk every `_chat-status.md` in the vault, parse the YAML frontmatter, and roll the rolled-up state into a generated section of the master tracker. Until that ships:
+**Phase 2 aggregator (shipped 2026-06-01).** The `master-tracker-aggregator` skill (at `~/workspace/skills/master-tracker-aggregator/SKILL.md`) walks every `_chat-status.md` digest under `04_projects/clients/_active/` and `04_projects/personal/`, parses the YAML frontmatter, and rolls the result into a generated section of the master tracker (between `<!-- AGGREGATOR:BEGIN -->` / `<!-- AGGREGATOR:END -->` markers) or to a sister file (`--output sister-file`). Two modes: AGGREGATE (write) and DRIFT-DETECT (read-only freshness audit). Idempotent; non-destructive on per-project files; surfaces gaps (missing digests, parse errors, expired blockers) rather than silently skipping. Composes here — the aggregator consumes the digest contract this skill's references folder defines; this skill's tracker discipline owns everything outside the marker block.
 
-- Per-project trackers are **read-only-by-aggregator placeholders**. Operators continue to use the master tracker as the editing surface.
-- Per-project trackers exist for project-scoped reading + as scaffolding for the Phase 2 rollup.
-- Cross-link both directions: per-project tracker links to master tracker; master tracker links to per-project trackers via the project README pointers.
+- Per-project trackers are **operator-editable surfaces** going forward; the aggregator reads the companion `_chat-status.md` digest (not the human-readable tracker) and rolls up.
+- Cross-link both directions: per-project tracker links to master tracker; master tracker's aggregator-generated section links back to per-project digests.
+- See `~/workspace/skills/master-tracker-aggregator/SKILL.md` for the aggregator's full contract; `~/workspace/skills/master-tracker-aggregator/references/aggregation-algorithm.md` for the parsing + rendering rules.
 
 **DECOMPOSE-generated handoffs register at both levels.** Once a project subfolder exists with a `_chat-tracker.md`, DECOMPOSE's tracker-row-additions step writes the new row into both the master tracker (in the appropriate tier) AND the per-project tracker (project-scoped). Row shapes are identical across levels — same Chat name + Handoff wikilink + Why now / Trigger to spawn cells.
 
@@ -809,3 +809,4 @@ These are observations seeded at skill creation. Promote to standalone notes if 
 - `./references/project-chat-tracker-shape.md` — data contract for per-project `_chat-tracker.md` files (Phase 1 of vault-orchestrator)
 - `./references/project-status-digest-shape.md` — data contract for per-project `_chat-status.md` machine-readable digests (parsed by Phase 2 aggregator)
 - `./references/chat-resilience-checkpoints.md` — optional `### Checkpoint` block convention for long-running chats
+- `~/workspace/skills/master-tracker-aggregator/SKILL.md` — Phase 2 aggregator skill that consumes the digest contract above and rolls up into the master tracker
