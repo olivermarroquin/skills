@@ -24,6 +24,37 @@ What this means in practice across the suite:
 
 A heavy month (20+ refinements + a few blueprint runs + several scans) could land at 10-15% of monthly budget. The plan accommodates an aggressive Knowledge-OS cadence without budget pressure most months.
 
+## Path A status — REMOVED as of 2026-06-01 (Cowork pairing bug; Sonar API is the only working Perplexity path)
+
+**Effective 2026-06-01, Path A (Claude in Chrome → Perplexity Pro) is no longer a working path for Perplexity-suite skills.** This section in the doc below still describes Path A for archival reasons, but every suite skill should treat Path B (Sonar API) as the de-facto default until Anthropic ships a fix for the known Cowork pairing bug.
+
+**What happened:** the Cowork desktop ↔ Claude in Chrome native-messaging handshake has been broken since the April 15, 2026 Cowork desktop update. Symptom: `mcp__Claude_in_Chrome__list_connected_browsers` returns `[]` even when the extension is installed, signed in, and the desktop-side connector is toggled on. Anthropic's [Claude in Chrome Troubleshooting article](https://support.claude.com/en/articles/12902405-claude-in-chrome-troubleshooting) acknowledges the bug; tracked at [anthropics/claude-code GitHub issue #48806](https://github.com/anthropics/claude-code/issues/48806). The standard recovery sequence (disable/re-enable extension → restart Chrome → restart Cowork) does NOT fix it.
+
+**What this means for suite skills:**
+
+- The two-path decision tree below collapses to one path: Path B (Sonar API via `~/workspace/second-brain-tier3/automation/scripts/perplexity_sonar.py`).
+- The refusal step still applies if Path B is also unavailable (no API key configured in `automation/secrets/perplexity-sonar.key`).
+- Cost is now metered exclusively on the Sonar pay-per-query bill (~$0.005-$0.02/query), not the Pro subscription credit pool. The $21.20/mo Pro subscription still exists for the operator's interactive Perplexity use (browser, mobile apps) but isn't reachable from skills until Anthropic fixes the pairing bug.
+- The 2026-06-01 dual-substrate research comparison ([`phase-0-research-comparison-2026-06-01.md`](../../../second-brain/_meta/handoffs/local-model-migration/phase-0-research-comparison-2026-06-01.md)) is the worked example: 14 queries on `sonar-pro` for ~$0.36 via the Sonar script, confirming the path works end-to-end.
+
+**Re-check trigger:** any of the following flips Path A back to default:
+
+- Anthropic ships a Cowork update that fixes the pairing bug (watch the release notes)
+- `mcp__Claude_in_Chrome__list_connected_browsers` starts returning a non-empty array spontaneously
+- The operator manually re-tests the pairing and confirms it works (re-running the disable/enable + restart sequence)
+
+When any of the above happens, restore Path A as the default in this doc + update the auto-memory `reference_perplexity_sonar_only.md`.
+
+**Drift in other vault docs (cleanup queued, not blocking):** several vault docs still describe Path A as the primary/preferred path. Per the auto-memory `reference_perplexity_sonar_only.md`, these are the known stale references:
+
+- `~/workspace/skills/perplexity-refinement/SKILL.md` — extensive Path A documentation with browser checklists
+- `~/workspace/second-brain/_meta/decision-research-conventions.md` — references "Perplexity Pro via Claude in Chrome → Sonar API → refusal"
+- `~/workspace/second-brain/_meta/handoffs/_active-chats-tracker.md` — Hermes Prework C "Why now" cell references "Path A or Path B"
+- `~/workspace/second-brain/_meta/handoffs/hermes-harness/prework-c-perplexity-validation-load-bearing-claims.md` — likely Path A references in body
+- Other `~/workspace/second-brain/_meta/handoffs/perplexity-skill-build/` wave handoffs probably mention Path A as primary
+
+A future cleanup pass should reconcile these against the post-2026-06-01 reality. Not a blocker for current Perplexity-suite skills — they read this file first and inherit the current path state.
+
 ## Research workflow — WebSearch first pass, Sonar Pro verification (added 2026-06-01)
 
 After the Phase 0 hardware-research comparison (operator-driven A/B test, 2026-06-01), the standing default for any research task is:
