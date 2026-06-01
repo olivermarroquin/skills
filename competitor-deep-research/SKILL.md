@@ -405,3 +405,191 @@ The implementation work is a follow-up project. This spec captures what the refi
 - [[strategy-custom-coded-nextjs-via-ai-with-competitor-inspiration]] — the strategy the refinement supports
 - [[tactic-emulate-competitor-design-patterns-with-ai]] — the tactic that consumes design dossiers
 - `~/workspace/skills/design-emulation-verify/SKILL.md` — sister skill that verifies our build against the reference's dossier
+
+---
+
+## Refinement — link-map mode (added 2026-05-31)
+
+**Status:** spec + worked example shipped 2026-05-31 in the Phase 4b internal-linking session. Implementation lives alongside this SKILL.md; outputs go to `second-brain/05_shared-intelligence/research-briefs/link-maps/`.
+
+### Why this mode exists
+
+The base skill captures Section 9 ("Internal-linking observations") inside each per-competitor brief, but the data sits buried among the rest of the SEO/positioning analysis. Phase 4b of the [[client-seo-onboarding-automation]] blueprint needs a denser, standalone deliverable: a **link map** — a structured picture of how a competitor's pages link to each other — that downstream consumers can read without wading through 3,000 words of unrelated brief.
+
+The link map feeds two consumers:
+
+1. **A synthesis recommendation** — "this is what our site's link graph should look like." One per client domain. Lives at `link-maps/_synthesis-<client-slug>.md`.
+2. **The internal-linking inserter script** (`repos/ai-agency-core/scripts/insert-internal-links.py`) — reads the synthesis and proposes/inserts cross-links into the client's published page corpus.
+
+Treat link-map mode the same way design-fingerprint mode is treated: a focused dimension that can run alongside the base skill (`dossier-plus-brief` equivalent) or on its own.
+
+### Trigger phrases for link-map mode
+
+In addition to the base skill's triggers, also use this mode when:
+
+- "Map the internal links on [site]"
+- "Run a link-map on [site]"
+- "Analyze [site]'s internal-linking architecture"
+- "Build a reference architecture for [client]'s link graph"
+- "What does the link graph look like on [top competitor]"
+- Any time a site is being prepared for the internal-linking inserter described in [[client-seo-onboarding-automation]] Phase 4b
+
+### Inputs (in addition to the base skill's inputs)
+
+- **Competitor URL list** — required. The homepage URL plus at least one service page and one location page per competitor. Three competitors per (service, city) cell is the default cap.
+- **Client slug** — required when writing a synthesis. The synthesis filename is `_synthesis-<client-slug>.md`.
+- **Output folder** — defaults to `second-brain/05_shared-intelligence/research-briefs/link-maps/`. One file per competitor + one synthesis per client.
+- **Source for the competitor list** — pull from the relevant Tier 3 intersection brief if one exists (per Phase 2c); otherwise from the Phase 1 competitor identification step.
+
+### Output contract — the link-map dossier format
+
+Spec'd at `second-brain/05_shared-intelligence/research-briefs/link-maps/_README.md`. Reproduced here:
+
+```
+<competitor-slug>.md
+
+Frontmatter:
+- type: link-map
+- status: draft | verified
+- created, updated
+- competitor-slug, competitor-domain
+- source-pages-audited: [list of URLs]
+- tags: [link-map, internal-linking, <client-slug>, <niche>]
+
+Content sections (in order):
+1. Identity (one paragraph — name, domain, what this map covers)
+2. Top-level navigation
+   - 2a. Main nav structure (with anchor text + destination)
+   - 2b. Mega-menu depth (if applicable)
+   - 2c. Mobile nav variations
+3. Footer link blocks
+   - 3a. Services column
+   - 3b. Locations column
+   - 3c. Support / legal column
+   - 3d. Social block
+4. Breadcrumb structure (pattern + depth)
+5. In-body link patterns
+   - 5a. Link density per page type (homepage, service page, city page, blog)
+   - 5b. Anchor-text conventions (bare slug, full title, action phrase, sentence-embedded)
+   - 5c. Link-graph between service pages, city pages, and hubs (mermaid diagram)
+6. Related-content sections (end of page) — shape, count, ordering
+7. Patterns worth emulating (3-5 specific patterns the client should adopt)
+8. Patterns to skip (anti-patterns)
+9. Sources audited
+```
+
+### New procedure for link-map extraction
+
+Beyond the base skill's Section 9:
+
+#### A. Nav and footer extraction
+
+Procedure:
+
+1. `mcp__workspace__web_fetch` the homepage. Extract the `<nav>` and `<footer>` blocks.
+2. For each `<a href>` in those blocks, capture: anchor text, destination URL, destination type (service page / city page / hub / external / utility), nesting depth in the menu.
+3. Group destinations by type. Note total count per type.
+4. If the nav is a mega-menu (multi-column dropdown), capture the column structure. Mega-menus expose more links per page-impression and are a known ranking signal.
+5. Note whether the same nav serves every page or whether contextual nav variants exist.
+
+#### B. Breadcrumb extraction
+
+Procedure:
+
+1. Fetch a service page and a city page. Search for `<nav aria-label="breadcrumb">`, `<ol class="breadcrumb">`, schema.org `BreadcrumbList` markup, or visually-styled breadcrumb divs near the top of the main content area.
+2. Capture: depth (Home > Category > Service vs. Home > Service), separator character, whether the current page is linked or plain text, schema markup presence.
+3. Note whether breadcrumbs appear on every page type or only some.
+
+#### C. In-body link density and anchor-text patterns
+
+Procedure:
+
+1. Pull the main content area of a service page (excluding nav/footer/sidebar).
+2. Count `<a href>` tags inside that content area. Compute link density (links per 100 words) using the brief's word-count estimate.
+3. Categorize each link's anchor text: bare slug (`/panel-upgrade/`), full title (`Electrical Panel Upgrades in Vienna VA`), action phrase (`See our EV charger installation page`), or sentence-embedded (`our panel-upgrade work in Vienna`).
+4. Repeat on a city page and a blog post. The density and anchor-text mix often differ by page type.
+5. Surface the dominant anchor-text style. Sentence-embedded links score higher with Google because they read like editorial, not navigation.
+
+#### D. Link-graph mapping
+
+Procedure:
+
+1. From the service page, list every internal link destination (excluding nav/footer/utility links).
+2. From the city page, do the same.
+3. Build a directed graph: nodes are page types (homepage, service hub, service page, city page, neighborhood page, blog, FAQ); edges are link directions with frequency.
+4. Render the graph as a mermaid diagram inside the brief. Reading the diagram tells the operator at a glance whether the site is a star (everything links to the homepage), a web (service pages link to city pages link to neighborhoods), or a hub-and-spoke (category hubs absorb link equity from leaf pages).
+5. The graph shape is the reference architecture the client's site should match.
+
+#### E. Related-content section audit
+
+Procedure:
+
+1. Look for sections labelled "Related Services," "You might also like," "Other electrical services we offer," etc. at the bottom of service and city pages.
+2. Capture: card count, ordering logic (alphabetical, topical adjacency, popularity), link style (card, list, inline paragraph).
+3. Note whether related-content selection is hand-curated or template-driven. Template-driven sets that always show the same five siblings are easy to reproduce; hand-curated sets are harder but read more natural.
+
+### How this folds back into the base skill
+
+When running the base skill in `link-map` mode alongside the standard competitor brief:
+
+- The base skill's Section 9 ("Internal-linking observations") shrinks to a one-paragraph summary with a wikilink to the dossier: `Full link map: [[link-maps/<competitor-slug>]]`.
+- The dossier carries the detailed evidence; the brief carries the strategic implication for the client's SEO and content plan.
+- If running link-map mode standalone (no full brief), skip the brief and write only the dossier.
+
+### When to use base skill vs link-map mode
+
+| User intent | Mode |
+|---|---|
+| Full competitive landscape for SEO + content strategy | Base skill |
+| Cross-page link architecture only | Link-map mode |
+| Prepare input for the internal-linking inserter | Link-map mode + synthesis |
+| Compare nav/footer/breadcrumb patterns across competitors | Link-map mode on each, then synthesis |
+| Audit the client's own site against a reference architecture | Link-map mode on the client's site, compared against the synthesis |
+
+If both base skill and link-map mode are needed, run base skill first, then link-map mode. They produce sibling files (the brief in `admin-extracts/competitor-research/`, the dossier in `research-briefs/link-maps/`).
+
+### Synthesis output — the reference architecture recommendation
+
+After running link-map mode on the top 2-3 competitors for the same (service, city) cell or the same client, write a synthesis at `<output-folder>/_synthesis-<client-slug>.md`. Use this shape:
+
+```
+Frontmatter:
+- type: link-map-synthesis
+- status: draft | promoted
+- client-slug, client-domain
+- competitors-mapped: [list]
+- created, updated, tags
+
+Content sections:
+1. Headline finding (one paragraph: the strongest pattern across the link maps)
+2. Reference architecture
+   - 2a. Homepage links to: <concrete list>
+   - 2b. Service hub links to: <concrete list>
+   - 2c. Service-city page links to: <concrete list>
+   - 2d. City page links to: <concrete list>
+   - 2e. Category hub links to: <concrete list>
+3. Anchor-text conventions to adopt (3-5 rules)
+4. Link density targets per page type (table)
+5. Patterns to skip (anti-patterns the competitors do but we won't)
+6. Mermaid diagram of the recommended link graph
+7. Mapping to the data-driven layer (`related_cards` recommendations per service)
+8. Mapping to the semantic layer (where the AI inserter should add contextual links)
+9. Verification checklist (what to confirm after the inserter has run a pass)
+```
+
+The synthesis is what `insert-internal-links.py` reads. The script's `--reference-architecture <path>` flag points at this file.
+
+### Future implementation notes
+
+- The nav/footer extraction lends itself to a script (`scripts/extract_nav_footer.py`) that takes a URL and emits structured output. Defer until 3+ link maps exist.
+- Anchor-text classification can be partially automated with a regex/heuristic pass; full classification stays a Claude-driven analysis.
+- Mermaid generation can be templated once the page-type taxonomy is stable.
+- Cross-link the synthesis to the relevant Tier 1 service briefs' Section 9 — the `related_cards` recommendations should agree.
+
+### Related
+
+- [[client-seo-onboarding-automation]] — the blueprint Phase 4b serves
+- `~/workspace/repos/ai-agency-core/scripts/insert-internal-links.py` — the script that consumes the synthesis
+- `~/workspace/repos/ai-agency-core/scripts/README-insert-internal-links.md` — operator-facing docs
+- [[_template-service-brief]] — Section 9 (internal-linking observations) feeds into link-map mode
+- [[execution-log-2026-05-31-internal-linking-automation]] — the build session that shipped this refinement
