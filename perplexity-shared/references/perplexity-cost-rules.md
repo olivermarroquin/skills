@@ -2,7 +2,9 @@
 
 Every Perplexity-suite skill follows the same cost-management rules. This file is the single source. When the rules change (Perplexity changes its plan structure, the credit allocation shifts, a new fallback path opens up), update this file once and every suite skill picks up the change.
 
-**Last revised:** 2026-05-28 — switched from the legacy "~200 Pro Search queries per rolling 7-day window" framing to the current credits-based model. Pro is now metered in credits/month (4,000/mo on the standard plan as of 2026-05-27). The two research paths — Path A (Claude in Chrome browser) and Path B (Sonar API) — bill into separate buckets.
+**Last revised:** 2026-06-01 — narrowed the "Cowork never reads tier-3" rule to the `automation/` carve-out. Path B key now lives at `~/workspace/second-brain-tier3/automation/secrets/perplexity-sonar.key` (script-readable, value only, perms 600), paired with rolodex entry at `personal/credentials/perplexity-sonar.md` (operator-readable, metadata + value). Env var `PERPLEXITY_API_KEY` is no longer used; scripts read the file directly via a two-candidate-path lookup that works from both Mac Terminal and Cowork sandbox.
+
+**Previous revision:** 2026-05-28 — switched from the legacy "~200 Pro Search queries per rolling 7-day window" framing to the current credits-based model. Pro is now metered in credits/month (4,000/mo on the standard plan as of 2026-05-27). The two research paths — Path A (Claude in Chrome browser) and Path B (Sonar API) — bill into separate buckets.
 
 ## The capacity reality — Perplexity Pro is metered in credits/month
 
@@ -22,12 +24,31 @@ What this means in practice across the suite:
 
 A heavy month (20+ refinements + a few blueprint runs + several scans) could land at 10-15% of monthly budget. The plan accommodates an aggressive Knowledge-OS cadence without budget pressure most months.
 
+## Research workflow — WebSearch first pass, Sonar Pro verification (added 2026-06-01)
+
+After the Phase 0 hardware-research comparison (operator-driven A/B test, 2026-06-01), the standing default for any research task is:
+
+1. **First pass: Cowork WebSearch** (free, fast, currency-strong). Captures the headline facts, recent news, and broad coverage of the question.
+2. **Verification + refinement pass: Perplexity Sonar Pro via Path B** (~$0.02-0.03 per query). Runs on the same questions as the WebSearch pass to: (a) verify load-bearing claims against curated AI-overview synthesis, (b) extract precise numbers where WebSearch had ranges or approximations, (c) reach beyond the WebSearch results to find data WebSearch missed.
+3. **Compare + reconcile.** Produce a comparison file noting where they agree, disagree, and miss each other. WebSearch tends to be more current on recent pricing/news; Sonar tends to be more rigorous, citation-dense, and willing to refuse-when-uncertain.
+
+**When to skip the Sonar verification pass:**
+- Research informs a low-stakes decision (<$5K, easily reversible)
+- Question is informational only, not feeding a commitment
+- WebSearch results were already from authoritative primary sources and the claims are clearly current
+
+**When to skip the WebSearch first pass and go straight to Sonar:**
+- Question requires citation-rigorous answer the first time (e.g., decision-research handoffs feeding hardware purchase, client commitments, contract decisions)
+- Operator has explicitly requested the Pro verification
+
+The comparison discipline is a one-time validation, not a permanent overhead. Once the operator has done ~3-5 paired A/B runs and has personal confidence in when each source wins, the explicit comparison file can become optional and the standard pattern collapses to "WebSearch first, Sonar selectively on claims that matter." Track the per-source strengths the operator observes over time at `~/workspace/second-brain/03_domains/automation-systems/research-substrate-comparison.md` (or wherever fits the vault structure).
+
 ## Two research paths — same skill family, separate cost buckets
 
 Every Perplexity-suite skill that runs interactively (refinement, blueprint, topic-gaps, niche-validation, etc.) follows the same priority decision tree at runtime:
 
 1. **Path A — Claude in Chrome (default).** The skill calls `mcp__Claude_in_Chrome__list_connected_browsers`; if a browser is connected and signed-in to Pro, it drives the logged-in browser session. Queries draw on the operator's monthly Pro credit pool (4,000/mo).
-2. **Path B — Sonar API (backup).** When Claude in Chrome is unavailable (no browser, not signed in, headless run, scheduled task), the skill checks for `PERPLEXITY_API_KEY` (env var or configured path) and uses the Sonar HTTP endpoints. Sonar is pay-per-query, billed separately; rough math is $0.005-$0.02 per query depending on model (`sonar`, `sonar-pro`, etc.).
+2. **Path B — Sonar API (backup).** When Claude in Chrome is unavailable (no browser, not signed in, headless run, scheduled task), the skill reads the Sonar API key from the tier-3 automation carve-out at `~/workspace/second-brain-tier3/automation/secrets/perplexity-sonar.key` (operator-managed plain-text file, perms 600) and uses the Sonar HTTP endpoints. Sonar is pay-per-query, billed separately; rough math is $0.005-$0.02 per query depending on model (`sonar`, `sonar-pro`, etc.). The canonical script that handles this lookup is `~/workspace/second-brain-tier3/automation/scripts/perplexity_sonar.py`.
 3. **Refusal (no third path).** If neither Path A nor Path B is available, the skill **pauses and surfaces the gap to the operator**. It does NOT fall back to Cowork's built-in `WebSearch` or `web_fetch`. That would silently substitute a different research source (general web search, not Perplexity Pro's curated AI-overview synthesis) and consume zero credits — defeating the contract the subscription pays for.
 
 The refusal step is the structural protection against silent source substitution. Past invocations of `perplexity-refinement` (Wave 0, 2026-05-27) ran without the refusal step and quietly used Cowork WebSearch when the browser wasn't reachable. Phase 2 of the output-quality-loop project (2026-05-28) added the structural refusal; every future suite skill build inherits it.
@@ -84,13 +105,20 @@ What stays in the Path A (browser) by default:
 - `perplexity-blueprint-research` — flagship, interactive
 - `perplexity-topic-gaps`, `perplexity-niche-validation`, `perplexity-client-discovery`, `perplexity-competitor-move-detection`, `perplexity-ai-overview-hardening` — situational, interactive
 
-**API-key setup.** The skill expects either:
-- env var `PERPLEXITY_API_KEY` exported in the shell environment, or
-- a config-pointed path with the key (e.g., the suite skill reads a path from its own config and loads the key from there).
+**API-key setup (revised 2026-06-01).** The Sonar API key lives in two places by design:
 
-The key itself lives in the operator's tier-3 vault at `~/workspace/second-brain-tier3/personal/business-keelworks.md` (or wherever the operator's Perplexity entry lives). Cowork does NOT read tier-3 directly; the operator populates the env var or config from the tier-3 vault manually. This honors the standing `feedback_never_propose_overwrite_tier3` discipline — the skill never proposes writes against tier-3 paths.
+1. **Rolodex (human-readable master record)** at `~/workspace/second-brain-tier3/personal/credentials/perplexity-sonar.md`. Has the key value PLUS metadata: console URL, account, generation date, rotation date, billing details, notes. Cowork does NOT read this file. The operator looks here when auditing or rotating credentials.
+2. **Vending-machine file (script-readable)** at `~/workspace/second-brain-tier3/automation/secrets/perplexity-sonar.key`. Plain text, value only, no newline, no quotes, perms 600. Scripts (including `perplexity_sonar.py` in the same `automation/` subtree) read from here.
 
-If the env var is unset and no config path resolves to a key, Path B is unavailable and the skill falls through to refusal (per the two-path priority above).
+**Convention carve-out.** Cowork DOES read `second-brain-tier3/automation/` (this one carve-out only). Everything else under tier-3 — `personal/credentials/*.md`, `personal/business-keelworks.md`, `personal/financial.md`, `clients/*`, `_HOME.md`, `conventions.md` — remains air-gapped per the original tier-3 protocol. The "feedback_never_propose_overwrite_tier3" discipline still applies to writes anywhere in tier-3; Cowork does not write to tier-3 (including the automation/ carve-out) without per-path operator approval in chat.
+
+**Path resolution from script.** `perplexity_sonar.py` resolves the key path from either execution context:
+- Mac Terminal: `~/workspace/second-brain-tier3/automation/secrets/perplexity-sonar.key`
+- Cowork sandbox: `~/mnt/workspace/second-brain-tier3/automation/secrets/perplexity-sonar.key` (workspace is mounted under `~/mnt/` in the sandbox)
+
+The script uses whichever path exists. No env var or external config needed.
+
+If the key file is absent from both candidate paths, Path B is unavailable and the skill falls through to refusal (per the two-path priority above).
 
 ## The cost surface stays honest
 
