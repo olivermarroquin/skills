@@ -62,6 +62,26 @@ Indirect triggers — when the operator finishes a chat and asks an open-ended f
 - "Just shipped X. What now?"
 - "I have an hour. What's the highest-leverage thing to spawn?"
 
+## Tracker hierarchy
+
+The skill operates against **two tiers of trackers**:
+
+**Master tracker** at `~/workspace/second-brain/_meta/handoffs/_active-chats-tracker.md`. The operator-facing source of truth for vault-wide chat coordination. All six tables documented in `references/tracker-row-shapes.md`. The operator edits this directly today.
+
+**Per-project trackers** at `~/workspace/second-brain/04_projects/<area>/<active>/<project-slug>/_chat-tracker.md` (with companion machine-readable digest at `_chat-status.md`). Project-scoped mirror of the master tracker — same visual conventions, same row shapes, scoped to one project. Tier-2 and Tier-3 collapse into one "Queued (project-scoped)" table at project scale (the master tracker keeps the tier discipline vault-wide). Shape specs at `references/project-chat-tracker-shape.md` (human-readable) and `references/project-status-digest-shape.md` (machine-readable digest).
+
+**Phase 2 aggregator (planned).** The `master-tracker-aggregator` skill (vault-orchestrator Phase 2, not yet shipped) will walk every `_chat-status.md` in the vault, parse the YAML frontmatter, and roll the rolled-up state into a generated section of the master tracker. Until that ships:
+
+- Per-project trackers are **read-only-by-aggregator placeholders**. Operators continue to use the master tracker as the editing surface.
+- Per-project trackers exist for project-scoped reading + as scaffolding for the Phase 2 rollup.
+- Cross-link both directions: per-project tracker links to master tracker; master tracker links to per-project trackers via the project README pointers.
+
+**DECOMPOSE-generated handoffs register at both levels.** Once a project subfolder exists with a `_chat-tracker.md`, DECOMPOSE's tracker-row-additions step writes the new row into both the master tracker (in the appropriate tier) AND the per-project tracker (project-scoped). Row shapes are identical across levels — same Chat name + Handoff wikilink + Why now / Trigger to spawn cells.
+
+**Optional Opening / Closing Protocol at project scope.** A chat that operates inside one project may optionally run the per-project Opening / Closing Protocol in addition to the master Protocol — same shape, scoped to the project file. Today this is optional secondary writes; Phase 2+ makes per-project trackers the primary editing surface.
+
+**Chat-resilience checkpoints.** Long-running chats may optionally append `### Checkpoint <YYYY-MM-DD HH:MM>` blocks to their row's Notes cell to enable mid-work resumption. Convention at `references/chat-resilience-checkpoints.md`. Most short chats skip checkpoints entirely.
+
 ## Core operating principles
 
 These principles apply across all three modes. Read them before invoking any mode.
@@ -781,8 +801,11 @@ These are observations seeded at skill creation. Promote to standalone notes if 
 - `~/workspace/second-brain/_meta/handoffs/roadmap-client-seo-onboarding-automation/_README.md` — exemplar project subfolder (large)
 - `~/workspace/second-brain/_meta/handoffs/perplexity-skill-build/_README.md` — exemplar project subfolder (medium)
 - `~/workspace/second-brain/_meta/handoffs/intel-routing-rollout/_README.md` — exemplar project subfolder (small)
-- `./references/tracker-row-shapes.md` — data contract for the six tables
+- `./references/tracker-row-shapes.md` — data contract for the six tables of the master tracker
 - `./references/handoff-frontmatter-spec.md` — data contract for handoff files
 - `./references/project-subfolder-template.md` — template for new project READMEs
 - `./references/drift-report-template.md` — drift report format
 - `./references/closing-protocol-template.md` — closing protocol baked into every generated handoff
+- `./references/project-chat-tracker-shape.md` — data contract for per-project `_chat-tracker.md` files (Phase 1 of vault-orchestrator)
+- `./references/project-status-digest-shape.md` — data contract for per-project `_chat-status.md` machine-readable digests (parsed by Phase 2 aggregator)
+- `./references/chat-resilience-checkpoints.md` — optional `### Checkpoint` block convention for long-running chats
