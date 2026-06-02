@@ -233,6 +233,67 @@ Notes:
 
 - Blueprints are system-architecture specs. The evaluation checks completeness (every named component has a description) and consistency (the components named in §1 reappear in §3's data-flow section).
 
+### Scaffolded service/city/client JSON
+
+Spec sources to load:
+
+1. **Source brief that drives the JSON** — the Tier-1 service brief, Tier-2 city brief, or client-fact brief whose contents the scaffolder consumed (path passed by the orchestrator at invocation)
+2. **Canonical reference JSON of the same type** — `vault://repos/ai-agency-core/scripts/data/services/panel-upgrade.json` for service JSONs; `vault://repos/ai-agency-core/scripts/data/cities/<canonical>.json` for city JSONs; `vault://repos/ai-agency-core/scripts/data/client-ev-electric.json` for client JSONs (provides the shape to compare against)
+3. **JSON schema validity** — strict JSON parse + structural completeness (all template-required fields present, no `FILL:` placeholders in mandatory fields)
+4. **Cross-brief consistency** — service.json's `claims` references brand_voice from client.json + matching tone; city.json's intersection-brief threading present per build-order
+
+Notes:
+
+- This is a v1.1 addition (added 2026-06-02) driven by `client-seo-onboarding` v1.1's per-step quality loop contract. The orchestrator calls Mode 1 per scaffolded JSON during its Step 3.
+- The evaluation focuses on schema validity + cross-brief consistency + FILL placeholder detection in mandatory fields. Brand-voice or copy quality is out of scope (handled by downstream `house-voice-rewrite` skill, not this loop).
+- Mode 4 (AUTO-RESEARCH) for this type elevates by re-running cross-brief consistency checks rather than external Sonar queries — the gaps are usually internal threading issues, not external knowledge gaps.
+
+### Imagery-prompt log
+
+Spec sources to load:
+
+1. **`sop-ai-imagery-for-core-30-pages.md`** — `vault://second-brain/_meta/sops/sop-ai-imagery-for-core-30-pages.md` (the canonical imagery SOP)
+2. **The page's data file** — the service / city / client JSON for the page (used to verify reference photo URLs are correctly threaded into the prompts)
+3. **Higgsfield prompt-craft conventions** — when present at `vault://second-brain/03_domains/ai-imagery/tactics/tactic-higgsfield-prompt-shape.md`; gracefully skip if absent
+
+Notes:
+
+- v1.1 addition driven by `client-seo-onboarding` v1.1 Step 6 quality loop.
+- Evaluates completeness (hero + about + scene prompts each present per template), reference photo URL presence (no broken URLs), and prompt structure (matches Higgsfield's preferred input shape).
+- Mode 4 elevates by checking current Higgsfield prompt-craft best practices via Sonar (cap 3 queries; this type's gaps are mostly tactical and benefit from external benchmarking).
+
+### Internal-link proposals + Dead-link audit
+
+Spec sources to load:
+
+1. **`insert-internal-links.py` README** — `vault://repos/ai-agency-core/scripts/README-insert-internal-links.md` if present, or the script's docstring as fallback
+2. **Link-map synthesis when present** — `vault://second-brain/05_shared-intelligence/research-briefs/link-maps/_synthesis-<client>.md` (gracefully skip if absent; data-driven mode doesn't require it)
+3. **Build-order** — `vault://04_projects/clients/_active/<client>/website-archive/new/core-30/_build-order.md` (verifies link destinations against the canonical page list)
+4. **Plain-language conventions** — `vault://_meta/plain-language-conventions.md`
+
+Notes:
+
+- v1.1 addition driven by `client-seo-onboarding` v1.1 Step 10 quality loop.
+- Two distinct artifact shapes routed under one entry: `_internal-link-proposals-*.md` (per-page proposal documents) and `_dead-link-audit-*.md` (corpus-wide audit report).
+- For proposals: evaluates per-axis completeness (Axes A / B / C / D), proposal relevance (does each link have a justification?), and anchor-text variety.
+- For audit: evaluates coverage (every page walked), accuracy (dead links match real file-system absence), and operator-actionability (top-N build-next candidates surfaced).
+- Mode 4 elevates link proposals via `competitor-deep-research` (compose with sibling skill) for SERP-level link-pattern benchmarking.
+
+### Onboarding final report
+
+Spec sources to load:
+
+1. **`client-seo-onboarding` SKILL.md** — `skills://client-seo-onboarding/SKILL.md` (defines what the report MUST cover per Step 11)
+2. **The run's state file** — `vault://04_projects/clients/_active/<client>/_state/onboarding.json` (the report MUST accurately reflect state — every published page in `page_status` should appear in the report's "Pages live" section; every `failures` entry should appear in the "Follow-up needed" section; etc.)
+3. **Plain-language conventions** — `vault://_meta/plain-language-conventions.md`
+
+Notes:
+
+- v1.1 addition driven by `client-seo-onboarding` v1.1 Step 11 quality loop.
+- This is an AGGREGATE evaluation pass — prior steps already evaluated their own artifacts. Step 11 evaluates the report itself for accuracy + completeness against the run state.
+- Mode 4 typically returns "validates" on most gaps — final reports are summaries, not novel claims. Mode 4 budget for this type is light (top-3 gaps; cap 5 queries) — most reports don't need external benchmarking.
+- The evaluation cross-checks state-file fields against report sections; mismatches surface as hard requirement misses (e.g., "page_status has 30 pages live; report names 28" = hard fail).
+
 ## Operator overrides
 
 When the operator runs `quality-check <artifact> against <spec1> <spec2>`, the routing table is bypassed and the operator-named specs are used. Surface the override in the evaluation report so the audit trail names what was actually loaded:

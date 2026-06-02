@@ -68,6 +68,10 @@ The table below is the starting calibration for Phase 6 ship (2026-05-28). It an
 | Research brief | **85** | 75 | 70 | 75 | Feeds downstream scaffolders. Spec-routing coverage weighted high. |
 | Cross-cluster synthesis | **90** | 75 | 70 | 75 | Same shape as cluster synthesis. |
 | Blueprint | **90** | 70 | 65 | 75 | High blast radius — blueprints feed multiple downstream initiatives. |
+| Scaffolded data file (service/city/client JSON) | **90** | 80 | 70 | 75 | Schema-validity-sensitive; FILL-placeholder detection load-bearing. Downstream scaffolders + publish pipeline depend on correctness. Added 2026-06-02 (v1.1 client-seo-onboarding Step 3). |
+| Imagery-prompt log | **80** | 75 | 70 | 70 | Mid-stakes; operator still picks variants downstream so prompt imperfection is recoverable. Higgsfield prompt-craft is fast-moving; lower anchor reflects external-knowledge dependence. Added 2026-06-02 (v1.1 client-seo-onboarding Step 6). |
+| Internal-link proposals + dead-link audit | **85** | 75 | 70 | 70 | Affects corpus graph + crawl behavior; per-axis completeness matters. Audit accuracy is binary (file exists or doesn't). Added 2026-06-02 (v1.1 client-seo-onboarding Step 10). |
+| Onboarding final report | **85** | 80 | 70 | 70 | Aggregate summary; cross-checks state vs report. Most gaps are arithmetic mismatches; first-pass cleanliness is the main signal. Added 2026-06-02 (v1.1 client-seo-onboarding Step 11). |
 
 **Reading the table:**
 
@@ -151,6 +155,7 @@ Every update to this file appends a row here.
 | Date | Author | Change | Trigger |
 |---|---|---|---|
 | 2026-05-28 | Phase 6 ship | Initial table; conservative anchors; n=3 real-use verdicts + n=1 bypass event backing the calibration | Phase 6 build |
+| 2026-06-02 | client-seo-onboarding v1.1 | Added 4 new rows: Scaffolded data file (90), Imagery-prompt log (80), Internal-link proposals + dead-link audit (85), Onboarding final report (85). Conservative-by-default; calibration data sparse until v1.1 first real use. | v1.1 SKILL rewrite (per-step quality loop integration needs per-type thresholds for the artifacts the orchestrator produces) |
 | (next: 2026-08-28) | quarterly refresh | TBD | TBD |
 
 ---
