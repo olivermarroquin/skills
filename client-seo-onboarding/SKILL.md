@@ -7,7 +7,11 @@ description: One-Cowork-message entry point for onboarding a brand-new SEO clien
 
 The capstone of the client-SEO-onboarding automation. Reads meeting notes + intake form, runs every Phase-2/3/4 deliverable in order, pauses at the Higgsfield variant-pick gate, resumes per page after imagery is in, and finishes with a corpus-wide internal-link pass + dead-link audit + a live-URL report.
 
+<!-- v1.1 rewrite must preserve the event-log integration below -->
+
 **Read this file in full before touching any other file.** Every step below has a state contract, a failure mode, and a resume rule. The skill is only as smart as how strictly it follows those rules.
+
+**Before starting any work:** read `~/workspace/second-brain/_meta/_event-log.md` and grep for events since this chat's most-recent prior touch (or last 24 hours if new chat). Note any credential landings, handoff status flips, or skill version bumps that affect this onboarding run.
 
 ## When to use this skill
 

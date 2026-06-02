@@ -114,6 +114,10 @@ Section order (mandatory):
 
 Detailed shape, minimum-content discipline, and section-level examples live in `references/survey-section-shapes.md`.
 
+### Pre-flight (all modes)
+
+**Before running any mode:** read `~/workspace/second-brain/_meta/_event-log.md` and grep for events since the orchestrator's most-recent prior touch (or last 24 hours if first run of the session). Incorporate any credential landings, handoff status flips, skill version bumps, or pattern promotions into the survey/ranking/provision context. This supplements — does not replace — the master tracker read.
+
 ### SURVEY step-by-step
 
 **Step 1 — Read the master tracker.**
@@ -701,6 +705,7 @@ Substrate recommendation is mandatory on every NEXT-MOVES candidate. Cite the co
 - **Editing the master tracker outside the aggregator's marker block (Modes 1-2).** That section belongs to `master-tracker-aggregator`, not this skill. PROVISION (Mode 3) edits the hand-edited "Ready to spawn" / "Queued — Tier 2" / "Queued — Tier 3" sections via row additions — never edits the aggregator's marker block.
 - **Editing per-project digests or trackers.** Read-only on per-project digests; PROVISION may write a new per-project subfolder + `_README.md` only when the operator approves a new project at the review gate.
 - **Editing in-flight or already-queued handoffs.** PROVISION drafts new handoffs; it does not modify handoffs that already exist. Edits to existing handoffs are operator-driven or a separate maintenance chat.
+- **Decomposing remaining work for EXISTING projects.** PROVISION (v1.1) creates a new project subfolder for a new initiative. It does not have a path for existing projects where work is partly done, partly in-flight, and partly remaining — the operator cannot today say "decompose what's left to finish ev-electric Phase 2 work" and expect PROVISION to read the existing project state and draft the remaining-work handoffs into the existing subfolder. This is **known gap 1** in [[../../../second-brain/_meta/handoffs/vault-orchestrator/_README|the vault-orchestrator project README]] (full gap description there). Workaround today: operator drafts a single mid-project handoff by hand following the existing handoffs' shape, OR uses PROVISION on a sub-initiative goal that creates a sibling subfolder. Likely fix: a Mode 4 RESUME-PROVISION shipped in v1.2 OR folded into Phase 5's per-project orchestrator decomposition where the project-surveyor sub-skill knows "where the project is" and feeds into a project-decider that drafts only the remaining-work handoffs.
 - **Cross-vault federation.** Single vault (`~/workspace/second-brain/`). Tier-3 vault is air-gapped by design.
 - **Domain-level per-domain trackers.** Domains stay SURVEY-only — read folder listings + frontmatter freshness signals, don't expect a per-domain tracker.
 - **Semantic-conflict detection.** Edit-zone conflict detection catches shared-file races; it does not predict semantic contradictions between two chats updating disjoint sections. That's a NEXT-MOVES decision-research call when surfaced.
