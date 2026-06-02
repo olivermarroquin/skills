@@ -1,15 +1,17 @@
 ---
 name: vault-orchestrator
-description: Two-mode orchestrator skill that sits above `multi-chat-coordination` and `master-tracker-aggregator`. Reads the entire vault state — master tracker (including the aggregator's generated rollup section), per-project `_chat-tracker.md` + `_chat-status.md` digests, hot decisions, scheduled tasks, `03_domains/` knowledge surfaces, recently-closed chats, and execution-log activity — and produces operator-facing decision support. **Mode 1 (SURVEY):** plain-language state-of-the-vault report with nine ordered sections (in-flight / ready / queued / open decisions / scheduled / recent wins / domain signals / stale signals / cross-project signals). **Mode 2 (NEXT-MOVES):** composes with multi-chat-coordination's NEXT-MOVE ranking, then layers session-budget totals (neutral, no editorializing), parallel-work detection (disjoint file sets), serial-blocked detection (high-leverage unblockers), per-candidate substrate recommendation (Claude Code / Cowork / either) per the working-surfaces convention, decision-research convention on ranking ties or priority conflicts, and a recommended session plan capped at 8 hours. Both modes auto-invoke `output-quality-loop` on their report artifacts. Read-only on vault content; reports are operator-facing chat output by default, optionally persisted to disk. Phase 3 of the vault-orchestrator project (2026-06-01). Trigger phrases include "run vault-orchestrator," "survey the vault," "state of the vault," "what's the state of play," "give me the vault rollup," "what should I work on next," "what should I spawn next," "rank my next moves," "next-moves recommendation," "session plan for tonight," "give me the spawnable list," "what's the highest-leverage move right now."
+description: Three-mode orchestrator skill that sits above `multi-chat-coordination` and `master-tracker-aggregator`. Reads the entire vault state — master tracker (including the aggregator's generated rollup section), per-project `_chat-tracker.md` + `_chat-status.md` digests, hot decisions, scheduled tasks, `03_domains/` knowledge surfaces, recently-closed chats, and execution-log activity — and produces operator-facing decision support plus (in Mode 3) drafted handoffs + a substrate-agnostic spawn queue. **Mode 1 (SURVEY):** plain-language state-of-the-vault report with nine ordered sections (in-flight / ready / queued / open decisions / scheduled / recent wins / domain signals / stale signals / cross-project signals). **Mode 2 (NEXT-MOVES):** composes with multi-chat-coordination's NEXT-MOVE ranking, then layers session-budget totals (neutral, no editorializing), parallel-work detection (disjoint file sets), serial-blocked detection (high-leverage unblockers), per-candidate substrate recommendation (Claude Code / Cowork / either) per the working-surfaces convention, decision-research convention on ranking ties or priority conflicts, and a recommended session plan capped at 8 hours. **Mode 3 (PROVISION):** composes with multi-chat-coordination's DECOMPOSE to split a project goal into N drafted handoffs, runs decision-research at every meaningful decomposition decision, tags each drafted handoff with a `preferred-substrate:` field, scans drafted + in-flight + queued handoffs for shared-file conflicts (edit-zone detection), appends substrate-agnostic copy-paste-ready rows to `_meta/handoffs/_spawn-queue.md`, registers the new project at the appropriate tracker tier, integrates the chat-resilience checkpoint reminder into long-running handoffs, ties the operator-fatigue heuristic to queue totals (warns at >10h queued), and produces a plain-language operator summary. All three modes auto-invoke `output-quality-loop` on their artifacts. Modes 1-2 are read-only on vault content; Mode 3 writes drafted handoffs + queue rows + tracker rows + new project subfolders only after operator approval at a single review gate. Phase 3 + Phase 4 of the vault-orchestrator project (2026-06-01). Trigger phrases include "run vault-orchestrator," "survey the vault," "state of the vault," "what's the state of play," "give me the vault rollup," "what should I work on next," "what should I spawn next," "rank my next moves," "next-moves recommendation," "session plan for tonight," "give me the spawnable list," "what's the highest-leverage move right now," "provision <goal>," "draft handoffs for <goal>," "decompose this project into chats," "set up a spawn queue for <goal>," "scaffold this initiative."
 ---
 
-# Vault Orchestrator (v1)
+# Vault Orchestrator (v1.1)
 
 The hierarchical orchestration layer above `multi-chat-coordination`. Oliver's "vault chief of staff" — the role that today lives in Oliver's head plus the master `_active-chats-tracker.md`. The orchestrator surveys every part of the vault, surfaces what's happening, and ranks what's most valuable to work on next. It does not replace operator judgment. It removes the bottleneck where every "what's the state of play?" or "what should I spawn next?" question requires the operator to mentally walk every project and domain.
 
 The skill exists because the system has grown past one-tracker-can-hold-it-all. 11 projects, 10+ domains, dozens of in-flight + queued chats, scheduled tasks, hot decisions, recently-closed work, unsynthesized sources accumulating in `03_domains/`. Without an aggregating layer, every NEXT-MOVE question routes through Oliver tracking everything manually. This skill is that layer.
 
-The skill is **read-only on vault content**. It never edits per-project files, never edits the master tracker outside the aggregator's marker block (which the aggregator owns, not this skill), never writes a digest. Its outputs are reports — plain-language markdown the operator reads in chat or persists to disk on request. Phase 4 (PROVISION) will add the handoff-drafting + spawn-queue layer; Phase 3 stops short of any spawning.
+**Modes 1 and 2 are read-only on vault content.** SURVEY and NEXT-MOVES never edit per-project files, never edit the master tracker outside the aggregator's marker block (which the aggregator owns, not this skill), never write a digest. Their outputs are reports — plain-language markdown the operator reads in chat or persists to disk on request.
+
+**Mode 3 (PROVISION) writes — but only after operator approval at a single review gate.** PROVISION composes with `multi-chat-coordination` DECOMPOSE to draft handoffs for a proposed initiative, scans them for cross-project edit-zone conflicts, tags each with a preferred substrate, and stages them in a substrate-agnostic `_spawn-queue.md`. No file is written until the operator approves the full decomposition + queue at the review gate. Once approved, PROVISION writes the new project subfolder + `_README.md` + per-phase handoffs + queue rows + master tracker rows atomically. The operator drives every spawn — Mode 3 does not auto-execute any drafted chat.
 
 ## When to trigger
 
@@ -48,11 +50,31 @@ Indirect triggers — when the operator finishes a chat or names a time budget:
 - "Just shipped X. What now?"
 - "Pick my next chat for me"
 
+### Mode 3 — PROVISION (draft handoffs + populate spawn queue)
+
+Direct triggers for decomposing a project goal into drafted handoffs and staging them in the spawn queue:
+
+- "Provision <goal>"
+- "Draft handoffs for <goal>"
+- "Decompose this project into chats"
+- "Scaffold this initiative"
+- "Set up a spawn queue for <goal>"
+- "Plan the chats for <project name>"
+
+Indirect triggers — when the operator names a multi-phase initiative without specifying decomposition:
+
+- "I want to launch <X>. Walk me through what chats this needs."
+- "Build me the project structure for <X>."
+- "Take this strategic-chat output and turn it into spawnable chats."
+- A NEXT-MOVES output chained into PROVISION (operator says "now provision the top candidate" or "draft handoffs for what you just ranked")
+
 ## Core operating principles
 
 These hold across both modes. Read them before invoking either.
 
-**Read-only on vault content.** The orchestrator never edits per-project files, never edits handoff frontmatter, never writes a digest, never edits the master tracker outside the aggregator's marker block (which belongs to the `master-tracker-aggregator` skill, not this one). The orchestrator produces reports. The operator decides what to do with them. Phase 4 adds PROVISION — drafting handoffs + a spawn queue — but that's a separate mode in a separate phase. Don't blur the line here.
+**Modes 1 and 2 are read-only on vault content.** SURVEY and NEXT-MOVES never edit per-project files, never edit handoff frontmatter, never write a digest, never edit the master tracker outside the aggregator's marker block (which belongs to the `master-tracker-aggregator` skill, not this one). They produce reports; the operator decides what to do with them.
+
+**Mode 3 writes only after operator approval.** PROVISION drafts handoffs, queue rows, and tracker rows but stages them at a single review gate before any file is written. No drafted handoff is written, no queue row appended, no tracker row added until the operator says "approved" (with or without edits). On approval, PROVISION writes all proposed files atomically — handoff bodies + project `_README.md` + spawn-queue rows + master-tracker rows in one pass — then runs YAML parse checks on every touched file and emits the auto-invoke quality-loop block. The operator-driven spawn step (paste or fire) is always separate from the draft step.
 
 **Compose, do not reimplement.** NEXT-MOVES composes with `multi-chat-coordination` NEXT-MOVE mode to get the initial leverage ranking, then layers session-budget display + parallel-work detection + serial-blocked detection + substrate recommendation + decision-research convention on top. SURVEY reads what `master-tracker-aggregator` has already rolled up rather than re-walking every digest. Don't duplicate logic that already lives in dependencies — see `references/composition-with-multi-chat-coordination.md` for the contract.
 
@@ -355,6 +377,275 @@ Same convention as SURVEY Step 8. Emit the standard block only when the report w
 
 See `examples/first-next-moves-2026-06-01.md` for the first real-use run against the live vault.
 
+## Mode 3 — PROVISION
+
+### What PROVISION produces
+
+For an operator-provided project goal (or a NEXT-MOVES output chained directly into PROVISION), Mode 3 returns:
+
+1. **A decomposition proposal** — N proposed phase handoffs with dependencies, estimated times, deliverables, and tier classification (Tier 1 ready-to-spawn / Tier 2 same-week queue / Tier 3 explicit-trigger queue)
+2. **A per-handoff substrate tag** — `preferred-substrate: claude-code | cowork | either` baked into each drafted handoff's frontmatter, plus a one-line rationale in the proposal
+3. **A conflict scan** — every drafted handoff's file-set checked against in-flight + queued handoffs' file-sets, with severity scored per [[edit-zone-conflict-detection]]
+4. **Decision-research calls** — every meaningful decomposition decision (phase ordering, scope cuts, dependency choices, substrate ambiguity) run through the five-step decision-research convention with the call documented inline in the proposal
+5. **Checkpoint reminders** — chat-resilience checkpoint reminder section inserted into each drafted handoff whose estimate crosses 2 hours, per [[checkpoint-integration]]
+6. **Spawn-queue rows** — one row per drafted handoff, substrate-agnostic copy-paste-ready prompt, ready to append to `_meta/handoffs/_spawn-queue.md` per [[spawn-queue-shape]]
+7. **Master-tracker rows** — proposed rows at the appropriate tier (default Tier 2 for new projects; Tier 1 only when the operator names a phase as ready-to-spawn immediately)
+8. **Operator-fatigue check** — sum of all drafted-handoff hours; if the spawn queue would exceed 10 hours total, a warning banner is surfaced and the operator can re-rank, defer, or split before approval
+9. **A plain-language operator summary** — "I drafted N handoffs for project X. K conflicts flagged. M ready for Claude Code Task tool, P ready for Cowork paste, Q decisions surfaced for your call before any spawn."
+
+PROVISION surfaces all of this as a **single review gate**. The operator approves the full proposal, edits individual rows, or aborts. No file is written until approval lands.
+
+### When PROVISION fires
+
+The operator triggers PROVISION explicitly (the direct triggers in "When to trigger" above) OR PROVISION is chained from a NEXT-MOVES output when the operator says "now provision the top candidate" / "draft handoffs for what you just ranked." Both entry paths produce the same shape; the chain just supplies the goal automatically.
+
+PROVISION does NOT auto-fire from SURVEY findings. SURVEY surfaces signals; the operator decides whether to provision an initiative around them.
+
+### PROVISION step-by-step
+
+**Step 1 — Receive or gather the project goal.**
+
+Two entry shapes:
+
+- **Operator-provided.** The operator names a goal in plain language: "Build a content calendar generator for EV Electric's blog" / "Launch the Keelworks YouTube channel" / "Stand up the per-client onboarding automation." PROVISION reads the goal, asks 1-2 clarifying questions if underspecified (audience, success criteria, deadlines, prerequisite chats), and proceeds.
+
+- **NEXT-MOVES-chained.** The operator's most recent NEXT-MOVES output named a high-leverage candidate; the operator says "provision that" or "draft handoffs for the top candidate." PROVISION reads the candidate row + its linked handoff (if it exists) + any strategic-context document for the project, then proceeds.
+
+If the goal is genuinely ambiguous (multiple plausible decompositions, no clarifying signal from existing vault docs), PROVISION runs the decision-research convention to lock the goal frame before decomposing. Document the call in the proposal.
+
+**Step 2 — Compose with multi-chat-coordination DECOMPOSE.**
+
+Invoke `multi-chat-coordination` Mode 1 (DECOMPOSE) with the goal. DECOMPOSE returns:
+
+- A proposed kebab-case project slug for the subfolder
+- A list of N phase handoffs with one-sentence purpose + deliverable + prereqs + estimated time
+- A dependency graph in plain text (indented ASCII)
+- A proposed `_README.md` body using the project-subfolder-template
+- Proposed full bodies for each generated handoff (frontmatter + prompt body + closing protocol)
+- Proposed tracker rows at the appropriate tier
+
+PROVISION consumes DECOMPOSE's output as the starting point. The orchestrator does NOT reimplement DECOMPOSE's logic — sizing rules, dependency analysis, tier classification all belong to multi-chat-coordination. See [[composition-with-multi-chat-coordination]] for the handoff shape (composition contract). Phase 4 extends that document to cover DECOMPOSE composition.
+
+If DECOMPOSE returns a single-unit decomposition (one handoff, no dependencies), PROVISION surfaces the result as "this looks like a single-chat unit — propose `handoff-YYYY-MM-DD-<slug>.md` at the root of `_meta/handoffs/` instead of a project subfolder?" The operator confirms or asks PROVISION to push for a multi-phase decomposition.
+
+**Step 3 — Run decision-research at every meaningful decomposition decision.**
+
+DECOMPOSE makes several non-obvious decisions during decomposition. PROVISION's added discipline is to surface those decisions and run the five-step decision-research convention (see [[decision-research-composition]] and `~/workspace/second-brain/_meta/decision-research-conventions.md`) on each one. Typical fire points:
+
+- **Phase ordering.** Two equally-valid orderings (e.g., research-then-build vs build-then-research-during-iteration). Fire the convention; document the call.
+- **Scope cuts.** A proposed phase is too large; should it split into 2 phases or merge two adjacent narrow phases? Fire the convention.
+- **Dependency choices.** A handoff could depend on either of two upstream handoffs; the choice affects parallelizability. Fire the convention.
+- **Substrate ambiguity at draft time.** A drafted handoff's work shape could fit either Claude Code or Cowork; the substrate tag (Step 5) is ambiguous. Fire the convention.
+- **Tier classification.** A handoff is borderline Tier 2 vs Tier 3; the trigger condition isn't clearly named. Fire the convention.
+
+Document each call inline in the PROVISION proposal under a "Decision-research calls" subsection. Each call gets: the question, the option set considered, the recommendation, the rationale.
+
+The convention does NOT fire on every choice — only meaningful ones. PROVISION's job is to err toward firing rather than burying decisions; over-firing produces noise but under-firing produces silent drift.
+
+**Step 4 — Scan for cross-project edit-zone conflicts.**
+
+For each drafted handoff, parse its `## Files to edit` and `## Files to create` sections. Build a file-set per drafted handoff. Then run the detection algorithm in [[edit-zone-conflict-detection]]:
+
+- Pairs of (drafted, in-flight) handoffs touching the same shared file → flag with severity (serial-required / parallel-OK-with-note / warning-only / self-conflict)
+- Pairs of (drafted, queued) handoffs same → flag
+- Pairs of (drafted, drafted) within this PROVISION run → flag (intra-batch conflicts)
+
+For each flagged pair, name the suggested resolution (serialize via queue order, split via handoff refactor, accept-risk via override). The conflict-flag table goes into both the PROVISION proposal AND the spawn-queue's "Conflict flags" section after approval.
+
+Self-conflicts (a drafted handoff that writes to `_spawn-queue.md` or claims to edit the orchestrator's own owned files) are rejected at draft time, not deferred to approval. PROVISION re-drafts or surfaces the contract violation.
+
+**Step 5 — Tag preferred substrate per drafted handoff.**
+
+For each drafted handoff, set `preferred-substrate: claude-code | cowork | either` in its frontmatter. Rules:
+
+- **`claude-code`** — multi-file edits, parallel sub-agent work, long-running autonomous execution, repo-level git workflows, anything that benefits from the Task tool. Default for handoffs estimated >3h with >3 file deliverables and minimal operator gates.
+- **`cowork`** — judgment-heavy conversational work, file-presentation-shaped output, operator-attended research, one-off lookups where the operator wants to weigh in mid-flight. Default for handoffs with explicit operator gates or "discussion chat" framing.
+- **`either`** — the work shape is flexible; either substrate handles it well. Document why (which factors balance out) in the per-handoff rationale.
+
+Cite the working-surfaces convention's "Default routing" table in the rationale (see [[substrate-recommendation-heuristics]]). Generic memory is not a substitute for the explicit routing table.
+
+The substrate tag is the source of truth for the spawn-queue row's "Substrate rec" cell (see [[spawn-queue-shape]] invariant 4).
+
+**Step 6 — Inject the chat-resilience checkpoint reminder where triggers fire.**
+
+For each drafted handoff, check the checkpoint triggers from [[checkpoint-integration]]:
+
+- Estimated time > 2h, OR
+- Deliverable count > 5 files, OR
+- Multi-session shape (operator gates, calendar holds, "across sessions"), OR
+- Research-heavy shape ("deep research" / "many sources" / "synthesis")
+
+Where any trigger fires, insert the "Chat-resilience checkpoint reminder" section between the work description and the closing protocol per the shape in [[checkpoint-integration]]. Where no triggers fire, skip the reminder (avoid convention-noise).
+
+Record the inclusion/skip decision in the proposal: "Included checkpoint reminder in Phases 2, 3, 4 (each >2h); skipped Phase 1 (45min, single-file)."
+
+**Step 7 — Compute the operator-fatigue check.**
+
+Sum the estimated build times across all drafted handoffs. Add to the current spawn-queue total (the queue may already hold rows from prior PROVISION runs). If the resulting queue total exceeds **10 hours**, surface a warning banner at the top of the proposal:
+
+```
+⚠️ Operator-fatigue warning: queued spawn-queue total would reach <Nh> after this PROVISION. The 10-hour ceiling matches the NEXT-MOVES 8-hour session cap plus a context-switch buffer. Re-rank, defer, or split before approval.
+```
+
+The warning is advisory — the operator can approve anyway. Do not block approval on this; the operator's judgment owns the decision. The warning also lands at the top of `_spawn-queue.md` "Queued" section after approval if the threshold is crossed.
+
+**Step 8 — Surface the single review gate.**
+
+Present the full proposal to the operator in plain language with this shape:
+
+```
+PROVISION PROPOSAL — <today>
+
+Goal: <operator's goal in one sentence>
+Proposed subfolder: ~/workspace/second-brain/_meta/handoffs/<project-slug>/
+Tier registration: <default Tier 2 unless one Phase is named as ready-to-spawn now>
+
+Dependency graph:
+<plain-text indented graph from DECOMPOSE Step 3>
+
+N proposed handoffs:
+
+1. phase-1-<short> — <purpose> (Tier 1, ~Nh, claude-code)
+   Prereqs: none
+   Deliverable: <what ships>
+   Checkpoint reminder: included | skipped
+   Conflicts: none | flagged → see conflict table
+
+2. phase-2a-<short> — <purpose> (Tier 2, ~Nh, cowork)
+   Prereqs: phase-1-<short>
+   Deliverable: <what ships>
+   Checkpoint reminder: included
+   Conflicts: serial-required with "<in-flight chat name>" on `_meta/conventions.md` → see conflict table
+
+... (continue for each phase)
+
+Substrate distribution:
+- M handoffs prefer claude-code (Task tool path)
+- P handoffs prefer cowork (paste path)
+- Q handoffs are either
+
+Decision-research calls run:
+1. <call 1 question + recommendation + rationale>
+2. <call 2 ...>
+
+Conflict-flag table:
+| Conflicts with | Shared file | Severity | Suggested resolution |
+|---|---|---|---|
+| ... | ... | ... | ... |
+
+Operator-fatigue check:
+Drafted handoff total: <Nh>
+Current queue total: <Nh>
+Combined: <Nh>
+Status: under-ceiling | ⚠️ over-ceiling
+
+Proposed tracker row additions:
+- M rows to "Ready to spawn next" (Tier 1)
+- P rows to "Queued — Tier 2"
+- Q rows to "Queued — Tier 3"
+
+Proposed spawn-queue row additions:
+- N rows to "Queued" section of `_meta/handoffs/_spawn-queue.md`
+
+Files I would write (none written yet):
+- <full path to <project-slug>/_README.md>
+- <full path to each drafted handoff>
+- <full path to _spawn-queue.md row additions>
+- <full path to _active-chats-tracker.md row additions>
+
+Reply with one of:
+- "approved" — write everything as proposed
+- "approved with edits: <changes>" — write with your modifications
+- "abort" — don't write anything
+- specific feedback like "merge 2a and 2b" or "rename slug to <X>" or "downgrade Phase 3 to Tier 3"
+```
+
+Wait for explicit operator approval. Do not write any file until the operator says so.
+
+**Step 9 — On approval, write everything atomically.**
+
+After approval:
+
+1. Create the project subfolder under `_meta/handoffs/<project-slug>/`
+2. Write the `_README.md` from DECOMPOSE's proposed body
+3. Write each drafted handoff file with frontmatter (including `preferred-substrate:`) + body + checkpoint reminder (where triggered) + closing protocol
+4. Append spawn-queue rows to `_meta/handoffs/_spawn-queue.md` "Queued" section (append-only, monotonic numbering)
+5. Regenerate the spawn-queue "Conflict flags" table from current Queued + in-flight file-sets
+6. Add master-tracker rows in the appropriate tier sections
+7. If the operator-fatigue warning fires, render the banner at the top of `_spawn-queue.md` "Queued" section
+8. Bump frontmatter `last-change:` on the master tracker (one line) and prepend the full pass notes to `_active-chats-tracker-changelog.md`
+9. Bump `_spawn-queue.md` frontmatter `last-change:` + `updated:`
+10. Run the YAML parse check on every touched file. If any fails, surface the failure and offer to roll back.
+
+The writes are atomic per run — handoff written but tracker row missing is a contract violation. If any step fails, surface to operator with a roll-back proposal.
+
+**Step 10 — Tell the operator what to do next.**
+
+Render the plain-language operator summary:
+
+```
+✅ PROVISION complete for <project name>.
+
+What I drafted:
+- N handoffs in `_meta/handoffs/<project-slug>/`
+- N rows in `_spawn-queue.md` (queued, ready to spawn)
+- N rows in the master tracker at <tier>
+
+What's ready to spawn now (Tier 1, K rows):
+- Row 1: <chat name> — substrate rec: <claude-code | cowork | either>
+- ...
+
+What's queued (Tier 2 / Tier 3, P rows):
+- ...
+
+Substrate routing for the queued rows:
+- M rows are best fired via Claude Code Task tool — operator says "fire row N via Task tool" in this orchestrator chat
+- P rows are best pasted into fresh Cowork windows — operator opens a new Cowork chat and pastes verbatim
+- Q rows are either — operator picks by current context
+
+Decision-research calls surfaced for your awareness:
+- <call 1 one-line>
+- <call 2 one-line>
+
+Conflicts flagged: K total. <one-line summary of severity + suggested resolution>
+
+Operator-fatigue check: <under-ceiling | ⚠️ over-ceiling at Nh — consider deferring before spawning>
+
+What's next: review the spawn queue, resolve any conflicts, then spawn rows in your preferred order. Master tracker is updated; spawn queue is the audit trail.
+```
+
+**Step 11 — Auto-invoke output-quality-loop.**
+
+PROVISION's writes are artifacts (drafted handoffs + queue rows + tracker rows + new project README). Per the auto-invoke convention, emit the standard block at completion:
+
+````markdown
+## Auto-invoke output-quality-loop
+
+This skill produced the following artifact(s):
+- `<full path to <project-slug>/_README.md>`
+- `<full path to each drafted handoff>`
+- `<full path to _spawn-queue.md>` (modify-only; the existing file was edited)
+- `<full path to _active-chats-tracker.md>` (modify-only; the existing file was edited)
+
+[output-quality-loop:eval] — for each artifact, run output-quality-loop in EVALUATE mode. If PASS, declare the chat done. If NEEDS REVISION or FAIL, ingest the revision prompt as if it were operator input and regenerate the artifact, then re-invoke output-quality-loop. Cap at 3 iterations; on the 3rd FAIL, escalate to the operator with the evaluation report.
+````
+
+Per the multi-chat-coordination DECOMPOSE convention, tracker edits are NOT in the evaluation list — they're the index, not the artifact. Only the drafted handoffs + `_README.md` + the spawn-queue rows are evaluated.
+
+### PROVISION flags
+
+- `--dry-run` — produce the proposal without ever writing on approval. Useful for previewing decomposition without committing.
+- `--tier <1|2|3>` — override the default tier-2 registration for the new project's tracker rows.
+- `--skip-conflict-scan` — skip Step 4 conflict detection. Use only when the operator explicitly accepts the risk; PROVISION still records the flag in the proposal so it's auditable.
+- `--skip-decision-research` — skip Step 3's convention firing. Falls back to "decomposition left as DECOMPOSE proposed." Discouraged.
+- `--skip-checkpoint-reminders` — skip Step 6 checkpoint-reminder injection for all drafted handoffs. Discouraged for handoffs >2h.
+- `--fatigue-ceiling H` (default 10) — override the operator-fatigue warning threshold.
+- `--chain-from-next-moves` — read the most recent NEXT-MOVES output for goal context (used when chaining; usually inferred from operator phrasing).
+
+### PROVISION worked example
+
+See `examples/first-provision-2026-06-01-ev-blog-content-calendar.md` for the first real-use run.
+
 ## Composition with master-tracker-aggregator
 
 The aggregator is the bottom-up data layer; the orchestrator is the top-down decision layer. The contract:
@@ -371,7 +662,7 @@ The orchestrator composes — does not duplicate — multi-chat-coordination's t
 
 - **NEXT-MOVE composition.** NEXT-MOVES invokes multi-chat-coordination NEXT-MOVE to get the base leverage ranking. The orchestrator's overlays (session-budget totals, parallel-work detection, substrate tagging, decision-research) sit on top.
 - **AUDIT composition.** SURVEY's Section 8 (stale signals) can optionally call multi-chat-coordination AUDIT for deeper drift findings. By default it uses the lighter aggregator drift-detect.
-- **DECOMPOSE composition.** Out of scope for Phase 3. Phase 4 (PROVISION) composes with DECOMPOSE to draft handoffs.
+- **DECOMPOSE composition.** PROVISION (Mode 3) composes with DECOMPOSE to draft phase handoffs. PROVISION consumes DECOMPOSE's slug, dependency graph, handoff bodies, README body, and proposed tracker rows; it layers conflict detection + substrate tagging + checkpoint reminders + decision-research convention firing + operator-fatigue check + spawn-queue writes on top. The orchestrator does not reimplement DECOMPOSE's sizing rules, dependency analysis, or tier classification.
 
 When invoking a composed mode, the orchestrator reads its output and incorporates it into its own report; it does not re-emit the composed mode's own report verbatim.
 
@@ -401,21 +692,24 @@ SURVEY Section 7 surfaces unsynthesized source counts. NEXT-MOVES may rank a syn
 
 Substrate recommendation is mandatory on every NEXT-MOVES candidate. Cite the convention at `~/workspace/second-brain/_meta/working-surfaces.md` § "Default routing" in the per-candidate rationale. Generic memory ("Cowork is conversational") is not a substitute for the explicit routing guidance. See `references/substrate-recommendation-heuristics.md`.
 
-## Out of scope (v1)
+## Out of scope (v1.1)
 
-- **PROVISION mode.** Drafting handoffs and writing a `_spawn-queue.md` lives in Phase 4. Phase 3 reads-and-reports only.
-- **Per-project orchestrator decomposition.** Splitting the monolithic orchestrator into project-surveyor + project-analyst + project-decider sub-skills lives in Phase 5.
+- **True autonomous spawning.** PROVISION drafts handoffs + queues prompts, but the operator drives every spawn (paste into Cowork, fire via Claude Code Task tool). Auto-pasting from the queue is deferred until platform support exists (Anthropic Agent SDK sub-agents, a host-machine harness, or Claude in Chrome driving the Cowork app).
+- **Per-project orchestrator decomposition.** Splitting the monolithic orchestrator into project-surveyor + project-analyst + project-decider sub-skills lives in Phase 5 of this project, gated on 1 week of v1.1 real-use calibration.
 - **Skill-needs analyzer.** Detecting "this work needs a skill that doesn't exist" patterns lives in Phase 6.
-- **Auto-spawn.** Phase 3 produces reports; the operator decides what to spawn. Cowork has no chat-creation API today.
 - **Real-time vault watching.** The orchestrator runs on operator invocation, not on file change.
-- **Editing the master tracker outside the aggregator's marker block.** That section belongs to `master-tracker-aggregator`, not this skill.
-- **Editing per-project digests or trackers.** Read-only on per-project files.
+- **Editing the master tracker outside the aggregator's marker block (Modes 1-2).** That section belongs to `master-tracker-aggregator`, not this skill. PROVISION (Mode 3) edits the hand-edited "Ready to spawn" / "Queued — Tier 2" / "Queued — Tier 3" sections via row additions — never edits the aggregator's marker block.
+- **Editing per-project digests or trackers.** Read-only on per-project digests; PROVISION may write a new per-project subfolder + `_README.md` only when the operator approves a new project at the review gate.
+- **Editing in-flight or already-queued handoffs.** PROVISION drafts new handoffs; it does not modify handoffs that already exist. Edits to existing handoffs are operator-driven or a separate maintenance chat.
 - **Cross-vault federation.** Single vault (`~/workspace/second-brain/`). Tier-3 vault is air-gapped by design.
 - **Domain-level per-domain trackers.** Domains stay SURVEY-only — read folder listings + frontmatter freshness signals, don't expect a per-domain tracker.
+- **Semantic-conflict detection.** Edit-zone conflict detection catches shared-file races; it does not predict semantic contradictions between two chats updating disjoint sections. That's a NEXT-MOVES decision-research call when surfaced.
 
 ## Verification before declaring done
 
-Before the chat declares "SURVEY complete" or "NEXT-MOVES complete":
+Before the chat declares "SURVEY complete," "NEXT-MOVES complete," or "PROVISION complete":
+
+**Modes 1 and 2 (SURVEY / NEXT-MOVES):**
 
 1. Every section listed in the mode's output contract is present (9 sections for SURVEY; 7 parts for NEXT-MOVES).
 2. Every per-candidate row in NEXT-MOVES has a substrate recommendation with a one-line rationale.
@@ -425,7 +719,21 @@ Before the chat declares "SURVEY complete" or "NEXT-MOVES complete":
 6. Plain-language compliance — no jargon-density walls, no executive summary unless requested, glossed terms on first use.
 7. If `--persist` was used, the file exists on disk with valid frontmatter and YAML parses.
 8. If the report was persisted, the auto-invoke `output-quality-loop` block is emitted.
-9. The opening-protocol row move (if running inside a handoff-spawned chat) is honored — the orchestrator does not edit the tracker outside the aggregator marker; if the host chat's row needs updating, the host chat does it.
+9. The opening-protocol row move (if running inside a handoff-spawned chat) is honored — Modes 1-2 do not edit the tracker outside the aggregator marker; if the host chat's row needs updating, the host chat does it.
+
+**Mode 3 (PROVISION):**
+
+1. The review gate fired — no file was written before operator approval landed.
+2. Every drafted handoff has `preferred-substrate:` frontmatter (claude-code, cowork, or either) with a one-line rationale in the proposal.
+3. Conflict scan ran and the conflict-flag table is rendered both in the proposal and (after approval) in `_spawn-queue.md`.
+4. Every drafted handoff >2h estimated has a checkpoint-reminder section, or the proposal explicitly named the skip with reasoning.
+5. Decision-research convention fired on every meaningful decomposition decision (phase ordering, scope cuts, dependency choices, substrate ambiguity, tier classification) with the call documented inline.
+6. Operator-fatigue check ran; if queue total would exceed 10h, the warning banner is rendered in both the proposal and `_spawn-queue.md`.
+7. Spawn-queue invariants hold per [[spawn-queue-shape]] (append-only at bottom of Queued, substrate-rec matches handoff frontmatter, prompts are verbatim, YAML parses).
+8. Master-tracker rows landed in the appropriate tier sections; tracker frontmatter `last-change:` bumped (one line) and full pass prose prepended to `_active-chats-tracker-changelog.md`.
+9. YAML parses on every touched file (drafted handoffs + project `_README.md` + `_spawn-queue.md` + master tracker).
+10. Auto-invoke quality-loop block emitted naming every artifact (drafted handoffs + project `_README.md` + spawn-queue write); tracker edits excluded per the multi-chat-coordination convention.
+11. Plain-language operator summary rendered with substrate routing breakdown, conflict count, fatigue-check status, and "what's next" guidance.
 
 ## Maintenance notes (for future skill iterations)
 
@@ -445,6 +753,14 @@ These observations seed at skill creation. Promote to standalone notes if they g
 
 **7. Watch for cross-project-signal detection gaps.** Section 9 surfaces convention changes, multi-project handoffs, and downstream pattern-promotion effects. If a known cross-project event slips through (e.g., a convention change rolled out without SURVEY catching it), update the detection heuristics in `references/cross-project-signal-detection.md`.
 
+**8. Watch for shared-file-pattern drift (PROVISION).** The edit-zone-conflict-detection reference enumerates shared-file patterns. If the vault gains a new canonical shared file (e.g., a new `_meta/<convention>.md`), the detector's pattern table needs the addition. Detection: if a real conflict ships through to merge time without being flagged, retro the missing pattern.
+
+**9. Watch for operator-fatigue ceiling calibration (PROVISION).** The 10-hour ceiling matches today's 8-hour session cap + buffer. If the operator regularly overrides (`--fatigue-ceiling 6` for tight weeks, `--fatigue-ceiling 14` for marathon weeks), the default may need adjustment. Detection: track override values over time.
+
+**10. Watch for substrate-tag accuracy (PROVISION).** Each drafted handoff gets a `preferred-substrate:` tag. If the operator regularly overrides at review-gate ("downgrade Phase 3 to cowork"), the substrate-tagging heuristics need refinement. Detection: log operator edits during PROVISION review gates.
+
+**11. Watch for checkpoint-reminder over-inclusion or under-inclusion (PROVISION).** Step 6 triggers should fire on long-running handoffs and skip short ones. If short handoffs regularly arrive with checkpoint reminders (noise) or long ones arrive without (missed discipline), refine the trigger thresholds. Detection: spot-check drafted handoffs from each PROVISION run.
+
 ## Related
 
 - `~/workspace/skills/multi-chat-coordination/SKILL.md` — composes with this; provides the base NEXT-MOVE leverage ranking
@@ -453,9 +769,11 @@ These observations seed at skill creation. Promote to standalone notes if they g
 - `~/workspace/skills/output-quality-loop/references/auto-invoke-convention.md` — the block shape this skill emits when persisting
 - `~/workspace/second-brain/_meta/handoffs/_active-chats-tracker.md` — the master tracker SURVEY reads end-to-end
 - `~/workspace/second-brain/_meta/handoffs/vault-orchestrator/_README.md` — the project that produced this skill
-- `~/workspace/second-brain/_meta/handoffs/vault-orchestrator/phase-3-orchestrator-v1-survey-and-next-moves.md` — the handoff this skill executes
+- `~/workspace/second-brain/_meta/handoffs/vault-orchestrator/phase-3-orchestrator-v1-survey-and-next-moves.md` — the handoff that shipped Modes 1-2
+- `~/workspace/second-brain/_meta/handoffs/vault-orchestrator/phase-4-provision-and-autospawn-queue.md` — the handoff that shipped Mode 3
+- `~/workspace/second-brain/_meta/handoffs/_spawn-queue.md` — the substrate-agnostic queue PROVISION writes to
 - `~/workspace/second-brain/_meta/working-surfaces.md` — substrate-recommendation source of truth
-- `~/workspace/second-brain/_meta/decision-research-conventions.md` — five-step convention NEXT-MOVES invokes on hard calls
+- `~/workspace/second-brain/_meta/decision-research-conventions.md` — five-step convention NEXT-MOVES + PROVISION invoke on hard calls
 - `~/workspace/second-brain/_meta/plain-language-conventions.md` — voice rules every report follows
 - `./references/survey-section-shapes.md` — section-by-section shape + minimum-content discipline for SURVEY
 - `./references/leverage-scoring-heuristics.md` — how NEXT-MOVES scores leverage
@@ -464,7 +782,11 @@ These observations seed at skill creation. Promote to standalone notes if they g
 - `./references/domain-signal-mining.md` — how SURVEY walks `03_domains/` for unsynthesized sources + unpromoted patterns
 - `./references/cross-project-signal-detection.md` — how SURVEY detects multi-project handoffs + convention rollouts
 - `./references/plain-language-discipline.md` — orchestrator-specific plain-language examples
-- `./references/composition-with-multi-chat-coordination.md` — when NEXT-MOVES invokes MCC directly vs reimplements
-- `./references/decision-research-composition.md` — when SURVEY + NEXT-MOVES invoke the decision-research convention
+- `./references/composition-with-multi-chat-coordination.md` — when NEXT-MOVES + PROVISION invoke MCC directly vs reimplement
+- `./references/decision-research-composition.md` — when SURVEY + NEXT-MOVES + PROVISION invoke the decision-research convention
+- `./references/edit-zone-conflict-detection.md` — how PROVISION scans for shared-file conflicts + scores severity + suggests resolutions
+- `./references/spawn-queue-shape.md` — substrate-agnostic shape of `_spawn-queue.md` + invariants
+- `./references/checkpoint-integration.md` — when PROVISION bakes chat-resilience checkpoint reminders into drafted handoffs
 - `./examples/first-survey-2026-06-01.md` — first real-use SURVEY run
 - `./examples/first-next-moves-2026-06-01.md` — first real-use NEXT-MOVES run
+- `./examples/first-provision-2026-06-01-ev-blog-content-calendar.md` — first real-use PROVISION run (EV Electric blog content calendar generator)
