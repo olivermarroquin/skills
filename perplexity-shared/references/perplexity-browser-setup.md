@@ -1,6 +1,12 @@
 # Perplexity browser setup — shared reference
 
-This is the shared checklist that every Perplexity-suite skill points at before running queries through the browser. It lives in `skills/perplexity-shared/references/` so the setup steps live in one place. When the Perplexity UI changes, update this file once and every suite skill picks up the change.
+> **DEPRECATED 2026-06-01.** This file documents the browser-driven Path A (Claude in Chrome → Perplexity Pro) that was removed 2026-06-01. The only working Perplexity path today is the Sonar API via `~/workspace/second-brain-tier3/automation/scripts/perplexity_sonar.py`. Do not follow the checklist below — it points at infrastructure that no longer applies. The file is kept in place as an audit trail of the prior path's design. For the current working path, see `perplexity-cost-rules.md` and `perplexity-refinement/SKILL.md` Phase 2a.
+
+---
+
+## Historical content (do not act on)
+
+This is the shared checklist that every Perplexity-suite skill pointed at before running queries through the browser. It lived in `skills/perplexity-shared/references/` so the setup steps lived in one place. When the Perplexity UI changed, this file was updated once and every suite skill picked up the change.
 
 ## When to use this file
 

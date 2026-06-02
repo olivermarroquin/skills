@@ -206,7 +206,7 @@ Mode 4 turns the loop from policing-only into quality-elevation. Without it the 
 
 **Critical behavior for Mode 4:**
 
-- **Perplexity Pro is the only external research source.** Mode 4 invokes `perplexity-refinement` as a subroutine. After Phase 2's 2026-05-28 fix, `perplexity-refinement` routes through Path A (Claude in Chrome) → Path B (Sonar API) → refusal. **Silent fallback to Cowork's `WebSearch` is forbidden at every layer.** If `perplexity-refinement` returns the refusal message, Mode 4 surfaces the gap to the operator and stops; it does not degrade to vault-internal research and pretend it filled the external benchmark.
+- **Perplexity Sonar is the only external research source.** Mode 4 invokes `perplexity-refinement` as a subroutine, which routes through the Sonar API (via `~/workspace/second-brain-tier3/automation/scripts/perplexity_sonar.py`) → refusal. **Silent fallback to Cowork's `WebSearch` is forbidden at every layer.** If `perplexity-refinement` returns the refusal message, Mode 4 surfaces the gap to the operator and stops; it does not degrade to vault-internal research and pretend it filled the external benchmark. (Historical note: an earlier framing of this skill carried a two-path priority — Path A Claude in Chrome → Path B Sonar API. Path A was removed 2026-06-01.)
 - **Capped per artifact type.** See `references/research-budget-per-type.md`. Hard ceiling is 8 queries per artifact regardless of type; soft ceiling is top-5 gaps researched. Don't pad runs to hit the cap.
 - **Non-destructive.** Mode 4 writes only to the folder log (a new `### External research (Mode 4)` sub-section under the artifact's per-artifact section) and to Mode 2's revision prompt. It never edits the artifact body.
 - **Honest about inconclusive results.** If Perplexity returns "inconclusive" three queries in a row, stop and surface in the folder log. The artifact's gaps may not be researchable externally (vault-internal patterns, operator-discipline observations, proprietary knowledge). Don't fabricate elevation suggestions to justify the cost.
@@ -252,7 +252,7 @@ For each unique research question, invoke `perplexity-refinement` with:
 - **Refinement mode:** `append` (Mode 4 doesn't want body edits — it wants research findings it can interpret)
 - **Specific focus area:** the research question text from Step 2
 
-The recursive `perplexity-refinement` call inherits the Perplexity Pro contract: Path A → Path B → refusal. If it refuses, Mode 4 surfaces the refusal to the operator and stops.
+The recursive `perplexity-refinement` call inherits the Perplexity Sonar contract: Sonar API → refusal. If it refuses, Mode 4 surfaces the refusal to the operator and stops.
 
 Compose with **type-specific sibling skills** where they exist (per `references/evaluation-heuristics-by-type.md`):
 
@@ -306,9 +306,9 @@ Per `references/folder-quality-log-shape.md` and `references/research-budget-per
 ```markdown
 ### External research (Mode 4) — YYYY-MM-DD
 
-**Path used:** Path A (Claude in Chrome / Pro Search) | Path B (Sonar API)
+**Path used:** Sonar API (`sonar-pro` or `sonar`)
 **Queries run:** N of cap N (top M of top-N gaps researched; K gaps skipped per termination rule)
-**Credits consumed (Path B only):** ~$X.XX
+**Cost incurred:** ~$X.XX
 
 **Per-gap queries:**
 
@@ -320,10 +320,10 @@ Per `references/folder-quality-log-shape.md` and `references/research-budget-per
 2. ...
 
 **Cache hits:** N (queries reused from earlier in this iteration)
-**Termination reason:** "Top-N gaps covered" | "3 inconclusive results" | "Perplexity Pro unavailable" | "Operator override"
+**Termination reason:** "Top-N gaps covered" | "3 inconclusive results" | "Perplexity Sonar unavailable" | "Operator override"
 ```
 
-3. **Update the artifact's frontmatter** to add (or update) `auto-research-last-run: YYYY-MM-DD` and `auto-research-path: A | B`. These are read by Phase 6 (auto-approve thresholds) when calibrating confidence.
+3. **Update the artifact's frontmatter** to add (or update) `auto-research-last-run: YYYY-MM-DD` and `auto-research-path: sonar-pro | sonar`. These are read by Phase 6 (auto-approve thresholds) when calibrating confidence. (Historical note: pre-2026-06-01 versions used `auto-research-path: A | B`; Path A was removed.)
 
 4. **The artifact's main frontmatter `last-verdict:` field is not touched by Mode 4** — it carries the EVALUATE verdict from Mode 1. Mode 4's findings shape the next iteration's regeneration; the next EVALUATE pass produces the next `last-verdict:`.
 
@@ -568,7 +568,7 @@ After Phase 2 ships, both of these skills emit the auto-invoke convention block 
 
 ### Phase 4 auto-research mode (shipped as Mode 4 in v1.1, 2026-05-28)
 
-Adds the "what's the strongest version of this in the world?" pass as Mode 4 above. Composes with `perplexity-refinement` (browser-driven Perplexity Pro, per the architecture decision) for external benchmarking. Routes through the Perplexity Pro contract — no silent fallback to Cowork WebSearch at any layer. Per-artifact-type caps in `references/research-budget-per-type.md`; per-type research strategies in `references/evaluation-heuristics-by-type.md` § "Auto-research strategy" subsections.
+Adds the "what's the strongest version of this in the world?" pass as Mode 4 above. Composes with `perplexity-refinement` (Sonar API on `sonar-pro` per the post-2026-06-01 path; the architecture decision originally specified browser-driven Perplexity Pro but Path A was removed 2026-06-01) for external benchmarking. Routes through the Perplexity Sonar contract — no silent fallback to Cowork WebSearch at any layer. Per-artifact-type caps in `references/research-budget-per-type.md`; per-type research strategies in `references/evaluation-heuristics-by-type.md` § "Auto-research strategy" subsections.
 
 ### Phase 5 convention rollout
 
@@ -612,7 +612,7 @@ Before reporting completion to the operator:
 3. **Citation check** — every checklist item in the evaluation report cites its spec source by file + section.
 4. **Plain-language check** — pick the densest paragraph of the evaluation report and confirm it reads conversationally.
 5. **Cap check** — if this is iteration 3 and verdict ≠ PASS, the escalation report is emitted, not a new revision prompt.
-6. **Mode-4 budget check** — if Mode 4 ran, the per-artifact query count is at or under the cap in `references/research-budget-per-type.md`; the `Path used:` line is named (Path A vs Path B); the `Termination reason:` line is named; the elevation suggestions cite their Perplexity-surfaced URLs.
+6. **Mode-4 budget check** — if Mode 4 ran, the per-artifact query count is at or under the cap in `references/research-budget-per-type.md`; the `Path used:` line is named (Sonar API + model); the `Termination reason:` line is named; the elevation suggestions cite their Perplexity-surfaced URLs.
 7. **Mode-4 refusal check** — if `perplexity-refinement` returned the refusal message during Mode 4, the folder log records the refusal and the revision prompt does NOT include fabricated elevation suggestions sourced from vault-internal content.
 8. **Non-destructive check** — the artifact body is unchanged. Only the frontmatter fields (the three Mode-1 fields plus the two Mode-4 fields when applicable plus the `last-confidence-score:` field when Mode 5 ran) were touched.
 9. **Mode-5 confidence check** — if Mode 5 ran, the artifact's frontmatter has `last-confidence-score: <0-100>`; the folder log's Latest line names the confidence; the iteration metadata block has a Confidence breakdown line. The score is consistent across the three places.
@@ -689,9 +689,9 @@ When you need them, read these:
 
 **The issue:** Mode 4 silently fell back to Cowork `WebSearch` when `perplexity-refinement` refused. The folder log shows queries run but the source ranking doesn't match Perplexity Pro's curated AI-overview synthesis.
 
-**How it surfaces:** The `Path used:` line in the folder log says "Path A" but the cited sources are generic web results, not Perplexity-Pro-curated sources. Or the line is missing entirely.
+**How it surfaces:** The `Path used:` line in the folder log says "Sonar API" but the cited sources are generic web results, not Perplexity-Sonar-curated sources. Or the line is missing entirely.
 
-**How to fix:** The refusal step in `perplexity-refinement` is structural — it's supposed to make this impossible. If Mode 4 is bypassing the refusal, it's calling some other research tool directly. Find the call site, route it through `perplexity-refinement`, and verify the refusal cascades. This is the same failure mode that caused Wave 0 of `perplexity-refinement` to silently substitute Cowork `WebSearch` — the Phase 2 fix to `perplexity-refinement` doesn't help if Mode 4 dodges around it.
+**How to fix:** The refusal step in `perplexity-refinement` is structural — it's supposed to make this impossible. If Mode 4 is bypassing the refusal, it's calling some other research tool directly. Find the call site, route it through `perplexity-refinement`, and verify the refusal cascades. This is the same failure mode that caused Wave 0 of `perplexity-refinement` to silently substitute Cowork `WebSearch` — the Phase 2 fix to `perplexity-refinement` doesn't help if Mode 4 dodges around it. (Historical note: pre-2026-06-01 versions of this entry referenced `Path A` instead of `Sonar API` — that path was removed.)
 
 ### M7: Calibration drift on confidence scores (added 2026-05-28, v1.2)
 

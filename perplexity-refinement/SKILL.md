@@ -14,7 +14,7 @@ This skill exists because Oliver upgraded to Perplexity Pro on 2026-05-26 ($21.2
 - **Non-destructive by default.** Append mode is the default. Inline edits to existing claims require operator confirmation per claim. The original artifact is never silently rewritten.
 - **Vault artifacts only.** Don't refine PDFs, external docs, web pages you don't own, or chat transcripts that aren't already vault notes. Refinement is for things the vault already knows about.
 - **Every refinement claim cites its Perplexity-surfaced source.** No claim makes it back to the vault without a URL. This is the load-bearing discipline that justifies the cost of the subscription.
-- **Perplexity Pro is the only valid research source. Two paths, in priority order.** Path A (default) — Claude in Chrome drives the operator's logged-in Perplexity Pro browser session. Path B (backup) — the Perplexity Sonar API (key in env var `PERPLEXITY_API_KEY` or named config field). **Silent fallback to Cowork's built-in `WebSearch` or `web_fetch` is forbidden.** If neither Path A nor Path B is available, the skill pauses and asks the operator to enable one. The whole point of the $21.20/mo subscription is the Pro Search source ranking + AI-overview synthesis — substituting Cowork WebSearch consumes zero Pro credits and produces a different (lower-curation) result without surfacing the swap to the operator. See "Research-source-discipline" below for the runtime decision tree.
+- **Perplexity Sonar API is the only valid research source.** All research goes through `~/workspace/second-brain-tier3/automation/scripts/perplexity_sonar.py` against the Sonar API (key in env var `PERPLEXITY_API_KEY` inside the tier-3 automation carve-out). **Silent fallback to Cowork's built-in `WebSearch` or `web_fetch` is forbidden.** If the Sonar key is missing or the script is unreachable, the skill pauses and asks the operator to fix the gap. The whole point of the Sonar subscription is the AI-overview synthesis + curated source ranking — substituting Cowork WebSearch produces a different (lower-curation) result without surfacing the swap to the operator. See "Research-source-discipline" below for the runtime decision tree. **(Historical note: a Path A "Claude in Chrome → Perplexity Pro browser session" was the default before 2026-06-01. That path was removed; the Sonar API is the canonical and only working path now.)**
 - **Cost-managed.** Per-invocation query caps (3/7/15 by depth). Low-tier items skipped by default. Refinements cached in the artifact so re-running doesn't duplicate effort.
 
 ---
@@ -35,7 +35,7 @@ Do **not** use this skill for:
 
 - Refining content that isn't already a vault file (paste-only content)
 - Refining external PDFs or docs the vault doesn't own
-- Running a Perplexity research session that isn't anchored to an existing artifact (use a regular Cowork prompt with Claude in Chrome)
+- Running a Perplexity research session that isn't anchored to an existing artifact (use the Sonar API script directly for unstructured research)
 - Bulk auto-refinement of every vault note on a schedule — over-investment until manual demand justifies it
 
 ---
@@ -67,7 +67,7 @@ If any input is missing, ask before running. Under-specified inputs waste Perple
 Six phases. Each phase has a stop condition; don't run past it without operator approval.
 
 1. **Parse the target artifact** — read it, extract claims/tools/stats/concepts/entities, tier each by refinement value.
-2. **Run targeted Perplexity queries** — choose Path A (Claude in Chrome) or Path B (Sonar API) per the two-path priority; refuse if neither is available. One query per high-tier item, capped per depth.
+2. **Run targeted Perplexity queries** — through the Sonar API via `perplexity_sonar.py`; refuse if the key is missing or the script is unreachable. One query per high-tier item, capped per depth.
 3. **Synthesize findings** — validated / updated / contradicted / new perspectives / new sources to ingest / suggested vault edits.
 4. **Apply refinement based on mode** — append, inline-merge, or sister-file. Update frontmatter.
 5. **Surface follow-ups** — propose new sources to VIS-ingest, primer extensions, tactic-note candidates. Update the execution log.
@@ -142,43 +142,41 @@ One query per confirmed high-tier item (plus medium if `deep` depth). Cap per de
 
 If the high-tier list exceeds the cap, ask the operator which items to drop before running. Don't silently truncate.
 
-### 2a. Choose the research path (two-path priority)
+### 2a. Confirm the research path (Sonar API only)
 
 Before sending the first query, run the **research-source decision tree**. This is the load-bearing discipline that keeps the skill honest about its source — it makes silent fallback to Cowork WebSearch structurally impossible.
 
 **Decision tree:**
 
-1. **Try Path A — Claude in Chrome driving Perplexity Pro.**
-   - Call `mcp__Claude_in_Chrome__list_connected_browsers`. If it returns at least one connected browser, run the four-step browser checklist in `~/workspace/skills/perplexity-shared/references/perplexity-browser-setup.md` (which now includes a "Claude in Chrome verification" subsection — read it before continuing). If all four steps pass and the Pro session is confirmed signed-in with Pro Search toggled on, **proceed in Path A**.
-   - If `list_connected_browsers` returns an empty list, or the browser isn't signed into Pro, fall through to step 2.
+1. **Confirm the Sonar API path is reachable.**
+   - Confirm `~/workspace/second-brain-tier3/automation/scripts/perplexity_sonar.py` exists on the host.
+   - Confirm the env var `PERPLEXITY_API_KEY` is set in the tier-3 automation environment (per `~/workspace/second-brain-tier3/automation/README.md`; the automation carve-out is the only place Cowork is allowed to call into tier-3).
+   - If both are present, **proceed via Sonar API**. The script handles auto-resume on chunked runs (it detects completed `## Q<n>:` headers and skips them on rerun); the standard call shape is `python3 perplexity_sonar.py --queries <queries.md> --out <raw-output.md> --model sonar-pro --limit 2` per the chunked-batch pattern that fits the 45s sandbox timeout.
+   - If either is missing, fall through to step 2.
 
-2. **Try Path B — Sonar API.**
-   - Check for the env var `PERPLEXITY_API_KEY` in the shell environment, then for a config-pointed path (e.g., `~/.config/perplexity/sonar-api-key` if configured). If a key is present and reachable, **proceed in Path B** using the Sonar API HTTP endpoints (`api.perplexity.ai/chat/completions` with a Sonar-class model).
-   - If no key is present, fall through to step 3.
-
-3. **Refusal.** Neither path is available. **Do not fall back to Cowork's `WebSearch` or `web_fetch` tools.** Surface the gap to the operator with this exact message:
+2. **Refusal.** The Sonar path is not available. **Do not fall back to Cowork's `WebSearch` or `web_fetch` tools.** Surface the gap to the operator with this exact message:
 
    ```
-   This skill requires Perplexity Pro to run. Neither path is currently available:
-     - Path A (Claude in Chrome): no connected browser / not signed in to Pro
-     - Path B (Sonar API): no PERPLEXITY_API_KEY env var / no configured key path
+   This skill requires the Perplexity Sonar API to run. The path is not currently available:
+     - Script: ~/workspace/second-brain-tier3/automation/scripts/perplexity_sonar.py
+     - Key: PERPLEXITY_API_KEY env var inside the tier-3 automation carve-out
 
-   Please enable one of these and re-invoke. The skill will not fall back to
-   Cowork's built-in WebSearch — that would silently substitute a different source
-   without using your Pro subscription.
+   Please confirm the script + key are in place and re-invoke. The skill will not fall
+   back to Cowork's built-in WebSearch — that would silently substitute a different
+   source without using your Sonar subscription.
    ```
 
    Stop. Do not proceed.
 
-**Why the refusal step matters.** Cowork's `WebSearch` / `web_fetch` will happily satisfy the "research" step and produce plausible-looking refinement output. It is **not** what the skill is supposed to use — it consumes zero credits against the operator's $21.20/mo Pro account, returns a different ranking of sources (Cowork's general web search, not Perplexity Pro's curated AI-overview synthesis), and offers no signal to the operator that the substitution happened. Past invocations of this skill did exactly that. The refusal step is the structural fix.
+**Why the refusal step matters.** Cowork's `WebSearch` / `web_fetch` will happily satisfy the "research" step and produce plausible-looking refinement output. It is **not** what the skill is supposed to use — it returns a different ranking of sources (Cowork's general web search, not Perplexity Sonar's curated AI-overview synthesis), and offers no signal to the operator that the substitution happened. Past invocations of this skill did exactly that. The refusal step is the structural fix.
 
-Path A vs Path B is a routine engineering choice; falling back to Cowork WebSearch is not. The latter changes the contract.
+Sonar API vs WebSearch is not a routine engineering choice; the latter changes the contract.
 
-**Once a path is chosen, capture which one was used.** Every refinement output's cost-receipt line (the `Queries run: N` line at the bottom of the appended section) must name the path: e.g., `Queries run: 7 via Path A (Claude in Chrome / Pro Search)`. Future invocations can audit whether the Pro contract held.
+**Historical note (2026-06-01).** Earlier versions of this skill carried a two-path priority — Path A (Claude in Chrome driving Perplexity Pro browser) and Path B (Sonar API). Path A was removed 2026-06-01 because the browser path produced too much friction (sign-in mid-run, UI changes, captcha events) and the Sonar API delivered comparable source curation on `sonar-pro` at predictable per-query cost. The Sonar API is the canonical and only working path now.
 
-**Path A specifics.** Follow the four-step browser checklist in `~/workspace/skills/perplexity-shared/references/perplexity-browser-setup.md` (which is the single source for connecting the browser, the new Claude in Chrome verification subsection, navigating to Perplexity, confirming Pro sign-in, and confirming the Pro Search toggle). When the Perplexity UI changes, update that shared file; the change propagates here automatically. Don't skip the four steps. A missed step means the run might use standard search (not Pro Search) and waste the subscription cost.
+**Capture the cost.** Every refinement output's cost-receipt line (the `Queries run: N` line at the bottom of the appended section) names the path and the dollar cost: e.g., `Queries run: 7 via Sonar API (sonar-pro), ~$0.22`. Future invocations can audit the run-cost trend.
 
-**Path B specifics.** The Sonar API is pay-per-query (token-priced, roughly $0.005-$0.02 per query depending on model). It doesn't draw on the Pro Search browser cap; cost lives in a separate billing line. Use Sonar when Claude in Chrome is unavailable (scheduled / headless runs, or browser-session friction). Pin the model to `sonar` (or `sonar-pro` when the depth or saturation warrants it) so the source ranking matches the Pro browser experience as closely as the API allows. Capture and surface the per-query token cost in the refinement output if the call response includes it; the operator's Sonar billing visibility lives outside this skill.
+**Sonar specifics.** The Sonar API is pay-per-query (token-priced, roughly $0.005-$0.04 per query depending on model and answer length). Pin the model to `sonar-pro` for refinement passes — the higher-curation source ranking is what justifies the per-query cost over the lighter `sonar` model. Capture and surface the per-query token cost in the refinement output if the call response includes it.
 
 ### 2b. Query templates
 
@@ -203,13 +201,13 @@ For each query, capture exactly:
 - A one-line verdict on the original claim: `validates` / `partially-validates` / `contradicts` / `inconclusive`
 - Any notable counter-positions or alternative framings the answer surfaced
 
-The `mcp__Claude_in_Chrome__get_page_text` tool returns the rendered answer; copy the answer and the source list from there.
+The Sonar API response delivers the answer + the citation list in structured form; parse the script's raw-output `## Q<n>:` blocks for the answer text + the trailing `Citations:` list.
 
 ### 2d. Throttling and politeness
 
-- Wait a few seconds between queries — Pro Search runs a heavier compute pattern and can rate-limit in practice if 10+ run back-to-back.
-- If a query times out or returns an error page, retry once after a short pause. Don't loop.
-- If Perplexity prompts to sign in mid-session, surface to operator immediately. Do not bypass.
+- The Sonar API tolerates back-to-back queries fine; the chunked-batch pattern (`--limit 2` per bash invocation) is driven by the 45s Cowork sandbox timeout, not Sonar rate limits.
+- If a query times out or returns an error response, retry once after a short pause. Don't loop.
+- If the script returns a 401 / 429, surface to operator immediately. Do not bypass.
 
 **Stop condition.** All confirmed queries run. Surface the per-query captures to the operator before moving to synthesis if `deep` depth, or proceed directly to Phase 3 for `light` / `medium`.
 
@@ -301,7 +299,7 @@ Section heading: `## Perplexity refinement — YYYY-MM-DD`
 
 Section body: the six Phase-3 buckets in order, with only the populated buckets included. End with a one-line tally that names the path used:
 
-> Queries run: N via Path A (Claude in Chrome / Pro Search) | Path B (Sonar API). Validated: X. Updated: Y. Contradicted: Z. New sources surfaced: W.
+> Queries run: N via Sonar API (sonar-pro), ~$<dollar-cost>. Validated: X. Updated: Y. Contradicted: Z. New sources surfaced: W.
 
 ### 4b. Inline-merge mode
 
@@ -467,16 +465,16 @@ The terse completion report (next subsection) fires only after Phase 6 resolves 
 
 ## Cost-management rules
 
-The canonical rules live in `~/workspace/skills/perplexity-shared/references/perplexity-cost-rules.md`. That file is the single source for the credits-based monthly budget (4,000 credits/month on the current Pro plan, 2026-05-27 onward), the per-invocation caps across all suite skills, the Path A (browser) vs Path B (Sonar API) cost split, and the operator-warning thresholds.
+The canonical rules live in `~/workspace/skills/perplexity-shared/references/perplexity-cost-rules.md`. That file is the single source for the per-invocation caps across all suite skills and the operator-warning thresholds. Today's working cost model: every query is a Sonar API call (pay-per-query, ~$0.005-$0.04 per query depending on model + answer length). The earlier "Path A browser credits vs Path B per-query" split was removed 2026-06-01 when Path A was deprecated.
 
 What this skill enforces, on top of the shared rules:
 
 - **Per-invocation caps** — 3 (light), 7 (medium), 15 (deep). Hard caps; don't exceed without operator override. These line up with the suite-wide caps table in the shared cost-rules file.
 - **Skip low-tier items by default** — only refine high-tier (and medium-tier at `deep` depth). Operator can promote items manually.
 - **Cache results in the artifact** — frontmatter records `perplexity-refined: YYYY-MM-DD`. A re-run on the same artifact within a refresh window (default 90 days) should ask the operator before running new queries.
-- **Log query count + path used + estimated cost** in the refinement output. The "Queries run: N via <Path A | Path B>" tally at the bottom of the appended section is the cost receipt. Over time, the operator can tune depth by seeing which depths produced which yields and which path was used. The `perplexity-research-suite` router reads these lines from execution logs to surface monthly tally — don't drop the discipline.
+- **Log query count + dollar cost** in the refinement output. The "Queries run: N via Sonar API (sonar-pro), ~$<cost>" tally at the bottom of the appended section is the cost receipt. Over time, the operator can tune depth by seeing which depths produced which yields. The `perplexity-research-suite` router reads these lines from execution logs to surface monthly tally — don't drop the discipline.
 
-When Perplexity changes its plan structure or credit allocation, the fix happens in the shared cost-rules file; this section picks up the change automatically. The skill is honest about its cost surface; don't hide queries and don't hide which source was used.
+When Sonar changes pricing or model names, the fix happens in the shared cost-rules file; this section picks up the change automatically. The skill is honest about its cost surface; don't hide queries and don't hide the cost.
 
 ---
 
@@ -539,7 +537,7 @@ Every refinement pass produces exactly these artifacts:
    - Number of claims validated / updated / contradicted
    - Top 3 new sources surfaced
    - Recommendations for follow-up actions (which Phase-5 items the operator should pick)
-   - Quality-loop verdict + iteration count + path used (Path A or Path B)
+   - Quality-loop verdict + iteration count + cost incurred (Sonar API)
 
 The completion report uses bullets, not paragraphs. It does not restate the refinement content — the operator can read the file.
 
@@ -629,7 +627,7 @@ These are explicit non-goals for the v1 build:
 When you need them, read these:
 
 - `~/workspace/skills/perplexity-refinement/references/query-templates.md` — the six query template shapes with worked examples
-- `~/workspace/skills/perplexity-shared/references/perplexity-browser-setup.md` — pre-query browser checks (sourced from Phase 2a)
+- `~/workspace/skills/perplexity-shared/references/perplexity-browser-setup.md` — historical: pre-query browser checks for the now-removed Path A. File carries a deprecation banner at the top; do not act on its contents. Kept in place for audit trail only.
 - `~/workspace/skills/perplexity-shared/references/perplexity-cost-rules.md` — suite-wide cost-management rules
 - `~/workspace/skills/perplexity-shared/references/perplexity-query-templates-index.md` — index of every suite skill's query templates
 - `~/workspace/skills/perplexity-research-suite/SKILL.md` — the router that lists this skill and dispatches into it
@@ -643,21 +641,17 @@ When you need them, read these:
 
 ## Maintenance notes
 
-### M1: Perplexity Pro UI changes (added 2026-05-27, v1.0)
+### M1: Perplexity Pro UI changes (added 2026-05-27, v1.0; deprecated 2026-06-01)
 
-**The issue:** Perplexity's web UI (toggle for Pro Search, account indicator placement, source list rendering) changes over time. The Phase 2a browser-setup instructions assume the late-May-2026 UI.
+**Historical only — Path A was removed 2026-06-01.** This entry covered the browser-driven Pro path's UI drift. The Sonar API path doesn't have a UI surface, so the failure mode no longer applies. Kept here as audit trail; do not act on it.
 
-**How it surfaces:** `mcp__Claude_in_Chrome__get_page_text` returns content that doesn't match the expected structure, or Pro Search can't be confirmed enabled.
+### M2: Sonar API cost surprises (added 2026-05-27, v1.0; revised 2026-06-01 to Sonar-only model)
 
-**How to fix:** Surface the mismatch to the operator. Ask for a fresh screenshot of the current UI. Update Phase 2a's setup steps to match. Don't fake the Pro-status confirmation.
+**The issue:** The Sonar API is pay-per-query. A `deep` pass (15 queries on `sonar-pro`) typically costs $0.30-$0.60. Back-to-back deep runs across a week can add up to single-digit dollars per week.
 
-### M2: Credit-budget surprises (added 2026-05-27, v1.0; revised 2026-05-28 to credits model)
+**How it surfaces:** The Sonar billing dashboard shows a monthly tally approaching the operator's mental budget cap (no hard plan cap on Sonar — it's pure usage-based).
 
-**The issue:** The current Pro plan is **credits-based, ~4,000 credits/month** (one credit roughly equals one Pro Search query, with deeper-reasoning queries costing more). A `deep` pass (15 queries) is ~0.4% of monthly budget; back-to-back deep runs across a week can still consume several percent. Short-burst rate limits also apply — 5-10 fast back-to-back browser queries can trigger a slowdown banner regardless of monthly budget.
-
-**How it surfaces:** Perplexity returns a slowdown banner, a captcha, or a "you've used X of Y credits this month" indicator. The monthly tally surfaced by `perplexity-research-suite` (read from execution-log `Queries run: N via Path A` lines) is approaching budget.
-
-**How to fix:** Pause the run. Surface to operator. Default to resuming with longer between-query waits. For monthly-budget hits, defer to next month or route through Path B (Sonar API) for the rest of the month — Path B is pay-per-query and doesn't draw on the Pro credit pool. If the rate limit hardens further, lower the per-invocation caps here and in the shared cost-rules file.
+**How to fix:** Pause the run. Surface to operator. Default to lower per-invocation caps for the rest of the month. The chunked-batch pattern (`--limit 2`) doesn't change cost — it's just timeout-friendly — so don't expect it to reduce spend. If sustained high spend is the issue, drop default depth from `medium` to `light` for routine refinements.
 
 ### M3: Hallucinated prose around real citations (added 2026-05-27, v1.0)
 
@@ -667,13 +661,13 @@ When you need them, read these:
 
 **How to fix:** When transcribing claims for the refinement output, prefer the source's wording over Perplexity's paraphrase. For high-stakes claims (Phase-3 bucket 3c contradictions), the operator should spot-check the cited URL before any inline-merge edit lands.
 
-### M4: Silent Cowork WebSearch substitution (added 2026-05-28, v1.1)
+### M4: Silent Cowork WebSearch substitution (added 2026-05-28, v1.1; revised 2026-06-01 to Sonar-only model)
 
-**The issue:** When this skill's Wave 0 (2026-05-27) shipped, the "browser-driven only" rule was specified in the Critical-behavior block but the workflow didn't carry a structural refusal step. In practice, runs proceeded by falling back to Cowork's built-in `WebSearch` / `web_fetch` tools when Claude in Chrome wasn't immediately reachable. Those runs produced plausible refinement output, consumed zero Pro credits, and offered no signal to the operator that the substitution happened.
+**The issue:** When this skill's Wave 0 (2026-05-27) shipped, the "Perplexity-only" rule was specified in the Critical-behavior block but the workflow didn't carry a structural refusal step. In practice, runs proceeded by falling back to Cowork's built-in `WebSearch` / `web_fetch` tools when the Perplexity path wasn't immediately reachable. Those runs produced plausible refinement output and offered no signal to the operator that the substitution happened.
 
-**How it surfaces:** Inspecting a recent refinement output's source URLs and finding general-web-search rankings rather than Perplexity Pro's curated source list; or checking the operator's Pro credit usage and seeing no draws despite multiple recent refinement runs; or auditing the chat transcript and finding `WebSearch` / `web_fetch` tool calls instead of `mcp__Claude_in_Chrome__*` calls.
+**How it surfaces:** Inspecting a recent refinement output's source URLs and finding general-web-search rankings rather than Perplexity Sonar's curated source list; or checking the operator's Sonar billing dashboard and seeing no draws despite multiple recent refinement runs; or auditing the chat transcript and finding `WebSearch` / `web_fetch` tool calls instead of the `perplexity_sonar.py` script invocation.
 
-**How to fix:** Phase 2a (rewritten 2026-05-28) now carries a three-step decision tree — Path A (Claude in Chrome), Path B (Sonar API), then explicit refusal with a copy-paste operator message. There is no fourth fallback. If a future variant of this skill (or a quick edit) reintroduces a WebSearch fallback path, treat it as a regression and revert. The cost-receipt line at the bottom of every refinement output also names the path used; if the line is missing or says "WebSearch," the discipline broke.
+**How to fix:** Phase 2a (rewritten 2026-05-28; revised 2026-06-01 to Sonar-only) now carries a two-step decision tree — confirm the Sonar API path is reachable, then explicit refusal with a copy-paste operator message. There is no fallback. If a future variant of this skill (or a quick edit) reintroduces a WebSearch fallback path, treat it as a regression and revert. The cost-receipt line at the bottom of every refinement output also names the path used; if the line is missing or says "WebSearch," the discipline broke.
 
 ---
 
@@ -694,5 +688,5 @@ When the skill errors or produces a miss in production, add a new entry: **Issue
 - `[[conventions]]` — KOS naming and frontmatter rules
 - `[[primer|seo/primer]]` — SEO operational primer (Section E names this skill as part of the knowledge-growth ecosystem)
 - `[[perplexity-research-suite]]` — the router skill that lists this one and dispatches into it
-- `[[perplexity-browser-setup]]` — shared pre-query browser checks
+- `[[perplexity-browser-setup]]` — historical Path A browser checks (deprecated 2026-06-01 with a banner at the top of the file; kept as audit trail)
 - `[[perplexity-cost-rules]]` — shared cost rules across the whole suite

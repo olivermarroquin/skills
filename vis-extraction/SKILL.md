@@ -648,7 +648,7 @@ The operator can override the auto-run by saying "skip refinement on this one" b
 
 ### What the perplexity-refinement skill does from here
 
-See `[[perplexity-refinement]]/SKILL.md`. Briefly: Phase 1 (parse + tier claims), Phase 2 (run Pro Search queries via Claude in Chrome), Phase 3 (synthesize findings into six buckets), Phase 4 (write back per mode), Phase 5 (surface follow-ups).
+See `[[perplexity-refinement]]/SKILL.md`. Briefly: Phase 1 (parse + tier claims), Phase 2 (run Sonar API queries via `~/workspace/second-brain-tier3/automation/scripts/perplexity_sonar.py`; Path A via Claude in Chrome was removed 2026-06-01), Phase 3 (synthesize findings into six buckets), Phase 4 (write back per mode), Phase 5 (surface follow-ups).
 
 The refinement output lands inside the source note (append mode) or as a sister file. The source note's frontmatter gets `perplexity-refined: YYYY-MM-DD` so future invocations can see at a glance that refinement has happened.
 

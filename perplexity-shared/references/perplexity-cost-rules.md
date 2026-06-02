@@ -74,21 +74,22 @@ After the Phase 0 hardware-research comparison (operator-driven A/B test, 2026-0
 
 The comparison discipline is a one-time validation, not a permanent overhead. Once the operator has done ~3-5 paired A/B runs and has personal confidence in when each source wins, the explicit comparison file can become optional and the standard pattern collapses to "WebSearch first, Sonar selectively on claims that matter." Track the per-source strengths the operator observes over time at `~/workspace/second-brain/03_domains/automation-systems/research-substrate-comparison.md` (or wherever fits the vault structure).
 
-## Two research paths — same skill family, separate cost buckets
+## Research path — Sonar API only (post-2026-06-01)
 
-Every Perplexity-suite skill that runs interactively (refinement, blueprint, topic-gaps, niche-validation, etc.) follows the same priority decision tree at runtime:
+Every Perplexity-suite skill follows the same decision tree at runtime:
 
-1. **Path A — Claude in Chrome (default).** The skill calls `mcp__Claude_in_Chrome__list_connected_browsers`; if a browser is connected and signed-in to Pro, it drives the logged-in browser session. Queries draw on the operator's monthly Pro credit pool (4,000/mo).
-2. **Path B — Sonar API (backup).** When Claude in Chrome is unavailable (no browser, not signed in, headless run, scheduled task), the skill reads the Sonar API key from the tier-3 automation carve-out at `~/workspace/second-brain-tier3/automation/secrets/perplexity-sonar.key` (operator-managed plain-text file, perms 600) and uses the Sonar HTTP endpoints. Sonar is pay-per-query, billed separately; rough math is $0.005-$0.02 per query depending on model (`sonar`, `sonar-pro`, etc.). The canonical script that handles this lookup is `~/workspace/second-brain-tier3/automation/scripts/perplexity_sonar.py`.
-3. **Refusal (no third path).** If neither Path A nor Path B is available, the skill **pauses and surfaces the gap to the operator**. It does NOT fall back to Cowork's built-in `WebSearch` or `web_fetch`. That would silently substitute a different research source (general web search, not Perplexity Pro's curated AI-overview synthesis) and consume zero credits — defeating the contract the subscription pays for.
+1. **Sonar API (the only working path).** The skill calls `~/workspace/second-brain-tier3/automation/scripts/perplexity_sonar.py`, which reads the Sonar API key from the tier-3 automation carve-out at `~/workspace/second-brain-tier3/automation/secrets/perplexity-sonar.key` (operator-managed plain-text file, perms 600) and hits the Sonar HTTP endpoints. Sonar is pay-per-query, billed monthly; rough math is $0.005-$0.04 per query depending on model (`sonar`, `sonar-pro`) and answer length.
+2. **Refusal (no fallback path).** If the script or key is missing, the skill **pauses and surfaces the gap to the operator**. It does NOT fall back to Cowork's built-in `WebSearch` or `web_fetch`. That would silently substitute a different research source (general web search, not Perplexity Sonar's curated AI-overview synthesis) — defeating the contract the subscription pays for.
 
 The refusal step is the structural protection against silent source substitution. Past invocations of `perplexity-refinement` (Wave 0, 2026-05-27) ran without the refusal step and quietly used Cowork WebSearch when the browser wasn't reachable. Phase 2 of the output-quality-loop project (2026-05-28) added the structural refusal; every future suite skill build inherits it.
 
-**Cost-receipt discipline.** Every refinement / research output writes a one-line tally at the end naming the path used:
+**Historical note.** Earlier versions of this doc carried a two-path priority — Path A (Claude in Chrome → Perplexity Pro browser) and Path B (Sonar API). Path A was removed 2026-06-01 (see the "Path A status — REMOVED" section above for the precipitating Cowork pairing bug). The Sonar API is the canonical and only working path now.
 
-> Queries run: N via Path A (Claude in Chrome / Pro Search) | Path B (Sonar API). Validated: X. Updated: Y. Contradicted: Z. New sources surfaced: W.
+**Cost-receipt discipline.** Every refinement / research output writes a one-line tally at the end naming the path used + the dollar cost:
 
-The path-naming half is non-optional. Without it the operator can't audit whether the Pro contract held.
+> Queries run: N via Sonar API (sonar-pro), ~$<cost>. Validated: X. Updated: Y. Contradicted: Z. New sources surfaced: W.
+
+The path-naming + cost half is non-optional. Without it the operator can't audit Sonar spend across the vault.
 
 ## Per-invocation caps
 
@@ -107,13 +108,13 @@ If a high-tier list exceeds the cap for the chosen depth, the skill asks the ope
 
 ## When to warn the operator
 
-The router skill (`perplexity-research-suite`) tracks rough monthly usage from execution logs (the `Queries run: N via Path A` lines). Warn before invoking a high-cost skill when monthly Path-A usage looks heavy.
+The router skill (`perplexity-research-suite`) tracks rough monthly Sonar spend from execution logs (the `Queries run: N via Sonar API ~$X` lines). Warn before invoking a high-cost skill when monthly spend looks heavy.
 
-- **> 1,500 Path-A queries in the current calendar month (~37% of budget)** — surface the tally; ask whether to proceed.
-- **> 2,500 Path-A queries (~62%)** — warn before any `deep` refinement or any blueprint run. Recommend `light` or `medium` instead, or route through Path B (Sonar API) which doesn't draw on the Pro budget.
-- **Approaching 3,500 (~87%)** — recommend deferring all Path-A runs except critical ones. Standing scans should already be on Path B; the remaining Path-A budget gets reserved for interactive refinement work.
+- **> $5/month on Sonar across the suite** — surface the tally; ask whether to proceed.
+- **> $15/month** — warn before any `deep` refinement or any blueprint run. Recommend `light` or `medium` instead.
+- **Approaching $30/month** — recommend deferring all non-critical runs. The remaining spend gets reserved for interactive refinement work.
 
-The tally is best-effort, not authoritative. It's read from execution-log entries that name "Queries run: N via Path A" lines. The operator is the source of truth on whether to proceed. Sonar usage (Path B) doesn't count toward the Pro credit pool, so it doesn't enter these thresholds — but it does generate a separate Sonar bill the operator can track in the Perplexity dashboard.
+These thresholds are operator-set defaults, not Perplexity-imposed caps; Sonar has no hard monthly cap. Adjust upward as cadence grows. The tally is best-effort, not authoritative; it's read from execution-log entries that name `Queries run: N via Sonar API` lines.
 
 ## Cache rule — don't repeat work
 
@@ -121,20 +122,19 @@ Every refinement output writes a frontmatter field `perplexity-refined: YYYY-MM-
 
 For blueprint-research and other heavier skills, the corresponding cache field is named per-skill but follows the same pattern: a frontmatter date + a refresh window the skill enforces.
 
-## Sonar API — Path B specifics
+## Sonar API — canonical path specifics
 
-The Sonar API is the canonical Path B endpoint. Pay-per-query (token-priced; the math lands somewhere around $0.005-$0.02 per query depending on model). At a few queries per day per scan, monthly Sonar cost stays single-digit dollars. Cheap enough to ignore relative to the $21.20/mo Pro subscription.
+The Sonar API is the canonical (and only) path post-2026-06-01. Pay-per-query (token-priced; ~$0.005-$0.04 per query depending on model and answer length). At a few queries per day across the suite, monthly Sonar cost stays low single-digit dollars.
 
-What goes through Sonar by default:
+Every suite skill routes through Sonar:
 
-- `perplexity-citation-monitoring` (Wave 1C) — daily or weekly scans of "is the operator's site or his clients' sites cited by Perplexity for target queries"
-- `perplexity-acquisition-signal` (Wave 5) — standing monitoring of acquisition signals across tracked queries
-
-What stays in the Path A (browser) by default:
-
-- `perplexity-refinement` — interactive vault-artifact refinement (uses Path B only when Claude in Chrome is unavailable)
-- `perplexity-blueprint-research` — flagship, interactive
+- `perplexity-refinement` — interactive vault-artifact refinement
+- `perplexity-blueprint-research` — flagship interactive research
 - `perplexity-topic-gaps`, `perplexity-niche-validation`, `perplexity-client-discovery`, `perplexity-competitor-move-detection`, `perplexity-ai-overview-hardening` — situational, interactive
+- `perplexity-citation-monitoring` (Wave 1C) — daily or weekly scans
+- `perplexity-acquisition-signal` (Wave 5) — standing monitoring across tracked queries
+
+Model selection per skill: `sonar` for lightweight scans, `sonar-pro` for refinement / blueprint / load-bearing research where curation matters.
 
 **API-key setup (revised 2026-06-01).** The Sonar API key lives in two places by design:
 
@@ -155,9 +155,9 @@ If the key file is absent from both candidate paths, Path B is unavailable and t
 
 Every skill output writes a one-line tally at the end:
 
-> Queries run: N via Path A (Claude in Chrome / Pro Search) | Path B (Sonar API). Validated: X. Updated: Y. Contradicted: Z. New sources surfaced: W.
+> Queries run: N via Sonar API (sonar-pro), ~$<cost>. Validated: X. Updated: Y. Contradicted: Z. New sources surfaced: W.
 
-That line is the cost receipt. Over time the operator can tune depth and frequency by reading these tallies across execution logs. Don't hide queries; don't batch them in a way that obscures the count; don't omit the path-naming half.
+That line is the cost receipt. Over time the operator can tune depth and frequency by reading these tallies across execution logs. Don't hide queries; don't batch them in a way that obscures the count; don't omit the path-naming + cost half.
 
 If a refinement output's tally line says `Queries run: N via WebSearch` (or omits the path entirely), the discipline broke. Treat it as a regression and re-run with the correct path.
 
@@ -174,7 +174,7 @@ Every suite skill points at this file, so the fix propagates.
 
 ## See also
 
-- [[perplexity-browser-setup]] — Path A pre-query browser checks (including Claude in Chrome verification subsection)
+- [[perplexity-browser-setup]] — historical Path A browser checks (deprecated 2026-06-01; kept as audit trail)
 - [[perplexity-query-templates-index]] — index pointing at each skill's query templates
-- [[perplexity-refinement]] — Wave 0 skill; carries the canonical two-path decision tree in Phase 2a
+- [[perplexity-refinement]] — Wave 0 skill; carries the canonical Sonar-only decision tree in Phase 2a
 - [[perplexity-research-suite]] — router that surfaces capacity status

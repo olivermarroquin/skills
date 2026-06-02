@@ -12,7 +12,7 @@ This file is the single source for "how many queries is auto-research allowed to
 | Perplexity-refinement output | **6** | top 5 | Recursive composition with `perplexity-refinement` for deeper triangulation on the gaps. The recursive call inherits its own caps (3 / 7 / 15) — pick `light` (3) by default for recursive depth so the combined run stays under 9 queries total. |
 | Cluster synthesis | **6** | top 5 | Compose with `multi-source-synthesis` review-agent mode. Queries target cluster claims with fewer than 3 sources cited (the premature-abstraction edge). |
 | Cross-cluster synthesis | **8** | top 5 | Higher cap than cluster — cross-cluster synthesis spans more topics and more anchor questions need triangulation. |
-| Research brief (any tier) | **5** | top 3 | Briefs already came out of a research-heavy skill (`service-seo-research`, `city-base-research`, `intersection-research`, `client-fact-research`); auto-research targets sections marked "operator follow-up pending" or "AI surfaces not reachable from Cowork" since those gaps are now reachable through Perplexity Pro. |
+| Research brief (any tier) | **5** | top 3 | Briefs already came out of a research-heavy skill (`service-seo-research`, `city-base-research`, `intersection-research`, `client-fact-research`); auto-research targets sections marked "operator follow-up pending" or "AI surfaces not reachable from Cowork" since those gaps are now reachable through Perplexity Sonar. |
 | SKILL.md | **4** | top 3 | Targets rare or absent patterns ("what skills in this space do X better?"). Skill-design literature + agent-skill conventions + related work queries. Low default cap because skill-design queries return diminishing returns past ~4. |
 | Source note (VIS ingestion) | **3** | top 3 | The source note is already the operator's distillation of one piece of content — auto-research should triangulate the 2-3 highest-tier extracted claims, not redo the whole VIS pass. For deeper refinement, the operator invokes `perplexity-refinement` directly with `medium` or `deep` depth, which is its own contract. |
 | Blueprint | **8** | top 5 | Same cap as Core 30 — blueprints are high-leverage architectural artifacts. Queries target components whose mechanism is asserted without primary-source backing. |
@@ -50,8 +50,8 @@ Auto-research within the same loop iteration caches research results. If two gap
 Even within the cap, auto-research stops early if:
 
 1. **Top-5 gaps already covered.** If the EVALUATE pass surfaced only 3 gaps, auto-research runs only 3 queries (one per gap, plus any composed-skill queries each gap triggers). Don't pad the run to hit the cap.
-2. **Three consecutive `inconclusive` query results.** The artifact's gaps may not be researchable through Perplexity Pro (e.g., proprietary internal knowledge, vault-internal patterns, operator-discipline observations). Stop and surface that in the folder log under "External research" as "Stopped early: 3 inconclusive queries — gaps may not be externally researchable."
-3. **Perplexity Pro unavailable.** If `perplexity-refinement` returns the refusal message (no Path A, no Path B), Mode 4 surfaces the gap to the operator and stops. Don't fall back to vault-internal research and pretend it filled the external benchmark — the audit trail breaks.
+2. **Three consecutive `inconclusive` query results.** The artifact's gaps may not be researchable through Perplexity Sonar (e.g., proprietary internal knowledge, vault-internal patterns, operator-discipline observations). Stop and surface that in the folder log under "External research" as "Stopped early: 3 inconclusive queries — gaps may not be externally researchable."
+3. **Perplexity Sonar unavailable.** If `perplexity-refinement` returns the refusal message (Sonar API path missing), Mode 4 surfaces the gap to the operator and stops. Don't fall back to vault-internal research and pretend it filled the external benchmark — the audit trail breaks. (Historical note: pre-2026-06-01 versions referenced `no Path A, no Path B`. Path A was removed 2026-06-01.)
 4. **Operator override during run.** If the operator intervenes mid-run ("skip the rest of the queries"), stop, log what was run, and proceed to the synthesis phase with whatever was collected.
 
 ## Tracking and audit
@@ -61,9 +61,9 @@ Every auto-research run writes to the folder log under the artifact's per-artifa
 ```markdown
 ### External research (Mode 4) — YYYY-MM-DD
 
-**Path used:** Path A (Claude in Chrome / Pro Search) | Path B (Sonar API)
+**Path used:** Sonar API (`sonar-pro` or `sonar`)
 **Queries run:** N of cap N (top M of top-5 gaps researched; K gaps skipped per termination rule)
-**Credits consumed (Path B only):** ~$X.XX
+**Cost incurred:** ~$X.XX
 
 **Per-gap queries:**
 
@@ -75,10 +75,10 @@ Every auto-research run writes to the folder log under the artifact's per-artifa
 2. ...
 
 **Cache hits:** N (queries reused from earlier in this iteration)
-**Termination reason:** "Top-N gaps covered" | "3 inconclusive results" | "Perplexity Pro unavailable" | "Operator override"
+**Termination reason:** "Top-N gaps covered" | "3 inconclusive results" | "Perplexity Sonar unavailable" | "Operator override"
 ```
 
-The path-naming line is non-optional (same convention as `perplexity-refinement`'s cost-receipt line — see `~/workspace/skills/perplexity-shared/references/perplexity-cost-rules.md` § "Cost-receipt discipline"). Without it the operator can't audit whether the Pro contract held across Mode 4 runs.
+The path-naming line is non-optional (same convention as `perplexity-refinement`'s cost-receipt line — see `~/workspace/skills/perplexity-shared/references/perplexity-cost-rules.md` § "Cost-receipt discipline"). Without it the operator can't audit Sonar spend across Mode 4 runs.
 
 ## Heavy-month warning thresholds
 

@@ -13,7 +13,7 @@ This skill exists because Otterly.ai's daily prompt tracking is configured aroun
 
 - **Non-destructive append.** Each run appends a new dated section to the citation-history note. Never overwrite prior snapshots. The whole point is that trends emerge across months — that only works if the historical record stays intact.
 - **Cheap by default.** 5-8 queries per run, not 15. Citation-monitoring is the cheapest standing skill in the suite. A monthly run for a single client should cost under 5% of the weekly Pro Search budget.
-- **Browser-driven at v1; Sonar API path at v2.** v1 runs through Claude in Chrome against the Perplexity Pro browser session. v2 will route scheduled monthly runs through the Perplexity Sonar API so they don't draw on the shared Pro browser cap. The shared `perplexity-cost-rules.md` documents the Sonar fallback when v2 lands.
+- **Sonar API only.** All runs go through the Perplexity Sonar API via `~/workspace/second-brain-tier3/automation/scripts/perplexity_sonar.py`. (Historical note: v1 of this skill originally specified Claude in Chrome → Perplexity Pro browser session at v1 + Sonar at v2; Path A was removed 2026-06-01 and Sonar became the only path, collapsing v1 + v2 into a single path.)
 - **Perplexity only at v1.** ChatGPT, Claude, and Gemini citation tracking land in v2. v1 is the cheapest viable version — one surface, monthly cadence, per-scope citation-history note.
 - **Cite every URL Perplexity surfaces.** No URL lands in the citation-history note without the query that surfaced it and the date. The history is the trust anchor; lazy citation poisons it.
 
