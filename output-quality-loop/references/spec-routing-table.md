@@ -294,6 +294,23 @@ Notes:
 - Mode 4 typically returns "validates" on most gaps — final reports are summaries, not novel claims. Mode 4 budget for this type is light (top-3 gaps; cap 5 queries) — most reports don't need external benchmarking.
 - The evaluation cross-checks state-file fields against report sections; mismatches surface as hard requirement misses (e.g., "page_status has 30 pages live; report names 28" = hard fail).
 
+### Vault-orchestrator RESUME report
+
+Spec sources to load:
+
+1. **`vault-orchestrator` SKILL.md** — `skills://vault-orchestrator/SKILL.md` § "Mode 5 — RESUME" (defines what the report MUST cover, the six-section output contract, the read order, and the verification block)
+2. **The RESUME input sources reference** — `skills://vault-orchestrator/references/resume-input-sources.md` (the report MUST accurately reflect what Mode 5 read; the "what I read" audit section should name all six sources or honestly surface missing ones)
+3. **The RESUME output shape reference** — `skills://vault-orchestrator/references/resume-output-shape.md` (the report MUST follow the six-section shape with the named minimum content per section)
+4. **Plain-language conventions** — `vault://_meta/plain-language-conventions.md`
+
+Notes:
+
+- v1.2 addition driven by `vault-orchestrator` v1.2 Mode 5 RESUME, shipped 2026-06-02. Mirrors the v1.1 additive pattern (new artifact type → new routing entry).
+- Mode 5 reports are AGGREGATE state reports — prior modes already evaluated their own artifacts (or not, for chat-only outputs). RESUME evaluates the report itself for accuracy + completeness against the project's six input sources.
+- The evaluation cross-checks: (a) Section 2 (available next-wave handoffs) lists ALL `planned_remaining_waves[]` entries whose deps are cleared per the state file + reconciliations; (b) Section 3 (cross-project unblockers) passes the filter rule from `resume-output-shape.md` (no vault-wide noise); (c) Section 5 (stale-state reconciliations) surfaces every reconciliation the detection rules in `resume-input-sources.md` would fire; (d) Section 4 (decomposition diagram) renders all waves + applies cycle detection.
+- Mode 4 budget for this type is light (top-3 gaps; cap 5 queries) — RESUME reports are summaries of vault state, not novel claims. Mode 4 typically returns "validates" because the source data is already in the vault.
+- Hard requirement misses: schema-version drift not surfaced when state file is older than skill; reconciliation rule fired but missing from Section 5; cross-project signal that doesn't pass the filter rule appears in Section 3; cycle detected but no warning banner rendered.
+
 ## Operator overrides
 
 When the operator runs `quality-check <artifact> against <spec1> <spec2>`, the routing table is bypassed and the operator-named specs are used. Surface the override in the evaluation report so the audit trail names what was actually loaded:

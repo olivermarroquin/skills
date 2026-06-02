@@ -76,6 +76,24 @@ When the operator wants the deeper drift report (tracker rows vs handoff frontma
 
 Out of scope for Phase 3. Phase 4 (PROVISION) composes with DECOMPOSE to draft handoffs from spawn-candidate proposals.
 
+## Mode 5 RESUME → Mode 3 PROVISION chain (v1.2)
+
+Mode 5 RESUME identifies which `planned_remaining_waves[]` for a named project are ready but lack handoff files. The operator's natural next move on those waves: "provision wave-X for <project>." That invokes Mode 3 PROVISION on the named wave, but with a key difference from a fresh PROVISION run:
+
+- **Fresh PROVISION (v1.1 default):** operator names a strategic-chat-style goal; DECOMPOSE generates the full N-phase plan from scratch.
+- **Chained PROVISION (v1.2 RESUME → PROVISION):** the wave scope comes from the RESUME report's Section 2 entry for the named wave. PROVISION consumes the existing scope + estimated hours + `blocks_on` array rather than re-deriving them.
+
+The chain composition contract:
+
+- Mode 5 RESUME's Section 2 names each ready wave with: `wave_id`, scope summary, estimated hours (from `planned_remaining_waves[].estimated_hours`), `blocks_on` array, and a chain note inviting PROVISION on that wave.
+- When the operator says "provision wave-X for <project>" after a RESUME run, Mode 3 PROVISION reads the RESUME output (chat-only if recent, or `--persist`ed file if archived) as the goal source. The wave's scope becomes PROVISION Step 2's input to DECOMPOSE; the `blocks_on` array becomes prerequisite context for the dependency graph.
+- PROVISION still runs its full discipline (Steps 3-11) — decision-research convention firing, edit-zone conflict scan, substrate tagging, checkpoint reminders, operator-fatigue check, single review gate. The chain just supplies the goal source automatically.
+- The drafted handoff file gets registered against the EXISTING project subfolder (e.g., `_meta/handoffs/<project-slug>/wave-X-<topic>.md`) rather than a new project subfolder. This is the key v1.1 known-gap-1 closer: PROVISION can now draft INTO an existing project, not just create a new one.
+
+The chain closes known-gap-1 from v1.1 (mid-project resume for existing projects): RESUME identifies; PROVISION drafts; Mode 6 EXECUTE (separate Claude Code chat, queued for 2026-06-03) spawns the resulting handoffs into sub-agents. The trio together makes existing-project resume + multi-agent execution work end-to-end.
+
+The operator drives the chain — Mode 5 RESUME does NOT auto-invoke PROVISION. The composition shape preserves the operator-driven separation between identification and drafting (same shape as NEXT-MOVES → PROVISION).
+
 ## Avoiding the double-bookkeeping trap
 
 The most common composition failure: invoking MCC NEXT-MOVE, then re-evaluating the six factors in the orchestrator, then ranking again. That's double-bookkeeping — the two rankings drift, the operator sees two different recommendations, trust erodes.

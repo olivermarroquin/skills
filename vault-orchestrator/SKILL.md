@@ -1,15 +1,15 @@
 ---
 name: vault-orchestrator
-description: Three-mode orchestrator skill that sits above `multi-chat-coordination` and `master-tracker-aggregator`. Reads the entire vault state — master tracker (including the aggregator's generated rollup section), per-project `_chat-tracker.md` + `_chat-status.md` digests, hot decisions, scheduled tasks, `03_domains/` knowledge surfaces, recently-closed chats, and execution-log activity — and produces operator-facing decision support plus (in Mode 3) drafted handoffs + a substrate-agnostic spawn queue. **Mode 1 (SURVEY):** plain-language state-of-the-vault report with nine ordered sections (in-flight / ready / queued / open decisions / scheduled / recent wins / domain signals / stale signals / cross-project signals). **Mode 2 (NEXT-MOVES):** composes with multi-chat-coordination's NEXT-MOVE ranking, then layers session-budget totals (neutral, no editorializing), parallel-work detection (disjoint file sets), serial-blocked detection (high-leverage unblockers), per-candidate substrate recommendation (Claude Code / Cowork / either) per the working-surfaces convention, decision-research convention on ranking ties or priority conflicts, and a recommended session plan capped at 8 hours. **Mode 3 (PROVISION):** composes with multi-chat-coordination's DECOMPOSE to split a project goal into N drafted handoffs, runs decision-research at every meaningful decomposition decision, tags each drafted handoff with a `preferred-substrate:` field, scans drafted + in-flight + queued handoffs for shared-file conflicts (edit-zone detection), appends substrate-agnostic copy-paste-ready rows to `_meta/handoffs/_spawn-queue.md`, registers the new project at the appropriate tracker tier, integrates the chat-resilience checkpoint reminder into long-running handoffs, ties the operator-fatigue heuristic to queue totals (warns at >10h queued), and produces a plain-language operator summary. All three modes auto-invoke `output-quality-loop` on their artifacts. Modes 1-2 are read-only on vault content; Mode 3 writes drafted handoffs + queue rows + tracker rows + new project subfolders only after operator approval at a single review gate. Phase 3 + Phase 4 of the vault-orchestrator project (2026-06-01). Trigger phrases include "run vault-orchestrator," "survey the vault," "state of the vault," "what's the state of play," "give me the vault rollup," "what should I work on next," "what should I spawn next," "rank my next moves," "next-moves recommendation," "session plan for tonight," "give me the spawnable list," "what's the highest-leverage move right now," "provision <goal>," "draft handoffs for <goal>," "decompose this project into chats," "set up a spawn queue for <goal>," "scaffold this initiative."
+description: Four-mode orchestrator skill that sits above `multi-chat-coordination` and `master-tracker-aggregator`. Reads the entire vault state — master tracker (including the aggregator's generated rollup section), per-project `_chat-tracker.md` + `_chat-status.md` digests, hot decisions, scheduled tasks, `03_domains/` knowledge surfaces, recently-closed chats, execution-log activity, project state files, and the inter-chat event log — and produces operator-facing decision support plus (in Mode 3) drafted handoffs + a substrate-agnostic spawn queue. **Mode 1 (SURVEY):** plain-language state-of-the-vault report with nine ordered sections (in-flight / ready / queued / open decisions / scheduled / recent wins / domain signals / stale signals / cross-project signals). **Mode 2 (NEXT-MOVES):** composes with multi-chat-coordination's NEXT-MOVE ranking, then layers session-budget totals (neutral, no editorializing), parallel-work detection (disjoint file sets), serial-blocked detection (high-leverage unblockers), per-candidate substrate recommendation (Claude Code / Cowork / either) per the working-surfaces convention, decision-research convention on ranking ties or priority conflicts, and a recommended session plan capped at 8 hours. **Mode 3 (PROVISION):** composes with multi-chat-coordination's DECOMPOSE to split a project goal into N drafted handoffs, runs decision-research at every meaningful decomposition decision, tags each drafted handoff with a `preferred-substrate:` field, scans drafted + in-flight + queued handoffs for shared-file conflicts (edit-zone detection), appends substrate-agnostic copy-paste-ready rows to `_meta/handoffs/_spawn-queue.md`, registers the new project at the appropriate tracker tier, integrates the chat-resilience checkpoint reminder into long-running handoffs, ties the operator-fatigue heuristic to queue totals (warns at >10h queued), and produces a plain-language operator summary. **Mode 5 (RESUME):** project-scoped mid-project visibility — reads a named project's state file, execution logs newest-first, per-project chat tracker + digest, the event log delta since the state file's `updated_at`, the master tracker rows naming this project, and the handoff files whose `client:` field matches; produces a four-part plain-language report (project state summary + available next-wave handoffs + cross-project unblockers + decomposition diagram text), surfaces every stale-state reconciliation Mode 5 applied (state-file-says-X-but-event-log-says-Y) with operator confirmation prompts, and chains into Mode 3 PROVISION when the operator wants the ready-waves drafted into handoffs. Mode 5 is read-only on vault content and closes known-gap-1 from v1.1 (mid-project resume for existing projects). All four modes auto-invoke `output-quality-loop` on their artifacts. Modes 1, 2, and 5 are read-only on vault content; Mode 3 writes drafted handoffs + queue rows + tracker rows + new project subfolders only after operator approval at a single review gate. Phase 3 + Phase 4 + v1.2 Phase 1 of the vault-orchestrator project (2026-06-01 + 2026-06-02). Trigger phrases include "run vault-orchestrator," "survey the vault," "state of the vault," "what's the state of play," "give me the vault rollup," "what should I work on next," "what should I spawn next," "rank my next moves," "next-moves recommendation," "session plan for tonight," "give me the spawnable list," "what's the highest-leverage move right now," "provision <goal>," "draft handoffs for <goal>," "decompose this project into chats," "set up a spawn queue for <goal>," "scaffold this initiative," "resume <project>," "where are we on <project>," "what's next for <project>," "show wave status for <project>," "decompose what's left for <project>."
 ---
 
-# Vault Orchestrator (v1.1)
+# Vault Orchestrator (v1.2)
 
 The hierarchical orchestration layer above `multi-chat-coordination`. Oliver's "vault chief of staff" — the role that today lives in Oliver's head plus the master `_active-chats-tracker.md`. The orchestrator surveys every part of the vault, surfaces what's happening, and ranks what's most valuable to work on next. It does not replace operator judgment. It removes the bottleneck where every "what's the state of play?" or "what should I spawn next?" question requires the operator to mentally walk every project and domain.
 
 The skill exists because the system has grown past one-tracker-can-hold-it-all. 11 projects, 10+ domains, dozens of in-flight + queued chats, scheduled tasks, hot decisions, recently-closed work, unsynthesized sources accumulating in `03_domains/`. Without an aggregating layer, every NEXT-MOVE question routes through Oliver tracking everything manually. This skill is that layer.
 
-**Modes 1 and 2 are read-only on vault content.** SURVEY and NEXT-MOVES never edit per-project files, never edit the master tracker outside the aggregator's marker block (which the aggregator owns, not this skill), never write a digest. Their outputs are reports — plain-language markdown the operator reads in chat or persists to disk on request.
+**Modes 1, 2, and 5 are read-only on vault content.** SURVEY, NEXT-MOVES, and RESUME never edit per-project files, never edit the master tracker outside the aggregator's marker block (which the aggregator owns, not this skill), never write a digest, never mutate state files. Their outputs are reports — plain-language markdown the operator reads in chat or persists to disk on request.
 
 **Mode 3 (PROVISION) writes — but only after operator approval at a single review gate.** PROVISION composes with `multi-chat-coordination` DECOMPOSE to draft handoffs for a proposed initiative, scans them for cross-project edit-zone conflicts, tags each with a preferred substrate, and stages them in a substrate-agnostic `_spawn-queue.md`. No file is written until the operator approves the full decomposition + queue at the review gate. Once approved, PROVISION writes the new project subfolder + `_README.md` + per-phase handoffs + queue rows + master tracker rows atomically. The operator drives every spawn — Mode 3 does not auto-execute any drafted chat.
 
@@ -68,11 +68,29 @@ Indirect triggers — when the operator names a multi-phase initiative without s
 - "Take this strategic-chat output and turn it into spawnable chats."
 - A NEXT-MOVES output chained into PROVISION (operator says "now provision the top candidate" or "draft handoffs for what you just ranked")
 
+### Mode 5 — RESUME (project-scoped mid-project visibility)
+
+Direct triggers for reading a specific project's state + surfacing where it is + which next-wave handoffs are ready:
+
+- "Resume <project>"
+- "Where are we on <project>?"
+- "What's next for <project>?"
+- "Show wave status for <project>"
+- "Decompose what's left for <project>"
+- "Run RESUME on <project>"
+
+Indirect triggers — when the operator returns to a project after a gap, or asks a project-scoped state question:
+
+- "Pick up <project> from where we left off"
+- "What's the state of <project> right now?"
+- "Are wave A2 / phase 3 / step N for <project> ready to spawn?"
+- A SURVEY output where the operator narrows to one project ("zoom into S&H")
+
 ## Core operating principles
 
 These hold across both modes. Read them before invoking either.
 
-**Modes 1 and 2 are read-only on vault content.** SURVEY and NEXT-MOVES never edit per-project files, never edit handoff frontmatter, never write a digest, never edit the master tracker outside the aggregator's marker block (which belongs to the `master-tracker-aggregator` skill, not this one). They produce reports; the operator decides what to do with them.
+**Modes 1, 2, and 5 are read-only on vault content.** SURVEY, NEXT-MOVES, and RESUME never edit per-project files, never edit handoff frontmatter, never mutate state files, never write a digest, never edit the master tracker outside the aggregator's marker block (which belongs to the `master-tracker-aggregator` skill, not this one). They produce reports; the operator decides what to do with them.
 
 **Mode 3 writes only after operator approval.** PROVISION drafts handoffs, queue rows, and tracker rows but stages them at a single review gate before any file is written. No drafted handoff is written, no queue row appended, no tracker row added until the operator says "approved" (with or without edits). On approval, PROVISION writes all proposed files atomically — handoff bodies + project `_README.md` + spawn-queue rows + master-tracker rows in one pass — then runs YAML parse checks on every touched file and emits the auto-invoke quality-loop block. The operator-driven spawn step (paste or fire) is always separate from the draft step.
 
@@ -650,6 +668,182 @@ Per the multi-chat-coordination DECOMPOSE convention, tracker edits are NOT in t
 
 See `examples/first-provision-2026-06-01-ev-blog-content-calendar.md` for the first real-use run.
 
+## Mode 5 — RESUME
+
+### What RESUME produces
+
+A project-scoped plain-language report with six sections (the four-part output contract from the v1.2 handoff plus a stale-state-reconciliation surface added at v1.2 Gate 1 operator refinement, plus a brief audit trail):
+
+1. **Project state summary** — current wave, last closed wave, scope of next planned wave, blockers the project flagged, plus the state-file freshness signal.
+2. **Available next-wave handoffs** — `planned_remaining_waves[]` entries whose dependencies are cleared, matched against handoff files Mode 5 found via `client:` frontmatter grep, with a tracker-Ready vs state-file-ready distinction.
+3. **Cross-project unblockers** — a FILTERED SUBSET of vault-wide cross-project signals: only those whose source handoff has `client:` matching this project, OR explicitly names this project's slug, OR appears in a wave's `blocks_on:` array.
+4. **Decomposition diagram** — text rendering of the project's wave dependency graph with status markers (`[✓]` closed · `[~]` in-progress · `[•]` ready · `[✗]` blocked · `[!]` superseded). Cycle detection runs every render; circular dependencies surface with a warning banner.
+5. **Stale-state reconciliations** — every reconciliation Mode 5 applied (state-file-says-X-but-event-log-says-Y) with operator confirmation prompts. Transparency over magic.
+6. **What I read to produce this** — brief audit trail of the six input sources, in read order, with freshness signals.
+
+Detailed shape + minimum content + voice rules in [[resume-output-shape]].
+
+RESUME is read-only on vault content (same as SURVEY and NEXT-MOVES). It does not mutate state files, never edits the master tracker, never writes a digest. Its output is a markdown report — emit to chat by default, persist to `_meta/handoffs/vault-orchestrator/runs/<YYYY-MM-DD-resume-<slug>>.md` on `--persist`.
+
+### When RESUME fires
+
+The operator triggers RESUME explicitly (the direct triggers in "When to trigger" above) OR a SURVEY output gets narrowed to one project ("zoom into S&H").
+
+RESUME does NOT auto-fire from NEXT-MOVES outputs. NEXT-MOVES already ranks spawnable work across projects; RESUME's value is project-scoped visibility. The operator chains them deliberately if they want NEXT-MOVES first then RESUME on a specific candidate's project.
+
+### RESUME step-by-step
+
+**Step 1 — Receive the project slug.**
+
+Operator-provided when triggering. If ambiguous (multiple project folders match), Mode 5 asks one clarifying question:
+
+```
+You said "resume S&H." I see two matching project folders:
+1. s-and-h-contracting (under clients/_active)
+2. s-and-h-personal-notes (under personal)
+
+Which one?
+```
+
+If the slug doesn't resolve, Mode 5 stops with an honest finding rather than producing an empty report.
+
+**Step 2 — Read the master tracker.**
+
+Read `~/workspace/second-brain/_meta/handoffs/_active-chats-tracker.md`. Extract rows naming the project across in-flight / Ready / Tier-2 queued / Tier-3 queued / Recently closed (past 14 days) / Recently completed (past 7 days). The matching rule: row's Notes column references the project slug, OR row's handoff filename contains the slug.
+
+The aggregator's generated rollup section MAY contain a per-project digest block for this project; if present, capture as a parallel summary for reconciliation in Step 7.
+
+**Step 3 — Read the event log delta.**
+
+Read `~/workspace/second-brain/_meta/_event-log.md` and filter rows to:
+
+- Timestamp >= state file's `updated_at` value (if state file exists), OR
+- Timestamp >= 24 hours ago (if no state file)
+
+For each row in the delta, capture surface + pass + chat-id + summary. Mode 5 uses the delta for the stale-state reconciliation step and the cross-project-unblockers output section.
+
+**Step 4 — Read the state file.**
+
+Read `04_projects/.../{slug}/_state/onboarding.json` (or equivalent). Key fields: `schema_version`, `current_wave`, `waves[]`, `wave_log[]`, `planned_remaining_waves[]`, `blocked_on[]`, `failures[]` (entries with `operator_action: pending`), `quality_log` (any `light-escalate` decisions still pending).
+
+If `schema_version` is older than the current skill version, surface as a finding — do NOT auto-migrate. Migration belongs to the owning skill.
+
+If no state file exists, surface clearly and continue with master tracker + execution log signals only.
+
+**Step 5 — Read the execution logs, newest-first.**
+
+List `04_projects/.../{slug}/execution-logs/execution-log-*.md` sorted by filename descending. For the newest 1-3 logs, extract frontmatter + section headers + any "Decisions made" / "Lessons learned" subsections.
+
+The newest execution log is the most-recent narrative; state file `wave_log` is the structured summary. Mode 5 reads both because each captures different things.
+
+**Step 6 — Read the per-project chat tracker + digest.**
+
+Read `_chat-tracker.md` (human-readable mirror) + `_chat-status.md` (machine-readable digest). The digest frontmatter is the primary read for `current-focus`, `blockers[]`, `spawn-recommendations[]`. If the digest is >14 days stale, surface that signal and treat the digest as advisory.
+
+If neither file exists, surface as advisory (project predates the Phase 1 convention) and continue.
+
+**Step 7 — Compute wave readiness + apply stale-state reconciliations.**
+
+Build the wave graph from `state_file.waves[]` + `planned_remaining_waves[]`. For each pending wave, compute readiness by checking whether all `blocks_on[]` deps are closed-or-cleared.
+
+Apply the five stale-state reconciliation detection rules from [[resume-input-sources]] § "Stale-state reconciliation rules":
+
+1. Blocker apparently un-cleared but handoff consumed in event log
+2. Wave in-progress but tracker shows the chat closed
+3. Schema-version drift
+4. Execution log newer than state file
+5. Per-project tracker out-of-sync
+
+For each reconciliation, name the source contradiction + Mode 5's inferred resolution + an operator confirmation prompt. Mode 5 NEVER writes a fix to the state file; it just produces an accurate read.
+
+**Step 8 — Detect cross-project unblockers (filtered subset).**
+
+Walk `_meta/handoffs/handoff-*.md` for frontmatter `client:` matching the named project, plus any handoff explicitly mentioning the project's slug in `purpose:` or body text, plus handoffs whose filename appears in any wave's `blocks_on:` array. For each qualifying handoff, capture filename + status + what it ships + which of this project's waves it would unblock.
+
+The filter is mandatory — Section 3 of the output is project-scoped, not vault-wide. See [[resume-output-shape]] § "Section 3 — Cross-project unblockers" filter rule.
+
+**Step 9 — Render the report.**
+
+Render in the six-section order per [[resume-output-shape]]. Voice rules: plain prose paragraphs as synthesis, bullets fine for naming rows, jargon glossed inline on first use, wikilinks preserved per knowledge-os conventions, zero invented data.
+
+Render the decomposition diagram per [[resume-decomposition-diagram-text]] — ASCII for ≤10 waves, table fallback for >10 waves, cycle detection on every render.
+
+**Step 10 — Emit the report.**
+
+Default: emit as chat output. The operator reads inline + responds to any confirmation prompts.
+
+If the operator says "save the resume report" or "persist this," write to `~/workspace/second-brain/_meta/handoffs/vault-orchestrator/runs/<YYYY-MM-DD-resume-<slug>>.md` after `ls`ing the parent and creating `runs/` if absent. Frontmatter:
+
+```yaml
+---
+type: report
+status: draft
+created: <today>
+updated: <today>
+project: <slug>
+mode: resume
+tags: [report, vault-orchestrator, resume, <slug>]
+---
+```
+
+Free-form fields single-quote-wrapped. YAML parses-check runs after the write.
+
+**Step 11 — Handle operator confirmation flow.**
+
+When Section 5 (stale-state reconciliations) fires, the report includes per-reconciliation `Operator confirm: ...` prompts. The operator responds inline:
+
+- On "yes" → Mode 5 treats the reconciled state as truth for downstream sections (e.g., wave A2 is unblocked if both reconciliations confirm)
+- On "no" → Mode 5 reverts to state-file truth + re-renders the relevant sections
+- On "edit" → Mode 5 asks one clarifying question + re-renders
+
+Mode 5 NEVER writes a fix to the state file as part of confirmation. State file edits remain the owning skill's responsibility. Mode 5 just produces an accurate read.
+
+**Step 12 — Auto-invoke output-quality-loop.**
+
+Per the auto-invoke convention. Emit the standard block at completion — when the report is persisted to disk. When the report is chat-only, the "ephemeral artifacts" exemption applies; skip the block.
+
+The block (verbatim) when the report was written:
+
+````markdown
+## Auto-invoke output-quality-loop
+
+This skill produced the following artifact(s):
+- `<path to the persisted resume report>`
+
+[output-quality-loop:eval] — for each artifact, run output-quality-loop in EVALUATE mode. If PASS, declare the chat done. If NEEDS REVISION or FAIL, ingest the revision prompt as if it were operator input and regenerate the artifact, then re-invoke output-quality-loop. Cap at 3 iterations; on the 3rd FAIL, escalate to the operator with the evaluation report.
+````
+
+Spec routing for the RESUME report lives in `output-quality-loop/references/spec-routing-table.md` § "Vault-orchestrator RESUME report" (v1.2 additive routing entry — mirrors the v1.1 additive pattern).
+
+### RESUME flags
+
+- `--persist` — write the report to `_meta/handoffs/vault-orchestrator/runs/<YYYY-MM-DD-resume-<slug>>.md` in addition to chat output.
+- `--persist-path <path>` — override the default persist path.
+- `--dry-run` — produce the report without persisting even if `--persist` was requested.
+- `--include-decomposition-diagram` (default true) — emit Section 4. Use `--include-decomposition-diagram=false` for terse outputs.
+- `--skip-event-log-cross-reference` — skip Step 3's event log delta read. Used when the operator explicitly wants only state-file truth; loses the stale-state reconciliation surface.
+- `--past-days N` (default 14) — change the "recent closed for this project" lookback window.
+
+### RESUME → PROVISION chain
+
+Mode 5 RESUME identifies which `planned_remaining_waves[]` are ready but lack handoff files. The operator's natural next move on those waves: "provision wave-X for <project>" — which invokes Mode 3 PROVISION to draft the handoff.
+
+Mode 5 names this chain explicitly in its Section 2 output:
+
+```
+Chain note: wave A3 is state-file-ready but no handoff exists. To draft one,
+say "provision wave-A3 for s-and-h-contracting" and Mode 3 will decompose +
+draft + queue the handoff.
+```
+
+The chain closes known-gap-1 from v1.1 (mid-project resume for existing projects): Mode 5 surfaces remaining work; Mode 3 PROVISION drafts it; Mode 6 EXECUTE (separate chat tomorrow) handles the spawn side.
+
+The composition contract: Mode 5 produces project-scoped state, Mode 3 PROVISION consumes that state as decomposition input for the named wave. The operator drives the chain — Mode 5 does NOT auto-invoke PROVISION.
+
+### RESUME worked examples
+
+See `examples/first-resume-2026-06-02-s-and-h.md` and `examples/first-resume-2026-06-02-ev-electric.md` for the first real-use runs against the live S&H and EV project state.
+
 ## Composition with master-tracker-aggregator
 
 The aggregator is the bottom-up data layer; the orchestrator is the top-down decision layer. The contract:
@@ -667,6 +861,7 @@ The orchestrator composes — does not duplicate — multi-chat-coordination's t
 - **NEXT-MOVE composition.** NEXT-MOVES invokes multi-chat-coordination NEXT-MOVE to get the base leverage ranking. The orchestrator's overlays (session-budget totals, parallel-work detection, substrate tagging, decision-research) sit on top.
 - **AUDIT composition.** SURVEY's Section 8 (stale signals) can optionally call multi-chat-coordination AUDIT for deeper drift findings. By default it uses the lighter aggregator drift-detect.
 - **DECOMPOSE composition.** PROVISION (Mode 3) composes with DECOMPOSE to draft phase handoffs. PROVISION consumes DECOMPOSE's slug, dependency graph, handoff bodies, README body, and proposed tracker rows; it layers conflict detection + substrate tagging + checkpoint reminders + decision-research convention firing + operator-fatigue check + spawn-queue writes on top. The orchestrator does not reimplement DECOMPOSE's sizing rules, dependency analysis, or tier classification.
+- **RESUME → PROVISION chain (v1.2).** Mode 5 RESUME identifies which `planned_remaining_waves[]` are ready but lack handoff files. The operator can chain into Mode 3 PROVISION on a specific ready wave by saying "provision wave-X for <project>." PROVISION consumes the RESUME report's wave scope as decomposition input rather than starting from a fresh strategic-chat goal. This chain closes v1.1's known-gap-1 (mid-project resume for existing projects): RESUME surfaces ready waves; PROVISION drafts the handoffs; Mode 6 EXECUTE (separate Claude Code chat, queued for 2026-06-03) handles the multi-agent spawn side. The operator drives the chain — RESUME does NOT auto-invoke PROVISION.
 
 When invoking a composed mode, the orchestrator reads its output and incorporates it into its own report; it does not re-emit the composed mode's own report verbatim.
 
@@ -705,7 +900,7 @@ Substrate recommendation is mandatory on every NEXT-MOVES candidate. Cite the co
 - **Editing the master tracker outside the aggregator's marker block (Modes 1-2).** That section belongs to `master-tracker-aggregator`, not this skill. PROVISION (Mode 3) edits the hand-edited "Ready to spawn" / "Queued — Tier 2" / "Queued — Tier 3" sections via row additions — never edits the aggregator's marker block.
 - **Editing per-project digests or trackers.** Read-only on per-project digests; PROVISION may write a new per-project subfolder + `_README.md` only when the operator approves a new project at the review gate.
 - **Editing in-flight or already-queued handoffs.** PROVISION drafts new handoffs; it does not modify handoffs that already exist. Edits to existing handoffs are operator-driven or a separate maintenance chat.
-- **Decomposing remaining work for EXISTING projects.** PROVISION (v1.1) creates a new project subfolder for a new initiative. It does not have a path for existing projects where work is partly done, partly in-flight, and partly remaining — the operator cannot today say "decompose what's left to finish ev-electric Phase 2 work" and expect PROVISION to read the existing project state and draft the remaining-work handoffs into the existing subfolder. This is **known gap 1** in [[../../../second-brain/_meta/handoffs/vault-orchestrator/_README|the vault-orchestrator project README]] (full gap description there). Workaround today: operator drafts a single mid-project handoff by hand following the existing handoffs' shape, OR uses PROVISION on a sub-initiative goal that creates a sibling subfolder. Likely fix: a Mode 4 RESUME-PROVISION shipped in v1.2 OR folded into Phase 5's per-project orchestrator decomposition where the project-surveyor sub-skill knows "where the project is" and feeds into a project-decider that drafts only the remaining-work handoffs.
+- **Decomposing remaining work for EXISTING projects — partially addressed in v1.2 Mode 5 RESUME (2026-06-02); EXECUTE side ships in v1.2 Mode 6 (separate chat).** v1.1's PROVISION created a new project subfolder for a new initiative; it did not have a path for existing-project resumes. v1.2 Mode 5 RESUME closes the identification side: read the project's state file + execution logs + event log + master tracker rows naming this project, surface which `planned_remaining_waves[]` are ready, and chain into Mode 3 PROVISION when the operator wants those ready-waves drafted into handoff files. Mode 5 is read-only — it identifies; PROVISION drafts; Mode 6 EXECUTE (separate Claude Code chat, queued for 2026-06-03) handles the multi-agent spawn side. Together the trio closes known-gap-1 end-to-end. Workaround for projects not yet using state files: Mode 5 reads what's present (master tracker rows + execution logs + handoffs naming the project) and produces a partial report; operator drafts the next-wave handoff by hand from that report.
 - **Cross-vault federation.** Single vault (`~/workspace/second-brain/`). Tier-3 vault is air-gapped by design.
 - **Domain-level per-domain trackers.** Domains stay SURVEY-only — read folder listings + frontmatter freshness signals, don't expect a per-domain tracker.
 - **Semantic-conflict detection.** Edit-zone conflict detection catches shared-file races; it does not predict semantic contradictions between two chats updating disjoint sections. That's a NEXT-MOVES decision-research call when surfaced.
@@ -740,6 +935,19 @@ Before the chat declares "SURVEY complete," "NEXT-MOVES complete," or "PROVISION
 10. Auto-invoke quality-loop block emitted naming every artifact (drafted handoffs + project `_README.md` + spawn-queue write); tracker edits excluded per the multi-chat-coordination convention.
 11. Plain-language operator summary rendered with substrate routing breakdown, conflict count, fatigue-check status, and "what's next" guidance.
 
+**Mode 5 (RESUME):**
+
+1. The six input sources were read in the order specified in [[resume-input-sources]] § "Read order" — master tracker, event log delta, state file, execution logs newest-first, per-project chat tracker + digest, handoff `client:` grep. Missing sources are surfaced honestly per the honest-gap-surfacing rule.
+2. The six output sections are present per [[resume-output-shape]] — project state summary, available next-wave handoffs, cross-project unblockers (filtered subset), decomposition diagram, stale-state reconciliations, what-I-read audit trail.
+3. Every stale-state reconciliation detected (per the five rules in [[resume-input-sources]] § "Stale-state reconciliation rules") is surfaced in Section 5 with the source contradiction + Mode 5's inferred resolution + an operator confirmation prompt. If zero reconciliations fire, Section 5 explicitly says so.
+4. Section 3's cross-project unblockers list passes the filter rule (only signals with `client:` matching this project, or explicitly naming the project slug, or appearing in a wave's `blocks_on:` array). Vault-wide signals that don't pass the filter are not surfaced here.
+5. The decomposition diagram renders per [[resume-decomposition-diagram-text]] — ASCII for ≤10 waves, table fallback for >10 waves, cycle detection on every render with `⚠️ CIRCULAR DEPENDENCY` banner if any cycle detected.
+6. Mode 5 did NOT write to the state file. No fixes, no migrations, no mutations. Reconciliations are surfaced for operator confirmation only.
+7. If `--persist` was used, the file exists on disk with valid frontmatter and YAML parses; the auto-invoke `output-quality-loop` block is emitted naming the persisted report (spec routing via `spec-routing-table.md` § "Vault-orchestrator RESUME report").
+8. Plain-language compliance — no jargon-density walls, no executive summary unless requested, glossed terms on first use.
+9. The opening-protocol row move (if running inside a handoff-spawned chat) is honored — Mode 5 doesn't edit the tracker outside the aggregator marker; if the host chat's row needs updating, the host chat does it.
+10. If the operator chains into PROVISION ("provision wave-X for <project>"), the chain handoff names the Mode 5 report as input — PROVISION reads the wave scope from the RESUME output rather than re-deriving from scratch.
+
 ## Maintenance notes (for future skill iterations)
 
 These observations seed at skill creation. Promote to standalone notes if they generalize.
@@ -765,6 +973,12 @@ These observations seed at skill creation. Promote to standalone notes if they g
 **10. Watch for substrate-tag accuracy (PROVISION).** Each drafted handoff gets a `preferred-substrate:` tag. If the operator regularly overrides at review-gate ("downgrade Phase 3 to cowork"), the substrate-tagging heuristics need refinement. Detection: log operator edits during PROVISION review gates.
 
 **11. Watch for checkpoint-reminder over-inclusion or under-inclusion (PROVISION).** Step 6 triggers should fire on long-running handoffs and skip short ones. If short handoffs regularly arrive with checkpoint reminders (noise) or long ones arrive without (missed discipline), refine the trigger thresholds. Detection: spot-check drafted handoffs from each PROVISION run.
+
+**12. Watch for stale-state reconciliation false-positives (RESUME).** Step 7 fires reconciliations when the event log + state file appear to disagree. False-positives (reconciliation fires but operator says "no, state file is correct") indicate the detection rules are too aggressive. Detection: log operator confirmation responses; if >20% of reconciliations get a "no" response, refine the detection rules in [[resume-input-sources]] § "Stale-state reconciliation rules."
+
+**13. Watch for cross-project unblocker filter calibration (RESUME).** Section 3's filter (signal references project slug OR handoff `client:` matches) may turn out too narrow (missing relevant signals) or too broad (vault-wide noise leaking through). Detection: spot-check whether the operator regularly says "you missed signal X" or "signal Y wasn't relevant"; tune the filter rule in [[resume-output-shape]].
+
+**14. Watch for state-file schema-version drift (RESUME).** State files for new project types may not match the `client-seo-onboarding` v1.1 schema. If Mode 5 encounters non-onboarding state files (e.g., a future hermes-harness state file, a future ads-and-marketing state file), the input extraction rules in [[resume-input-sources]] § "State file" may need additions per new schema. Detection: log "non-onboarding state file encountered" events; build out the extraction rules in [[resume-input-sources]] when a second schema shows up.
 
 ## Related
 
@@ -792,6 +1006,12 @@ These observations seed at skill creation. Promote to standalone notes if they g
 - `./references/edit-zone-conflict-detection.md` — how PROVISION scans for shared-file conflicts + scores severity + suggests resolutions
 - `./references/spawn-queue-shape.md` — substrate-agnostic shape of `_spawn-queue.md` + invariants
 - `./references/checkpoint-integration.md` — when PROVISION bakes chat-resilience checkpoint reminders into drafted handoffs
+- `./references/resume-input-sources.md` — six input sources Mode 5 reads, read order, and the five stale-state reconciliation detection rules (v1.2)
+- `./references/resume-output-shape.md` — six-section RESUME report shape + stale-state reconciliation surface + filter rule for Section 3 cross-project unblockers (v1.2)
+- `./references/resume-decomposition-diagram-text.md` — ASCII wave-graph rendering rules + cycle detection + table fallback (v1.2)
+- `~/workspace/skills/output-quality-loop/references/spec-routing-table.md` § "Vault-orchestrator RESUME report" — spec sources for evaluating persisted RESUME reports (v1.2 additive)
 - `./examples/first-survey-2026-06-01.md` — first real-use SURVEY run
 - `./examples/first-next-moves-2026-06-01.md` — first real-use NEXT-MOVES run
 - `./examples/first-provision-2026-06-01-ev-blog-content-calendar.md` — first real-use PROVISION run (EV Electric blog content calendar generator)
+- `./examples/first-resume-2026-06-02-s-and-h.md` — first real-use RESUME run (S&H Contracting; wave A1 closed + wave A2 unblocked via stale-state reconciliation)
+- `./examples/first-resume-2026-06-02-ev-electric.md` — first real-use RESUME run (EV Electric; pages 06-12 closed-as-superseded + Mode-6-gated re-attempt + pages 13-30 queued behind)
