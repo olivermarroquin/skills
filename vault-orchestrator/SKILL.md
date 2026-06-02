@@ -1,6 +1,6 @@
 ---
 name: vault-orchestrator
-description: Four-mode orchestrator skill that sits above `multi-chat-coordination` and `master-tracker-aggregator`. Reads the entire vault state — master tracker (including the aggregator's generated rollup section), per-project `_chat-tracker.md` + `_chat-status.md` digests, hot decisions, scheduled tasks, `03_domains/` knowledge surfaces, recently-closed chats, execution-log activity, project state files, and the inter-chat event log — and produces operator-facing decision support plus (in Mode 3) drafted handoffs + a substrate-agnostic spawn queue. **Mode 1 (SURVEY):** plain-language state-of-the-vault report with nine ordered sections (in-flight / ready / queued / open decisions / scheduled / recent wins / domain signals / stale signals / cross-project signals). **Mode 2 (NEXT-MOVES):** composes with multi-chat-coordination's NEXT-MOVE ranking, then layers session-budget totals (neutral, no editorializing), parallel-work detection (disjoint file sets), serial-blocked detection (high-leverage unblockers), per-candidate substrate recommendation (Claude Code / Cowork / either) per the working-surfaces convention, decision-research convention on ranking ties or priority conflicts, and a recommended session plan capped at 8 hours. **Mode 3 (PROVISION):** composes with multi-chat-coordination's DECOMPOSE to split a project goal into N drafted handoffs, runs decision-research at every meaningful decomposition decision, tags each drafted handoff with a `preferred-substrate:` field, scans drafted + in-flight + queued handoffs for shared-file conflicts (edit-zone detection), appends substrate-agnostic copy-paste-ready rows to `_meta/handoffs/_spawn-queue.md`, registers the new project at the appropriate tracker tier, integrates the chat-resilience checkpoint reminder into long-running handoffs, ties the operator-fatigue heuristic to queue totals (warns at >10h queued), and produces a plain-language operator summary. **Mode 5 (RESUME):** project-scoped mid-project visibility — reads a named project's state file, execution logs newest-first, per-project chat tracker + digest, the event log delta since the state file's `updated_at`, the master tracker rows naming this project, and the handoff files whose `client:` field matches; produces a four-part plain-language report (project state summary + available next-wave handoffs + cross-project unblockers + decomposition diagram text), surfaces every stale-state reconciliation Mode 5 applied (state-file-says-X-but-event-log-says-Y) with operator confirmation prompts, and chains into Mode 3 PROVISION when the operator wants the ready-waves drafted into handoffs. Mode 5 is read-only on vault content and closes known-gap-1 from v1.1 (mid-project resume for existing projects). All four modes auto-invoke `output-quality-loop` on their artifacts. Modes 1, 2, and 5 are read-only on vault content; Mode 3 writes drafted handoffs + queue rows + tracker rows + new project subfolders only after operator approval at a single review gate. Phase 3 + Phase 4 + v1.2 Phase 1 of the vault-orchestrator project (2026-06-01 + 2026-06-02). Trigger phrases include "run vault-orchestrator," "survey the vault," "state of the vault," "what's the state of play," "give me the vault rollup," "what should I work on next," "what should I spawn next," "rank my next moves," "next-moves recommendation," "session plan for tonight," "give me the spawnable list," "what's the highest-leverage move right now," "provision <goal>," "draft handoffs for <goal>," "decompose this project into chats," "set up a spawn queue for <goal>," "scaffold this initiative," "resume <project>," "where are we on <project>," "what's next for <project>," "show wave status for <project>," "decompose what's left for <project>."
+description: Five-mode orchestrator skill that sits above `multi-chat-coordination` and `master-tracker-aggregator`. Reads the entire vault state — master tracker (including the aggregator's generated rollup section), per-project `_chat-tracker.md` + `_chat-status.md` digests, hot decisions, scheduled tasks, `03_domains/` knowledge surfaces, recently-closed chats, execution-log activity, project state files, and the inter-chat event log — and produces operator-facing decision support plus (in Mode 3) drafted handoffs + a substrate-agnostic spawn queue plus (in Mode 6) dispatched sub-agents that produce per-artifact outputs under orchestrator coordination. **Mode 1 (SURVEY):** plain-language state-of-the-vault report with nine ordered sections (in-flight / ready / queued / open decisions / scheduled / recent wins / domain signals / stale signals / cross-project signals). **Mode 2 (NEXT-MOVES):** composes with multi-chat-coordination's NEXT-MOVE ranking, then layers session-budget totals (neutral, no editorializing), parallel-work detection (disjoint file sets), serial-blocked detection (high-leverage unblockers), per-candidate substrate recommendation (Claude Code / Cowork / either) per the working-surfaces convention, decision-research convention on ranking ties or priority conflicts, and a recommended session plan capped at 8 hours. **Mode 3 (PROVISION):** composes with multi-chat-coordination's DECOMPOSE to split a project goal into N drafted handoffs, runs decision-research at every meaningful decomposition decision, tags each drafted handoff with a `preferred-substrate:` field, scans drafted + in-flight + queued handoffs for shared-file conflicts (edit-zone detection), appends substrate-agnostic copy-paste-ready rows to `_meta/handoffs/_spawn-queue.md`, registers the new project at the appropriate tracker tier, integrates the chat-resilience checkpoint reminder into long-running handoffs, ties the operator-fatigue heuristic to queue totals (warns at >10h queued), and produces a plain-language operator summary. **Mode 5 (RESUME):** project-scoped mid-project visibility — reads a named project's state file, execution logs newest-first, per-project chat tracker + digest, the event log delta since the state file's `updated_at`, the master tracker rows naming this project, and the handoff files whose `client:` field matches; produces a six-section plain-language report (project state summary + available next-wave handoffs + cross-project unblockers + decomposition diagram text + stale-state reconciliations + what-I-read audit trail), surfaces every stale-state reconciliation Mode 5 applied (state-file-says-X-but-event-log-says-Y) with operator confirmation prompts, and chains into Mode 3 PROVISION when the operator wants the ready-waves drafted into handoffs. **Mode 6 (EXECUTE):** multi-agent control plane — takes a specific next-wave handoff (Mode-3-PROVISION-drafted or operator-drafted) + dispatches narrowly-scoped per-artifact sub-agents under orchestrator coordination, with substrate-adaptive dispatch (true parallel on Claude Code Task tool; sequential one-shot on Cowork Agent tool; push-driven on future Hermes-harness), inter-agent coordination via the project state file's per-key write isolation, operator-gate routing via a per-project `_pending-operator-decisions.md` file, and parallel-safe coordination via reuse of Phase 4's edit-zone conflict detection over the sub-agent set. Closes the EXECUTION side of v1.1 known-gap-1; with Mode 5 + Mode 6 shipped the v1.2 trio (RESUME → PROVISION → EXECUTE) closes known-gap-1 end-to-end. All five modes auto-invoke `output-quality-loop` on their artifacts EXCEPT Mode 6 (per lesson D-05, the per-sub-agent four-substep loops cover quality at the artifact level; an aggregated wave-close roll-up substitutes). Modes 1, 2, and 5 are read-only on vault content; Mode 3 writes drafted handoffs + queue rows + tracker rows + new project subfolders only after operator approval at a single review gate; Mode 6 writes the project state file (via sub-agents' per-key writes), the gate file, and the dispatch log only after operator approval of the dispatch plan at a single review gate. Phase 3 + Phase 4 + v1.2 Phase 1 + v1.2 Phase 2 of the vault-orchestrator project (2026-06-01 + 2026-06-02 + 2026-06-03). Trigger phrases include "run vault-orchestrator," "survey the vault," "state of the vault," "what's the state of play," "give me the vault rollup," "what should I work on next," "what should I spawn next," "rank my next moves," "next-moves recommendation," "session plan for tonight," "give me the spawnable list," "what's the highest-leverage move right now," "provision <goal>," "draft handoffs for <goal>," "decompose this project into chats," "set up a spawn queue for <goal>," "scaffold this initiative," "resume <project>," "where are we on <project>," "what's next for <project>," "show wave status for <project>," "decompose what's left for <project>," "execute wave-<id> for <project>," "dispatch sub-agents for <wave>," "run wave-<id> through the orchestrator," "fire the next wave for <project>."
 ---
 
 # Vault Orchestrator (v1.2)
@@ -85,6 +85,23 @@ Indirect triggers — when the operator returns to a project after a gap, or ask
 - "What's the state of <project> right now?"
 - "Are wave A2 / phase 3 / step N for <project> ready to spawn?"
 - A SURVEY output where the operator narrows to one project ("zoom into S&H")
+
+### Mode 6 — EXECUTE (multi-agent dispatch over a named wave)
+
+Direct triggers for dispatching sub-agents to produce a wave's artifacts under orchestrator coordination:
+
+- "Execute wave-<id> for <project>"
+- "Dispatch sub-agents for <wave>"
+- "Run wave-<id> through the orchestrator"
+- "Fire the next wave for <project>"
+- "Run EXECUTE on <project> wave-<id>"
+
+Indirect triggers — when a Mode 5 RESUME output names a state-file-ready wave with a handoff present, or when the operator wants the orchestrator to coordinate the dispatch instead of pasting the handoff into a fresh Cowork window:
+
+- "Now execute the ready waves" (chained off a Mode 5 output)
+- "Spawn the dispatch plan" (chained off a Mode 5 output)
+- "Don't just draft — run wave-<id>"
+- A PROVISION output where the operator says "fire the queued handoff via Mode 6 instead of pasting"
 
 ## Core operating principles
 
@@ -844,6 +861,201 @@ The composition contract: Mode 5 produces project-scoped state, Mode 3 PROVISION
 
 See `examples/first-resume-2026-06-02-s-and-h.md` and `examples/first-resume-2026-06-02-ev-electric.md` for the first real-use runs against the live S&H and EV project state.
 
+## Mode 6 — EXECUTE
+
+The multi-agent control plane. Takes a specific next-wave handoff (either drafted by Mode 3 PROVISION or already on disk from operator drafting) + dispatches sub-agents to produce the wave's artifacts under orchestrator coordination. Closes the EXECUTION side of v1.1 known-gap-1; Mode 5 ships the read side, Mode 6 ships the dispatch side, the trio (RESUME → PROVISION → EXECUTE) closes the gap end-to-end.
+
+### What EXECUTE produces
+
+A dispatch plan (rendered up front for operator confirmation) plus orchestrated sub-agent execution that writes per-artifact verdicts to the project state file. The dispatch plan has six sections:
+
+1. **Wave header** — wave ID, project slug, source handoff path, total artifact count, substrate detected, execution-shape label (parallel | sequential | push-driven).
+2. **Sub-agent fan-out** — one row per planned sub-agent: artifact path, artifact type, spec source, estimated minutes, edit-zone declaration.
+3. **Conflict-flag table** — output of [[parallel-safe-coordination|the edit-zone detector]] over the sub-agent set; severity per pair; resolution-path per row.
+4. **Polling cadence + operator-gate routing** — `_pending-operator-decisions.md` path (per [[operator-gate-routing]]); polling cadence (parallel substrate) OR sequential-call ordering (Cowork substrate).
+5. **Wave-close conditions** — what verdicts close the wave; what failures escalate; what triggers `wave_log` appending + `current_wave` clearing.
+6. **Substrate-adapted wall-clock estimate** — total estimated time under the detected substrate, with a parallel-substrate alternative when relevant.
+
+After operator confirmation, the orchestrator dispatches per the plan, polls (or sequentially calls), surfaces gates as they fire, and runs wave-close on completion. The persisted artifact is the dispatch log at `~/workspace/second-brain/_meta/handoffs/vault-orchestrator/runs/<YYYY-MM-DD-execute-<slug>-<wave-id>>.md` capturing the plan + every sub-agent verdict + every gate firing + the wave-close outcome.
+
+EXECUTE writes (the project state file via sub-agents' per-key writes + the gate file at gates + the dispatch log on `--persist`) but only on operator confirmation of the dispatch plan. The dispatch plan IS the review-gate surface (same single-review-gate discipline Mode 3 PROVISION uses).
+
+### When EXECUTE fires
+
+The operator triggers EXECUTE explicitly OR a Mode 5 RESUME output chained ("now execute wave A2") OR a Mode 3 PROVISION output chained ("fire the queued handoff via Mode 6 instead of pasting").
+
+EXECUTE does NOT auto-fire from Mode 5 or Mode 3 output. The orchestrator surfaces the option ("Mode 6 can dispatch this wave for you — say 'execute wave-X for <project>'") but the operator drives the chain.
+
+EXECUTE requires:
+
+- A named project slug + named wave ID.
+- A handoff file on disk for that wave (either Mode-3-PROVISION-drafted or operator-drafted).
+- The wave's state-file `planned_remaining_waves[]` entry exists with `blocks_on:` resolved (Mode 5's reconciliation surface clarifies this).
+- The runtime substrate detected (Cowork Agent tool, Claude Code Task tool, or operator-stated Hermes-harness).
+
+If any precondition fails, EXECUTE stops with an honest finding ("wave A2 handoff missing — run Mode 3 PROVISION first" / "state file says wave A2 is blocked on X — clear blocker or override before dispatching"). Mode 5 RESUME is the canonical first move when preconditions are uncertain.
+
+### EXECUTE step-by-step
+
+**Step 1 — Receive the project slug + wave ID.**
+
+Operator-provided when triggering. The slug + wave ID together are the dispatch target. If the operator names only the project ("execute the next wave for S&H"), the orchestrator runs an internal Mode 5 RESUME first to identify the ready wave, then routes back to EXECUTE.
+
+**Step 2 — Read the wave's handoff + state file.**
+
+Read the wave's handoff (frontmatter + body) for the artifact list + spec sources + scope. Read the project state file for `planned_remaining_waves[<wave-id>]` + `blocked_on[]` (to confirm preconditions) + `quality_log` (to know which artifacts the wave already produced, if this is a resume of a partial wave).
+
+Build the planned sub-agent set: one sub-agent per artifact the handoff names. The sub-agent's slug derives from the artifact path (per [[sub-agent-dispatch-contract]] § "Sub-agent failure modes" — slugs must be artifact-path-derived to prevent collision).
+
+**Step 3 — Detect the runtime substrate.**
+
+Per [[sub-agent-dispatch-contract]] § "Substrate detection":
+
+1. Check for operator-stated substrate. If named, use it.
+2. Probe tool availability. `mcp__cowork__*` markers + workspace path under `/sessions/.../mnt/` indicates Cowork Agent tool. Task tool availability + Mac filesystem path indicates Claude Code. Ambiguous → ask one clarifying question.
+3. Default to Cowork Agent tool when fully ambiguous.
+
+Record the detected substrate in the dispatch plan header.
+
+**Step 4 — Compute edit-zones + run the conflict detector.**
+
+For each planned sub-agent, compute the edit-zone per [[sub-agent-dispatch-contract]] § "Sub-agent edit-zone declaration":
+
+- `writes`: the artifact path the sub-agent produces
+- `state_keys`: `quality_log[<step>][<artifact-name>]`
+- `append_only`: `waves[<wave-id>].outputs`, `failures[]`
+
+Run the Phase 4 edit-zone conflict detector over the sub-agent set per [[parallel-safe-coordination|the reuse contract]]. Emit the conflict-flag table.
+
+If any pair scores `serial-required` at sub-agent granularity, that's a contract violation (the dispatch plan is malformed). Stop + surface to operator.
+
+If any pair scores `self-conflict` (a sub-agent's edit-zone names an orchestrator-owned key), stop + surface as a malformed sub-agent contract.
+
+Normal output: `parallel-OK-with-note` on the shared `waves[<wave-id>].outputs` append-only array; rare `warning-only` on shared reference touches.
+
+**Step 5 — Adapt the dispatch model to the substrate + compute the cost surface.**
+
+Per [[sub-agent-dispatch-contract]] § "Substrate matrix" + lesson D-07:
+
+- Cowork Agent tool: sequential one-shot. Total wall-clock ≈ sum of per-sub-agent minutes.
+- Claude Code Task tool: true parallel. Total wall-clock ≈ slowest sub-agent + small coordination overhead.
+- Hermes-harness (future): long-lived sub-agents + push-driven coordination.
+
+Render the substrate-adapted wall-clock estimate. When the substrate is Cowork but the conflict-flag table shows `parallel-OK-with-note` rows, name the parallel alternative ("on Claude Code Task tool, ~1.5-2h instead").
+
+Compute the cost surface per [[sub-agent-dispatch-contract]] § "Cost estimation aggregated from per-artifact-sizing":
+
+- **Always-fires per artifact (pre-fire validation):** ~$0.001-0.003 per artifact for OpenAI + Gemini + Claude direct citation comparison + Mode 1 EVALUATE local spec walk. Aggregate: `validation_subtotal = per_artifact_validation × N`.
+- **Conditional per artifact (Mode 4 Sonar escalation):** ~$0.06-$0.15 per Mode 4 iteration; worst case 3 iterations = ~$0.30-$0.45 per artifact. Aggregate: `sonar_ceiling = per_artifact_sonar_worstcase × N`.
+- **Operator-visible cost line:** name BOTH the always-fires subtotal AND the conditional ceiling explicitly. Operator sees the floor + ceiling, NOT an opaque "approximately $X" estimate.
+- **When project quality_log history exists:** use it to name an expected-cost range (e.g., "first brief landed at NEEDS REVISION minor with 1 iteration → expect ~$0.06-$0.12 per artifact"). When no signal exists, render the wide range + name the assumption.
+
+**Step 6 — Render the dispatch plan + emit for operator confirmation.**
+
+Render in the six-section order at the top of this Mode 6 spec. Voice rules: plain prose paragraphs for synthesis, tables for sub-agent rows + conflict flags, plain-language substrate explanation up front, zero invented data.
+
+Emit the dispatch plan to chat. Honor the standing operator-fatigue heuristic — if total wall-clock crosses the 10-hour ceiling, render the advisory warning + name the option to split the wave across multiple Mode 6 invocations.
+
+**Step 7 — Wait for operator confirmation.**
+
+The operator confirms with `approve` / `edit <field> <new-value>` / `abort`. On `approve`, proceed to Step 8. On `edit`, apply the edit + re-render the plan + re-confirm. On `abort`, stop without writing.
+
+This IS the single review gate for Mode 6. No sub-agents fire until the operator approves.
+
+**Step 8 — Initialize the wave state.**
+
+Atomic writes to the project state file:
+
+- `current_wave: <wave-id>`
+- `waves[<wave-id>].status: "in-progress"`
+- `waves[<wave-id>].started_at: <ISO UTC>`
+- `waves[<wave-id>].chat_id: <this chat's ID>`
+- `waves[<wave-id>].dispatch_plan_path: <persisted plan path if --persist>`
+
+Initialize the gate file at `04_projects/.../{slug}/_pending-operator-decisions.md` if absent (per [[operator-gate-routing]] § "File shape").
+
+Append an event-log row via `append_event_log.sh`:
+
+```
+~/workspace/repos/ai-agency-core/scripts/append_event_log.sh \
+  "04_projects/clients/_active/<slug>" \
+  "n/a" \
+  "<this chat's ID>" \
+  "Mode 6 EXECUTE dispatch initialized for wave <wave-id> via <substrate>"
+```
+
+**Step 9 — Dispatch + poll (or sequential-call, per substrate).**
+
+On Claude Code Task tool: fire all `parallel-OK-with-note` sub-agents in one message via concurrent Task calls. Fire `serial-required` sub-agents in dependency order (one Task call per message). Enter the polling loop per [[inter-agent-coordination-via-state-file]] § "Polling cadence." Default cadence 10s.
+
+On Cowork Agent tool: fire sub-agent A via a single Agent call. Block until return. Read sub-agent A's structured response. Write the corresponding `quality_log` key + append `waves[<wave-id>].outputs` if PASS at threshold. Fire sub-agent B via the next Agent call. Repeat through the sub-agent list.
+
+In both cases:
+
+- On a sub-agent verdict `PASS at threshold` → mark sub-agent done in dispatch log.
+- On `ESCALATED` (gate-file row written) → mark sub-agent paused; surface the gate row to the operator via [[operator-gate-routing]]; wait for operator response.
+- On `FAIL after 3 iterations` → escalate per [[operator-gate-routing]] § "Gate types" → quality-loop-3-iter-stall.
+- On `external-write-confirm` gate (per lesson D-06) → surface for operator confirmation before any external action fires.
+
+The orchestrator NEVER auto-resolves a gate. Operator response drives every resume.
+
+**Step 10 — Wave-close.**
+
+When all sub-agents in the wave have status `done` OR all gates resolve to non-pending outcomes:
+
+- Write `waves[<wave-id>].status: "closed"` + `closed_at: <ISO UTC>` + `waves[<wave-id>].outputs` (already appended by sub-agents).
+- Append a `wave_log[]` entry with summary + key_artifacts + spawned_handoffs (if any) + verdict_summary.
+- Remove the just-closed wave from `planned_remaining_waves[]`.
+- Clear `current_wave` (set to `null`).
+- Truncate the gate file's "Closed gates (this wave)" section per the default cleanup rule (or preserve on `--preserve-gate-history`).
+- Append a closing event-log row.
+
+If `--persist` was used, finalize the dispatch log at `~/workspace/second-brain/_meta/handoffs/vault-orchestrator/runs/<YYYY-MM-DD-execute-<slug>-<wave-id>>.md` with the full audit trail. Frontmatter:
+
+```yaml
+---
+type: report
+status: shipped
+created: <today>
+updated: <today>
+project: <slug>
+wave: <wave-id>
+mode: execute
+skill: vault-orchestrator
+skill-version: v1.2
+tags: [report, vault-orchestrator, execute, <slug>, <wave-id>]
+---
+```
+
+Free-form fields single-quote-wrapped. YAML parses-check runs after the write.
+
+If a wave doesn't close cleanly (sub-agent stalled at `--defer`, operator hasn't responded to a gate within `--max-poll-iterations`), the orchestrator stops + surfaces the wave-open state for operator decision. The wave does NOT close silently with a missing artifact.
+
+## Auto-invoke output-quality-loop
+
+Per lesson D-05: Mode 6 does NOT auto-invoke `output-quality-loop` on its own dispatch plan or dispatch log. Each sub-agent's per-artifact output IS routed through `output-quality-loop` as part of the sub-agent's four-substep contract (Mode 1 EVALUATE + Mode 4 AUTO-RESEARCH + Mode 5 AUTO-APPROVE-AND-ESCALATE). Evaluating the dispatch plan would double-count the per-artifact loops + give a misleading "did the wave pass quality?" verdict (the wave's quality is the sum of its sub-agents' verdicts, recorded in `quality_log`).
+
+The dispatch log's spec-routing entry at `output-quality-loop/references/spec-routing-table.md` § "Vault-orchestrator EXECUTE dispatch plan" is marked `quality-loop-skip: true` with the per-sub-agent-loop rationale.
+
+If the operator wants a post-wave quality summary, the orchestrator emits an aggregated `quality_log` roll-up at wave-close (verdict + confidence + iteration count per artifact) — NOT a fresh output-quality-loop evaluation.
+
+### EXECUTE flags
+
+- `--persist` — write the dispatch log to `_meta/handoffs/vault-orchestrator/runs/<YYYY-MM-DD-execute-<slug>-<wave-id>>.md` in addition to chat output.
+- `--dry-run` — produce the dispatch plan for operator review without firing any sub-agent or writing to the state file. Useful for capturing the plan in a worked example or for operator pre-confirmation.
+- `--max-parallel N` (default 4) — cap concurrent sub-agents on parallel substrate. Useful for cost control or when the operator wants conservative dispatch.
+- `--polling-cadence Ns` (default `10s`) — polling interval on parallel substrate; ignored on sequential substrate.
+- `--silence-threshold Ns` (default `300s`) — flag a sub-agent as stalled if no `quality_log` entry lands in this window.
+- `--max-poll-iterations N` (default `360`) — stop polling and escalate the open sub-agents if no completion happens in this window.
+- `--gate-file-path <path>` — override the default `04_projects/.../{slug}/_pending-operator-decisions.md` location.
+- `--skip-conflict-detection` — skip Step 4 (use only when the operator has manually verified the sub-agent set is parallel-safe). Audit-trail flag — the dispatch plan names the skip + reason.
+- `--substrate <name>` — override substrate detection (`cowork-agent-tool` / `claude-code-task-tool` / `hermes-harness`).
+- `--preserve-gate-history` — at wave-close, keep the gate file's "Closed gates" section as a per-wave archive instead of clearing it.
+
+### EXECUTE worked example
+
+See `examples/first-execute-2026-06-03-s-and-h-wave-a2.md` for the first documented dispatch plan (S&H wave A2: ev-charger-installation + light-fixture-installation sub-agents). Per the v1.2 handoff's explicit DO NOT directive, the example documents the dispatch plan without firing sub-agents; live dispatch is reserved for the actual S&H wave A2 run (which the operator may spawn manually OR via Mode 6 EXECUTE composition once this chat closes).
+
 ## Composition with master-tracker-aggregator
 
 The aggregator is the bottom-up data layer; the orchestrator is the top-down decision layer. The contract:
@@ -861,7 +1073,8 @@ The orchestrator composes — does not duplicate — multi-chat-coordination's t
 - **NEXT-MOVE composition.** NEXT-MOVES invokes multi-chat-coordination NEXT-MOVE to get the base leverage ranking. The orchestrator's overlays (session-budget totals, parallel-work detection, substrate tagging, decision-research) sit on top.
 - **AUDIT composition.** SURVEY's Section 8 (stale signals) can optionally call multi-chat-coordination AUDIT for deeper drift findings. By default it uses the lighter aggregator drift-detect.
 - **DECOMPOSE composition.** PROVISION (Mode 3) composes with DECOMPOSE to draft phase handoffs. PROVISION consumes DECOMPOSE's slug, dependency graph, handoff bodies, README body, and proposed tracker rows; it layers conflict detection + substrate tagging + checkpoint reminders + decision-research convention firing + operator-fatigue check + spawn-queue writes on top. The orchestrator does not reimplement DECOMPOSE's sizing rules, dependency analysis, or tier classification.
-- **RESUME → PROVISION chain (v1.2).** Mode 5 RESUME identifies which `planned_remaining_waves[]` are ready but lack handoff files. The operator can chain into Mode 3 PROVISION on a specific ready wave by saying "provision wave-X for <project>." PROVISION consumes the RESUME report's wave scope as decomposition input rather than starting from a fresh strategic-chat goal. This chain closes v1.1's known-gap-1 (mid-project resume for existing projects): RESUME surfaces ready waves; PROVISION drafts the handoffs; Mode 6 EXECUTE (separate Claude Code chat, queued for 2026-06-03) handles the multi-agent spawn side. The operator drives the chain — RESUME does NOT auto-invoke PROVISION.
+- **RESUME → PROVISION chain (v1.2).** Mode 5 RESUME identifies which `planned_remaining_waves[]` are ready but lack handoff files. The operator can chain into Mode 3 PROVISION on a specific ready wave by saying "provision wave-X for <project>." PROVISION consumes the RESUME report's wave scope as decomposition input rather than starting from a fresh strategic-chat goal. This chain closes v1.1's known-gap-1 on the drafting side. The operator drives the chain — RESUME does NOT auto-invoke PROVISION.
+- **RESUME → PROVISION → EXECUTE chain (v1.2 full closer).** With Mode 6 EXECUTE shipped 2026-06-03, the v1.1 known-gap-1 closes end-to-end. RESUME identifies ready waves (the read side); PROVISION drafts handoffs for waves that lack them (the draft side); EXECUTE dispatches sub-agents per the handoff under orchestrator coordination (the dispatch side). The full chain runs as: "resume <project>" → operator picks a ready wave → "provision wave-X for <project>" (if no handoff exists yet) OR proceed directly → "execute wave-X for <project>." Each link is operator-driven; the orchestrator does not auto-chain. EXECUTE's substrate-adaptive dispatch model (parallel on Claude Code Task tool; sequential on Cowork Agent tool; push-driven on future Hermes-harness) is documented in [[sub-agent-dispatch-contract]] § "Substrate matrix."
 
 When invoking a composed mode, the orchestrator reads its output and incorporates it into its own report; it does not re-emit the composed mode's own report verbatim.
 
@@ -891,16 +1104,19 @@ SURVEY Section 7 surfaces unsynthesized source counts. NEXT-MOVES may rank a syn
 
 Substrate recommendation is mandatory on every NEXT-MOVES candidate. Cite the convention at `~/workspace/second-brain/_meta/working-surfaces.md` § "Default routing" in the per-candidate rationale. Generic memory ("Cowork is conversational") is not a substitute for the explicit routing guidance. See `references/substrate-recommendation-heuristics.md`.
 
-## Out of scope (v1.1)
+## Out of scope (v1.2)
 
-- **True autonomous spawning.** PROVISION drafts handoffs + queues prompts, but the operator drives every spawn (paste into Cowork, fire via Claude Code Task tool). Auto-pasting from the queue is deferred until platform support exists (Anthropic Agent SDK sub-agents, a host-machine harness, or Claude in Chrome driving the Cowork app).
+- **True autonomous spawning of WHOLE chats.** PROVISION drafts handoffs + queues prompts; Mode 6 EXECUTE dispatches narrowly-scoped per-artifact sub-agents under orchestrator coordination. Neither auto-spawns a fresh full-orchestrator chat. Auto-pasting whole handoff prompts from the queue is deferred until platform support exists (Anthropic Agent SDK long-lived chats, a host-machine harness, or Claude in Chrome driving the Cowork app).
+- **Fully autonomous external actions (v1.2 Mode 6 specifically).** Per lesson D-06, Mode 6 stops at every external write (WP REST API, GSC Indexing API, git push, Higgsfield variant generation, any tier-3 API call that mutates external state). The sub-agent queues the external action via the operator-gate file; the operator confirms before any external fire. Read-only API calls (Sonar query, GBP read, etc.) proceed without gating.
+- **Cross-project resource allocation.** If two projects' Mode 6 invocations want the same sub-agent slot (e.g., both projects need a Sonar-backed brief in the same window), v1.2 is first-come-first-serve; resource-aware scheduling is v1.3 work.
+- **Sub-agent quality-loop integration beyond the four-substep contract.** Sub-agents implement the canonical four-substep quality loop (Mode 1 + Mode 4 + Mode 5) per [[sub-agent-dispatch-contract]]. v1.2 doesn't add new per-sub-agent quality gates beyond that. Cost-budget enforcement at the orchestrator level (total quality-loop cost cap per wave, total Sonar spend per dispatch) is v1.3.
 - **Per-project orchestrator decomposition.** Splitting the monolithic orchestrator into project-surveyor + project-analyst + project-decider sub-skills lives in Phase 5 of this project, gated on 1 week of v1.1 real-use calibration.
 - **Skill-needs analyzer.** Detecting "this work needs a skill that doesn't exist" patterns lives in Phase 6.
 - **Real-time vault watching.** The orchestrator runs on operator invocation, not on file change.
 - **Editing the master tracker outside the aggregator's marker block (Modes 1-2).** That section belongs to `master-tracker-aggregator`, not this skill. PROVISION (Mode 3) edits the hand-edited "Ready to spawn" / "Queued — Tier 2" / "Queued — Tier 3" sections via row additions — never edits the aggregator's marker block.
 - **Editing per-project digests or trackers.** Read-only on per-project digests; PROVISION may write a new per-project subfolder + `_README.md` only when the operator approves a new project at the review gate.
 - **Editing in-flight or already-queued handoffs.** PROVISION drafts new handoffs; it does not modify handoffs that already exist. Edits to existing handoffs are operator-driven or a separate maintenance chat.
-- **Decomposing remaining work for EXISTING projects — partially addressed in v1.2 Mode 5 RESUME (2026-06-02); EXECUTE side ships in v1.2 Mode 6 (separate chat).** v1.1's PROVISION created a new project subfolder for a new initiative; it did not have a path for existing-project resumes. v1.2 Mode 5 RESUME closes the identification side: read the project's state file + execution logs + event log + master tracker rows naming this project, surface which `planned_remaining_waves[]` are ready, and chain into Mode 3 PROVISION when the operator wants those ready-waves drafted into handoff files. Mode 5 is read-only — it identifies; PROVISION drafts; Mode 6 EXECUTE (separate Claude Code chat, queued for 2026-06-03) handles the multi-agent spawn side. Together the trio closes known-gap-1 end-to-end. Workaround for projects not yet using state files: Mode 5 reads what's present (master tracker rows + execution logs + handoffs naming the project) and produces a partial report; operator drafts the next-wave handoff by hand from that report.
+- **Decomposing + dispatching remaining work for EXISTING projects — fully closed in v1.2 as of 2026-06-03.** v1.1's PROVISION created a new project subfolder for a new initiative; it had no path for existing-project resumes. v1.2 Mode 5 RESUME closes the identification side (2026-06-02): read the project's state file + execution logs + event log + master tracker rows naming this project, surface which `planned_remaining_waves[]` are ready, chain into Mode 3 PROVISION when the operator wants ready-waves drafted into handoff files. v1.2 Mode 6 EXECUTE closes the dispatch side (2026-06-03): take a wave's handoff + dispatch narrowly-scoped per-artifact sub-agents under orchestrator coordination, with the substrate-adaptive dispatch model (parallel on Claude Code Task tool; sequential on Cowork Agent tool; future push-driven on Hermes-harness). Together the trio (RESUME → PROVISION → EXECUTE) closes known-gap-1 end-to-end. Workaround for projects not yet using state files: Mode 5 reads what's present (master tracker rows + execution logs + handoffs naming the project) and produces a partial report; operator drafts the next-wave handoff by hand from that report; Mode 6 then dispatches against the hand-drafted handoff.
 - **Cross-vault federation.** Single vault (`~/workspace/second-brain/`). Tier-3 vault is air-gapped by design.
 - **Domain-level per-domain trackers.** Domains stay SURVEY-only — read folder listings + frontmatter freshness signals, don't expect a per-domain tracker.
 - **Semantic-conflict detection.** Edit-zone conflict detection catches shared-file races; it does not predict semantic contradictions between two chats updating disjoint sections. That's a NEXT-MOVES decision-research call when surfaced.
@@ -948,6 +1164,19 @@ Before the chat declares "SURVEY complete," "NEXT-MOVES complete," or "PROVISION
 9. The opening-protocol row move (if running inside a handoff-spawned chat) is honored — Mode 5 doesn't edit the tracker outside the aggregator marker; if the host chat's row needs updating, the host chat does it.
 10. If the operator chains into PROVISION ("provision wave-X for <project>"), the chain handoff names the Mode 5 report as input — PROVISION reads the wave scope from the RESUME output rather than re-deriving from scratch.
 
+**Mode 6 (EXECUTE):**
+
+1. The substrate was detected (or operator-stated) BEFORE dispatch — operator-stated > tool probe > Cowork default. Dispatch plan names which detection path resolved + names the substrate explicitly per [[sub-agent-dispatch-contract]] § "Substrate detection."
+2. Each sub-agent in the dispatch plan declares an edit-zone (artifact path + state-file `quality_log` key + append-only arrays it'll touch) per [[sub-agent-dispatch-contract]] § "Sub-agent edit-zone declaration."
+3. The Phase 4 edit-zone conflict detector ran over the sub-agent set per [[parallel-safe-coordination]]; the conflict-flag table is rendered in the dispatch plan; no `serial-required` or `self-conflict` row escaped to fire (both are contract violations — the orchestrator stops + surfaces).
+4. The substrate-adapted wall-clock estimate is rendered in the dispatch plan + names the parallel alternative when the substrate is Cowork but conflict-flags allow parallelism.
+5. The operator confirmed the dispatch plan before any sub-agent fired (single review gate — same discipline as Mode 3 PROVISION).
+6. The wave's state was initialized atomically — `current_wave`, `waves[<wave-id>].status: "in-progress"`, `waves[<wave-id>].started_at`, `waves[<wave-id>].chat_id`.
+7. The operator-gate file at `04_projects/.../{slug}/_pending-operator-decisions.md` was initialized if absent + every gate fire wrote a row per [[operator-gate-routing]] § "Gate row schema." No gate auto-resolved silently — every gate's "Operator response" cell got either a non-pending value (proceed) or `--defer` (pause) or `--abort` (stop wave).
+8. The wave-close ran cleanly — all sub-agents have status `done` OR all gates resolved; `waves[<wave-id>].status: "closed"` + `closed_at` written; `wave_log[]` appended; `planned_remaining_waves` updated to remove the just-closed wave; `current_wave` cleared.
+9. The auto-invoke `output-quality-loop` block is NOT emitted on the dispatch plan itself (per lesson D-05) — per-sub-agent quality loops covered the per-artifact verdicts; the aggregated `quality_log` roll-up at wave-close substitutes.
+10. If `--persist` was used, the dispatch log exists on disk at the named path with valid frontmatter + YAML parses; the dispatch log captures the plan + every sub-agent verdict + every gate firing + the wave-close outcome. Event-log rows appended at dispatch init + wave-close.
+
 ## Maintenance notes (for future skill iterations)
 
 These observations seed at skill creation. Promote to standalone notes if they generalize.
@@ -980,6 +1209,14 @@ These observations seed at skill creation. Promote to standalone notes if they g
 
 **14. Watch for state-file schema-version drift (RESUME).** State files for new project types may not match the `client-seo-onboarding` v1.1 schema. If Mode 5 encounters non-onboarding state files (e.g., a future hermes-harness state file, a future ads-and-marketing state file), the input extraction rules in [[resume-input-sources]] § "State file" may need additions per new schema. Detection: log "non-onboarding state file encountered" events; build out the extraction rules in [[resume-input-sources]] when a second schema shows up.
 
+**15. Watch for substrate-detection accuracy drift (EXECUTE).** Step 3 detects the runtime substrate via operator-stated > tool probe > Cowork default. If the operator regularly overrides the detected substrate (`--substrate <name>` flag fires often), the probe heuristics may be missing a substrate signal — e.g., a new Claude Code substrate variant, or a Cowork-with-extended-tools mode that the probe misclassifies. Detection: log `--substrate` overrides; if >20% of dispatches override, refine the probe rules in [[sub-agent-dispatch-contract]] § "Substrate detection."
+
+**16. Watch for operator-gate-file growth (EXECUTE).** `_pending-operator-decisions.md` files should stay small — open gates resolve in minutes; closed gates clear at wave-close by default. If a project's gate file grows past 500 lines or accumulates rows older than 7 days, that's a sign the operator isn't responding to gates (project may be paused) or the gate-types are mis-calibrated (sub-agents are escalating too aggressively). Detection: a sweep at wave-close that warns if any gate has been open > 24 hours.
+
+**17. Watch for concurrent-write false-positive rate (EXECUTE).** Per [[inter-agent-coordination-via-state-file]] § "Concurrent-write risks + mitigations," the state file's per-key isolation rules SHOULD prevent collisions. If the orchestrator catches malformed-JSON reads regularly (parse failure → retry on next poll), that's a sign the isolation rules are leaking somewhere — likely a sub-agent writing a key it doesn't own. Detection: log JSON parse failures during polling; if >5% of polls catch one, audit the sub-agent contracts for the leaking key.
+
+**18. Watch for sub-agent return-malformedness (EXECUTE).** Per [[sub-agent-dispatch-contract]] § "Sub-agent failure modes," sub-agents should return structured JSON responses. If sub-agents regularly return prose ("here's what I did...") instead of the structured contract, the dispatch prompt may not be emphasizing the contract clearly enough OR the sub-agent substrate may be silently editing the prompt. Detection: log return-malformedness rate; if > 10%, audit the dispatch prompt template + the substrate-specific call site.
+
 ## Related
 
 - `~/workspace/skills/multi-chat-coordination/SKILL.md` — composes with this; provides the base NEXT-MOVE leverage ranking
@@ -992,6 +1229,13 @@ These observations seed at skill creation. Promote to standalone notes if they g
 - `~/workspace/second-brain/_meta/handoffs/vault-orchestrator/phase-4-provision-and-autospawn-queue.md` — the handoff that shipped Mode 3
 - `~/workspace/second-brain/_meta/handoffs/_spawn-queue.md` — the substrate-agnostic queue PROVISION writes to
 - `~/workspace/second-brain/_meta/working-surfaces.md` — substrate-recommendation source of truth
+- `~/workspace/second-brain/_meta/handoffs/handoff-2026-06-01-vault-orchestrator-mid-project-resume-capability.md` — the v1.2 handoff that shipped Modes 5 + 6 (Mode 5 RESUME 2026-06-02; Mode 6 EXECUTE 2026-06-03)
+- [[references/sub-agent-dispatch-contract]] — Mode 6 per-sub-agent contract + substrate-adaptive dispatch model
+- [[references/inter-agent-coordination-via-state-file]] — Mode 6 polling + per-key write isolation
+- [[references/operator-gate-routing]] — Mode 6 `_pending-operator-decisions.md` contract
+- [[references/parallel-safe-coordination]] — Mode 6 reuse of Phase 4 edit-zone detector
+- `~/workspace/skills/client-seo-onboarding/SKILL.md` § "Per-step quality loop contract" — the four-substep contract Mode 6 sub-agents implement
+- `~/workspace/skills/client-seo-onboarding/state-schema.md` — the state file Mode 6 sub-agents write per-key
 - `~/workspace/second-brain/_meta/decision-research-conventions.md` — five-step convention NEXT-MOVES + PROVISION invoke on hard calls
 - `~/workspace/second-brain/_meta/plain-language-conventions.md` — voice rules every report follows
 - `./references/survey-section-shapes.md` — section-by-section shape + minimum-content discipline for SURVEY

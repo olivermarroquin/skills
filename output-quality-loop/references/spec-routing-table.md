@@ -311,6 +311,22 @@ Notes:
 - Mode 4 budget for this type is light (top-3 gaps; cap 5 queries) — RESUME reports are summaries of vault state, not novel claims. Mode 4 typically returns "validates" because the source data is already in the vault.
 - Hard requirement misses: schema-version drift not surfaced when state file is older than skill; reconciliation rule fired but missing from Section 5; cross-project signal that doesn't pass the filter rule appears in Section 3; cycle detected but no warning banner rendered.
 
+### Vault-orchestrator EXECUTE dispatch plan
+
+**Quality-loop skip — per-sub-agent loops cover artifact quality.** This entry is recorded for discoverability + routing-table completeness, NOT for evaluation. Mode 6 EXECUTE does NOT route its dispatch plan or dispatch log through `output-quality-loop` at exit. See `skills://vault-orchestrator/SKILL.md` § "Mode 6 — EXECUTE" → "Auto-invoke output-quality-loop" + lesson D-05 in `lesson-vault-orchestrator-v1.2-mode-6-execute-2026-06-03.md` for the rationale.
+
+`quality-loop-skip: true`
+
+Rationale:
+
+1. Each sub-agent's per-artifact output IS routed through `output-quality-loop` Modes 1 + 4 + 5 as part of the four-substep contract in `client-seo-onboarding` v1.1 SKILL.md § "Per-step quality loop contract." The wave's quality is the sum of its sub-agents' verdicts, recorded in the project state file's `quality_log`.
+2. Evaluating the dispatch plan itself would double-count quality-loop calls + give a misleading "did the wave pass quality?" verdict at the wave-aggregate level.
+3. The wave-close roll-up emitted by Mode 6 names each sub-agent verdict + the aggregated `quality_log` summary — that IS the wave-level quality surface, but it's a roll-up of already-evaluated artifacts, NOT a fresh evaluation.
+
+If a future need arises to evaluate dispatch-plan COMPLETENESS (did Mode 6 dispatch all required sub-agents? did the conflict detector miss anything?), add a separate routing entry then — not retroactively to this one.
+
+- v1.2 addition driven by `vault-orchestrator` v1.2 Mode 6 EXECUTE, shipped 2026-06-03. Mirrors the v1.1 + Mode 5 additive pattern (new artifact type → new routing entry), with the explicit `quality-loop-skip` marker.
+
 ## Operator overrides
 
 When the operator runs `quality-check <artifact> against <spec1> <spec2>`, the routing table is bypassed and the operator-named specs are used. Surface the override in the evaluation report so the audit trail names what was actually loaded:

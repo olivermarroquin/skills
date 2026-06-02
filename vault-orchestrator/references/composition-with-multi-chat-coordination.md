@@ -90,9 +90,35 @@ The chain composition contract:
 - PROVISION still runs its full discipline (Steps 3-11) — decision-research convention firing, edit-zone conflict scan, substrate tagging, checkpoint reminders, operator-fatigue check, single review gate. The chain just supplies the goal source automatically.
 - The drafted handoff file gets registered against the EXISTING project subfolder (e.g., `_meta/handoffs/<project-slug>/wave-X-<topic>.md`) rather than a new project subfolder. This is the key v1.1 known-gap-1 closer: PROVISION can now draft INTO an existing project, not just create a new one.
 
-The chain closes known-gap-1 from v1.1 (mid-project resume for existing projects): RESUME identifies; PROVISION drafts; Mode 6 EXECUTE (separate Claude Code chat, queued for 2026-06-03) spawns the resulting handoffs into sub-agents. The trio together makes existing-project resume + multi-agent execution work end-to-end.
+The chain closes known-gap-1 from v1.1 on the drafting side. With Mode 6 EXECUTE shipped 2026-06-03, the full trio (RESUME → PROVISION → EXECUTE) closes the gap end-to-end — see the next section.
 
 The operator drives the chain — Mode 5 RESUME does NOT auto-invoke PROVISION. The composition shape preserves the operator-driven separation between identification and drafting (same shape as NEXT-MOVES → PROVISION).
+
+## Mode 6 EXECUTE — sub-agent dispatch over the RESUME → PROVISION chain (v1.2)
+
+Mode 6 EXECUTE is the third link in the chain. RESUME identifies ready waves; PROVISION drafts handoffs for waves that lack them; EXECUTE dispatches narrowly-scoped per-artifact sub-agents under orchestrator coordination to actually produce the wave's artifacts.
+
+The chain composition contract:
+
+- **Fresh dispatch (operator triggers EXECUTE directly):** operator names a project slug + wave ID with a handoff file already on disk; Mode 6 reads the handoff + dispatches per its artifact list.
+- **RESUME-chained dispatch:** Mode 5 RESUME output names a wave as "state-file-ready + tracker-Ready + handoff exists"; operator chains with "execute wave-X for <project>"; Mode 6 reads the wave's handoff (named in the RESUME output) + dispatches.
+- **PROVISION-chained dispatch:** Mode 5 RESUME → operator chains into PROVISION on a wave that lacks a handoff → PROVISION drafts the handoff → operator chains into EXECUTE on the freshly-drafted handoff → Mode 6 dispatches against it. Three operator-driven hops; each one operator-confirmed at its own review gate.
+
+EXECUTE composes with `client-seo-onboarding`'s per-step quality loop contract (NOT with `multi-chat-coordination`'s NEXT-MOVE / DECOMPOSE / AUDIT). The sub-agent contract that EXECUTE dispatches IS the four-substep loop from `client-seo-onboarding` v1.1 SKILL.md § "Per-step quality loop contract." See [[sub-agent-dispatch-contract]] for the prompt template + return contract + substrate-adaptive dispatch matrix.
+
+The composition shape vs PROVISION:
+
+| Aspect | PROVISION | EXECUTE |
+|---|---|---|
+| What it operates on | A project goal | A wave handoff |
+| What it produces | N drafted phase handoffs + queue rows + tracker rows | A dispatch plan + sub-agent verdicts in `quality_log` + a wave-close `wave_log` entry |
+| Single review gate | Yes — operator approves the proposal before any write | Yes — operator approves the dispatch plan before any sub-agent fires |
+| Composes with | DECOMPOSE | `client-seo-onboarding`'s per-step quality loop |
+| Edit-zone detector input | Drafted + queued + in-flight handoffs | Sub-agent set within the wave |
+
+Both modes use Phase 4's edit-zone conflict detector, but at different granularities (handoff-level vs sub-agent-level). See [[parallel-safe-coordination]] for the EXECUTE-side reuse.
+
+The operator drives every chain hop — Mode 5 does not auto-invoke PROVISION; Mode 3 does not auto-invoke EXECUTE; Mode 6 does not auto-invoke other modes. The chain preserves the operator-driven separation between identification, drafting, and dispatch.
 
 ## Avoiding the double-bookkeeping trap
 
