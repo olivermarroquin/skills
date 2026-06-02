@@ -23,7 +23,7 @@ First real-use run of `vault-orchestrator` NEXT-MOVES mode against the live vaul
 
 ### 1. `hermes-harness Prework B` — Nous Research org transparency research
 
-**One-liner.** Perplexity Pro deep research on Nous Research team size, funding, governance, Steinberger/OpenClaw cautionary-template applicability, and the monitoring discipline that should sit at Phase 7.
+**One-liner.** Perplexity Sonar API deep research on Nous Research team size, funding, governance, Steinberger/OpenClaw cautionary-template applicability, and the monitoring discipline that should sit at Phase 7.
 
 **Base ranking (multi-chat-coordination).** High — Ready-to-spawn; no blockers; calendar-gate clear; low cognitive load; closes the highest-stakes what-would-change-recommendation flag from Phase 0 (Hermes founder/org instability).
 
@@ -31,17 +31,17 @@ First real-use run of `vault-orchestrator` NEXT-MOVES mode against the live vaul
 
 **Leverage tag.** `high-leverage` — tightens evidence on the highest-stakes architecture flag while context is hot.
 
-**Effort.** 2-3 hours operator-time. 8-12 Perplexity Pro queries.
+**Effort.** 2-3 hours operator-time. 8-12 Sonar API queries (~$0.20-0.30 estimated on `sonar-pro`).
 
-**Substrate recommendation.** `Cowork` — Perplexity Pro queries via Claude in Chrome fit Cowork's surface per `~/workspace/second-brain/_meta/working-surfaces.md` § "Default routing" ("Drive my Cowork-pasted browser to look at competitor sites" maps to Cowork with Claude in Chrome).
+**Substrate recommendation.** `Either` — Sonar API runs as a Python script (`~/workspace/second-brain-tier3/automation/scripts/perplexity_sonar.py`), substrate-flexible. Cowork fits if the operator wants judgment gates between query batches; Claude Code fits if the operator wants the script to run autonomously and report back. Note: Perplexity-Pro-via-Claude-in-Chrome was removed as a working path; Sonar API is the working source.
 
 **Unblocks.** `hermes-harness Phase 1+` (after all three Prework chats complete).
 
 **Risks.** Low. No file collisions with the four in-flight chats. Cognitive load already at 4 in-flight; spawning would push to 5, which is the practical ceiling.
 
-### 2. `hermes-harness Prework C` — Perplexity Pro validation of load-bearing claims
+### 2. `hermes-harness Prework C` — Perplexity Sonar API validation of load-bearing claims
 
-**One-liner.** Re-run 4-5 Phase 0 load-bearing claims through Perplexity Pro to elevate confidence before Phase 1 commits (Hermes v0.13/v0.14 stability + DW real-world reliability + Managed Agents timeline + OpenRouter cost-economics).
+**One-liner.** Re-run 4-5 Phase 0 load-bearing claims through Perplexity Sonar API to elevate confidence before Phase 1 commits (Hermes v0.13/v0.14 stability + DW real-world reliability + Managed Agents timeline + OpenRouter cost-economics).
 
 **Base ranking.** High — Ready-to-spawn; no blockers; calendar-gate clear; low cognitive load; addresses Phase 0's honest-substitution-disclosure caveat.
 
@@ -49,9 +49,9 @@ First real-use run of `vault-orchestrator` NEXT-MOVES mode against the live vaul
 
 **Leverage tag.** `high-leverage` — short, addresses an honest gap from Phase 0.
 
-**Effort.** 1-2 hours. 10-15 Perplexity Pro queries.
+**Effort.** 1-2 hours. 10-15 Sonar API queries (~$0.25-0.40 on `sonar-pro`).
 
-**Substrate recommendation.** `Cowork` — same rationale as Prework B (Perplexity Pro via Claude in Chrome).
+**Substrate recommendation.** `Either` — same rationale as Prework B (Sonar API script is substrate-flexible).
 
 **Unblocks.** `hermes-harness Phase 1+` (after all three Prework chats).
 
@@ -123,7 +123,7 @@ All 5 spawnable candidates total ~18 hours.
 
 Two pairs across the top 4 candidates can run concurrently with disjoint file sets.
 
-- **Prework B + Prework C in parallel.** Both write to `_meta/handoffs/hermes-harness/` but to different output files; both use Perplexity Pro queries which don't collide with each other. Could run as two Cowork windows.
+- **Prework B + Prework C in parallel.** Both write to `_meta/handoffs/hermes-harness/` but to different output files; both invoke the Sonar API script with different question sets — script invocations don't collide. Could run as two Cowork windows, two Claude Code sessions, or one of each.
 - **Prework B + website-design synthesis in parallel.** Prework B touches `_meta/handoffs/hermes-harness/`; website-design synthesis touches `03_domains/website-design/insights/`. Disjoint. Could run as two Cowork windows OR one Cowork + one Claude Code session.
 
 `Prework A` is operator-side and can't run concurrently with anything in Cowork — would need to spread across days.
@@ -136,9 +136,9 @@ None of the top candidates are "high-leverage unblockers" with ≥3 downstream c
 
 ## Decision-research calls
 
-### Tie between Prework B and Prework C (both Cowork, both Perplexity Pro, both close a Phase 0 flag)
+### Tie between Prework B and Prework C (both substrate-flexible, both Sonar API, both close a Phase 0 flag)
 
-**Frame.** Should NEXT-MOVES rank Prework B (Nous Research org transparency, 2-3h) above Prework C (Perplexity Pro validation of load-bearing claims, 1-2h)?
+**Frame.** Should NEXT-MOVES rank Prework B (Nous Research org transparency, 2-3h) above Prework C (Sonar API validation of load-bearing claims, 1-2h)?
 
 **Vault sources.** Hermes-harness Phase 0 decision report Section 6 surfaces six what-would-change-recommendation flags. Flag #1 (Hermes founder/org instability) is named first and tied to the "founder/org-stability monitoring discipline at Phase 7" risk. Flags #2-6 are about substrate-level evidence (DW maturity, Managed Agents timeline, OpenRouter economics, ToS, vault contract). Prework B addresses Flag #1; Prework C addresses Flags #2-6 collectively. The phase 0 report frames Flag #1 as the highest-stakes blocker — "what would change the recommendation" if it materialized within 3 months.
 
@@ -146,9 +146,9 @@ None of the top candidates are "high-leverage unblockers" with ≥3 downstream c
 
 ## Recommended session plan (capped at 8 hours)
 
-Take **Prework B first** (3 hours, Cowork via Claude in Chrome) — high-leverage, addresses Phase 0's highest-stakes flag, context warm, short.
+Take **Prework B first** (3 hours, Either substrate — Sonar API script) — high-leverage, addresses Phase 0's highest-stakes flag, context warm, short.
 
-Then **Prework C** (2 hours, Cowork via Claude in Chrome) — high-leverage, closes the substrate-evidence elevation, same surface so context loads cheaply.
+Then **Prework C** (2 hours, Either substrate — Sonar API script) — high-leverage, closes the substrate-evidence elevation, same script so the second run loads cheaply.
 
 Then **website-design synthesis** (3 hours, Either — recommend Cowork for the synthesis-shaping judgment calls) — high-leverage by overlay scoring (matches two priority memories), feeds client SEO work and the Keelworks Phase 2 full-site pivot. Session total: ~8 hours.
 

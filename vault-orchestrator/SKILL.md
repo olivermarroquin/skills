@@ -285,7 +285,7 @@ Surface in a dedicated subsection.
 For each ranked candidate, name the best substrate per the working-surfaces convention (`~/workspace/second-brain/_meta/working-surfaces.md`):
 
 - **Claude Code** — multi-file edits, parallel sub-agent work, long-running automation, repos that need git workflows, anything that benefits from the Task tool
-- **Cowork** — conversational planning, operator-judgment-heavy work, file-presentation-shaped output, browser-driven research with Claude in Chrome, one-off lookups
+- **Cowork** — conversational planning, operator-judgment-heavy work, file-presentation-shaped output, one-off lookups, judgment-gated research where the operator wants to weigh in mid-flight
 - **Either** — the work shape is flexible; pick by operator preference / availability
 
 Cite the convention in the rationale. Don't pick from generic memory.

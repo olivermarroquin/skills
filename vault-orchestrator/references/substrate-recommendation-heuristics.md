@@ -23,7 +23,7 @@ The table (excerpted for reference; the convention file is canonical):
 | "Spawn 3 parallel chats to work on these handoffs" | Claude Code |
 | "Read this file and tell me what's in it" | Cowork |
 | "Status of everything I'm working on right now" | Dashboard (future) / Cowork (today) |
-| "Drive my Cowork-pasted browser to look at competitor sites" | Cowork (with Claude in Chrome) |
+| "Drive my Cowork-pasted browser to look at competitor sites" | Cowork (with Claude in Chrome — separate from Perplexity-Pro-via-browser, which is removed) |
 | "I want a chat that runs unattended for 2 hours" | Claude Code |
 | "Quick decision: which path do you recommend?" | Cowork |
 
@@ -50,7 +50,7 @@ Use when the work is:
 - **Conversational planning.** Examples: discussing scope with the operator, walking through options, thinking through a decision together.
 - **Operator-judgment-heavy.** Examples: every step needs operator weigh-in, the deliverable shape is unsettled.
 - **File-presentation-shaped output.** Examples: producing a polished file the operator will read inline, generating docx/pptx for client delivery.
-- **Browser-driven research with Claude in Chrome.** Examples: walking competitor sites with the operator, Perplexity Pro queries via the operator's logged-in browser session.
+- **Browser-driven research with Claude in Chrome.** Examples: walking competitor sites with the operator. Note: Perplexity-Pro-via-Claude-in-Chrome was removed as a working path; Perplexity research today runs through the Sonar API script at `~/workspace/second-brain-tier3/automation/scripts/perplexity_sonar.py`, which is substrate-flexible (operator picks Cowork or Claude Code based on whether they want judgment gates).
 - **One-off lookups.** Examples: "what do I have on X?" — quick conversational answers.
 
 **The rationale should cite:** "conversational + operator-judgment-heavy fits Cowork per `~/workspace/second-brain/_meta/working-surfaces.md` § Default routing."

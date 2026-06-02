@@ -41,7 +41,7 @@ Headings stay verbatim as named below. Don't paraphrase them for cuteness — op
 
 **Empty-state shape.** "Nothing's currently Ready-to-spawn. Either every spawnable chat is already in flight, or every queue is gated on a trigger — see Section 3."
 
-**Voice example.** "Three chats are ready to spawn. `hermes-harness Prework A` ships the Hermes substrate validation — operator-side execution, ~6-8 hours, high leverage because it de-risks the architecture lock before Phase 1 commits. `Prework B` is the Nous Research transparency research — Perplexity Pro queries, ~2-3 hours, medium leverage. `Prework C` re-runs the load-bearing claims through Perplexity Pro after Phase 0's Cowork-WebSearch fallback — ~1-2 hours, high leverage because it tightens evidence on the architecture decision."
+**Voice example.** "Three chats are ready to spawn. `hermes-harness Prework A` ships the Hermes substrate validation — operator-side execution, ~6-8 hours, high leverage because it de-risks the architecture lock before Phase 1 commits. `Prework B` is the Nous Research transparency research — Sonar API queries via the perplexity_sonar.py script, ~2-3 hours, medium leverage. `Prework C` re-runs the load-bearing claims through the Sonar API after Phase 0's Cowork-WebSearch fallback — ~1-2 hours, high leverage because it tightens evidence on the architecture decision."
 
 ## Section 3 — What's queued and why
 
