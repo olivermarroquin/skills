@@ -32,6 +32,7 @@ Drift between this file and the memory is a known risk. If the two disagree, the
 | Gemini API | YES (`generativelanguage.googleapis.com`) | Yes — `automation/secrets/gemini.key` | `automation/scripts/gemini_query.py` | **Working today.** Default model `gemini-2.5-flash` (free-tier-friendly; `gemini-2.0-flash-exp` retired). Wired 2026-06-02. |
 | Anthropic Claude API | YES (`api.anthropic.com`) | Yes — `automation/secrets/anthropic-claude.key` | `automation/scripts/claude_query.py` | **Working today.** Default model `claude-sonnet-4-6`. Wired 2026-06-02. |
 | Google AI Overviews | NO direct API; browser-only | N/A | Claude in Chrome (`mcp__Claude_in_Chrome__navigate` + `mcp__Claude_in_Chrome__get_page_text`) | **Working via Chrome.** Tools listed as deferred; load via ToolSearch before use. |
+| YouTube transcript fetch | YES (`yt-transcript.oliver-marroquin31217.workers.dev`) | Yes — `automation/secrets/youtube-transcript.key` | `repos/ai-agency-core/scripts/fetch_youtube_transcript.py` | **Working today.** Cloudflare Worker wrapping `youtube-transcript` npm. Free tier (100k req/day). Wired 2026-06-03. |
 | ChatGPT web UI | Same — browser-only | Login required | Claude in Chrome | Use only if API doesn't cover the use case. |
 | Perplexity web UI | Same — browser-only | N/A | n/a | **Don't use.** Sonar API supersedes for all use cases. |
 

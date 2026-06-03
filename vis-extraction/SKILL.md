@@ -849,9 +849,19 @@ ls -t /Users/olivermarroquin/workspace/skills/vis-extraction/cache/*.md 2>/dev/n
 
 If a recent transcript file exists matching the source's video ID or article slug, use it directly. Skip to Step 7 with the cached filename. Tell the user: "Found a pre-existing cached transcript for this exact source from [date]. Using it rather than re-pulling."
 
-**Scenario B — Sandbox can fetch (one-step path):**
+**Scenario B — Cloudflare Worker transcript fetch (preferred for YouTube URLs):**
 
-Try running the script. **For YouTube URLs**, the bash call must include the PATH augmentation Phase 0a established (so `transcript-pull.sh`'s internal `command -v yt-dlp` finds the user-local binary):
+For YouTube URLs, use the sandbox-reachable Cloudflare Worker wrapper instead of `yt-dlp`. This works from both Mac Terminal and Cowork sandbox without network restrictions:
+
+```bash
+python3 ~/workspace/repos/ai-agency-core/scripts/fetch_youtube_transcript.py --url "<YOUTUBE-URL>" --markdown --quiet > /Users/olivermarroquin/workspace/skills/vis-extraction/cache/transcript-$(date +%Y-%m-%d-%H%M%S)-<slug>.md
+```
+
+The wrapper reads the API token from `~/workspace/second-brain-tier3/automation/secrets/youtube-transcript.key` (Mac Terminal) or `/mnt/user/second-brain-tier3/automation/secrets/youtube-transcript.key` (Cowork sandbox). If this succeeds, capture the output filename and proceed to Step 7.
+
+**Scenario B-legacy — transcript-pull.sh via yt-dlp (fallback for YouTube, required for articles):**
+
+If the Worker is down or for article URLs, fall back to the original `transcript-pull.sh` path. **For YouTube URLs**, the bash call must include the PATH augmentation Phase 0a established (so `transcript-pull.sh`'s internal `command -v yt-dlp` finds the user-local binary):
 
 ```bash
 PATH="$HOME/.local/bin:$PATH" /Users/olivermarroquin/workspace/skills/vis-extraction/scripts/transcript-pull.sh "<URL-or-path>" /Users/olivermarroquin/workspace/skills/vis-extraction/cache
@@ -867,7 +877,7 @@ If you see errors like:
 - `x-deny-reason: blocked-by-allowlist`
 - `ERROR: [youtube] ...: connection not allowed`
 
-The sandbox cannot fetch the source. **Do not retry.** Instead, surface this to the user and instruct them to run the pull on their host machine. Provide the exact command:
+The sandbox cannot fetch the source via `yt-dlp`. **Try the Cloudflare Worker wrapper first (Scenario B above).** If the Worker is also unreachable, surface this to the user and instruct them to run the pull on their host machine. Provide the exact command:
 
 ```
 The sandbox can't reach <domain>. Please run this in your Mac terminal:
