@@ -2,8 +2,8 @@
 type: schema
 status: v1.1
 created: 2026-06-01
-updated: 2026-06-02
-tags: [skill, client-seo-onboarding, state-schema, resume-contract, multi-chat-decomposition]
+updated: 2026-06-03
+tags: [skill, client-seo-onboarding, state-schema, resume-contract, multi-chat-decomposition, schema-auto-bump]
 ---
 
 # State Schema — `onboarding.json` (v1.1)
@@ -24,7 +24,36 @@ One file per client. The `_state/` folder may also hold sibling artifacts (e.g.,
 - **`quality_log`** — object keyed by step + artifact. Per-artifact verdicts from output-quality-loop Modes 1-5.
 - **`schema_version`** — bumped from `"1.0"` to `"1.1"`.
 
-v1.0 state files load cleanly under v1.1 — all v1.1 additions are new top-level fields or new optional sub-fields. See "Migration notes" at the bottom.
+v1.0 state files load cleanly under v1.1 *for reads* — all v1.1 additions are new top-level fields or new optional sub-fields. **But a write that introduces any v1.1 field into a v1.0-stamped file must bump `schema_version` first** (see "Schema field registry" and Write convention 9 below). Reading a v1.0 file under v1.1 is fine; *writing v1.1 fields without bumping* is the silent-drift bug. See "Migration notes" at the bottom.
+
+## Schema field registry (`SCHEMA_FIELDS`)
+
+This is the canonical, version-keyed set of top-level fields for each `schema_version`. The orchestrator consults it before every state write to decide whether a write is additive (introduces fields outside the current version's set) and therefore requires an auto-bump. **This registry is the single source of truth for "which fields belong to which version."** When a future version adds fields, add a new keyed set here and bump the skill version in the same edit.
+
+```
+SCHEMA_FIELDS = {
+  "1.0": {
+    "schema_version", "client_slug", "started_at", "updated_at",
+    "current_step", "step_status",
+    "ingest", "confirmed_services", "confirmed_cities",
+    "research_status", "data_files", "wp_auth", "page_status",
+    "internal_linking", "report", "failures",
+  },
+  "1.1": {  # v1.0 set + six additive fields
+    "schema_version", "client_slug", "started_at", "updated_at",
+    "current_step", "step_status",
+    "ingest", "confirmed_services", "confirmed_cities",
+    "research_status", "data_files", "wp_auth", "page_status",
+    "internal_linking", "report", "failures",
+    "current_wave", "waves", "wave_log", "planned_remaining_waves",
+    "blocked_on", "quality_log",
+  },
+}
+```
+
+**`_schema_version_history` is version-agnostic.** It is the audit array the auto-bump rule writes into; it is allowed in any version and writing it NEVER counts as additive drift (otherwise the bump would recurse). Treat it as implicitly present in every `SCHEMA_FIELDS[<version>]` — do not list it, do not let it trigger a bump.
+
+**Schema version ≠ skill version.** The highest-defined `schema_version` is `1.1`; the skill is at v1.2 (the v1.2 bump added this auto-bump *rule*, not a new schema *field*). Auto-bump targets the `schema_version` — it bumps a file TO the highest schema version whose `SCHEMA_FIELDS` set contains the field being written (currently `1.1`). Never stamp `schema_version: "1.2"` — there is no `SCHEMA_FIELDS["1.2"]`. A write is "additive" when it introduces a field in `SCHEMA_FIELDS[<highest schema version>]` that is NOT in `SCHEMA_FIELDS[<file's current schema_version>]`.
 
 ## Full schema
 
@@ -195,7 +224,7 @@ v1.0 state files load cleanly under v1.1 — all v1.1 additions are new top-leve
 
 ### Top-level identity
 
-- **`schema_version`** — `"1.1"` as of 2026-06-02. Increment when the schema changes in a way that breaks older state files (additive changes don't require a bump).
+- **`schema_version`** — `"1.1"` as of 2026-06-02. Increment when the schema changes — **including additive changes**: the first write that introduces a field outside the file's current version's `SCHEMA_FIELDS` set auto-bumps `schema_version` and appends a `_schema_version_history` entry (see "Schema field registry" + Write convention 9). Breaking (non-additive) changes — field removal or type change — are refused, not bumped. *(Note: this reverses the earlier "additive changes don't require a bump" guidance, which let S&H's file drift at v1.0 while carrying v1.1 fields; the auto-bump rule shipped 2026-06-03 Phase 5B closes that hole.)*
 - **`client_slug`** — kebab-case slug; matches the `04_projects/clients/_active/<slug>/` folder name and the `data/client-<slug>.json` filename.
 - **`started_at` / `updated_at`** — ISO 8601 UTC timestamps. `updated_at` rewrites on every state write.
 
@@ -299,6 +328,20 @@ This rule keeps the two arrays semantically clean: `failures` = "I can't proceed
 6. **Update `blocked_on` in place** (append the `— CLEARED ...` suffix); never delete a blocker entry — preserves dependency archaeology.
 7. **Append to `wave_log` at wave-close** (don't overwrite); each wave-close adds one entry.
 8. **At wave-close**, write `waves[<wave_id>].status: closed` + `closed_at` + `outputs`; append `wave_log` entry; clear `current_wave`; update `planned_remaining_waves` (remove the just-closed wave).
+9. **Schema-version auto-bump on additive write.** Before committing ANY write, compare the field set being written against `SCHEMA_FIELDS[<file's current schema_version>]` (see "Schema field registry" above). Run this check on every write — wave-state writes, `quality_log` writes, `blocked_on` updates, all of them.
+   - **Additive write (default — auto-bump + audit + write).** If the write introduces one or more fields present in `SCHEMA_FIELDS[<highest schema version>]` but absent from `SCHEMA_FIELDS[<file's version>]`, then in the SAME atomic write: (a) set `schema_version` to the highest schema version whose `SCHEMA_FIELDS` set contains the new field(s) — currently `1.1`, never the skill version — and (b) append one entry to `_schema_version_history` (create the array if missing). The entry is append-only — never overwrite or reorder existing entries. Entry shape:
+     ```json
+     {
+       "version": "1.1",
+       "bumped_at": "<ISO-8601 UTC>",
+       "bumped_by": "<chat-id, per event-log convention>",
+       "reason": "Additive fields written: [\"<sorted field names>\"]"
+     }
+     ```
+   - **Non-additive change (REFUSE, always).** If the write would REMOVE a field that exists in `SCHEMA_FIELDS[<file's version>]`, or change a field's type/shape from what the schema documents, do NOT write. Surface to the operator with the offending field(s) and stop — this holds regardless of any "allow additive" intent, because the auto-bump path only ever covers *adding* fields, never removing or reshaping them.
+   - **No-drift write (no bump).** If every field being written is already in `SCHEMA_FIELDS[<file's version>]` (plus the version-agnostic `_schema_version_history`), write normally — no bump, no audit entry.
+   - **Unknown field (REFUSE, always).** If the write introduces a field that is in NO version's `SCHEMA_FIELDS` set (neither additive, nor removal, nor no-drift), refuse + surface — it's a typo, or an unregistered field that must be added to the registry and skill-bumped first. Never auto-write a field the registry doesn't know.
+   - **Why this exists.** S&H's `onboarding.json` sat at `schema_version: "1.0"` while wave writers added v1.1 fields for 24+ hours before sweep [4] caught it (2026-06-03). This rule makes that drift impossible to write silently: the first v1.1-field write self-bumps and self-audits. **Enforcement is convention-class — the orchestrator (an LLM) must run the check; there is no deterministic guard.** A hard, un-skippable guard would require routing state writes through a script (parked as Phase 5B Path B, conditional on state writes becoming script-mediated).
 
 ## Read conventions
 
@@ -356,10 +399,11 @@ The skill never overrides operator-edited fields without explicit confirmation.
 
 ## Migration notes (v1.0 → v1.1)
 
-v1.0 state files load cleanly under v1.1 — all v1.1 additions are new top-level fields or new optional sub-fields. The orchestrator's schema-version check fires:
+v1.0 state files load cleanly under v1.1 *for reads* — all v1.1 additions are new top-level fields or new optional sub-fields. The orchestrator's schema-version check fires on load:
 
-- If `schema_version: "1.0"` is detected on load, the orchestrator surfaces: "State file is v1.0; this skill is v1.1. v1.1 adds `waves`, `wave_log`, `planned_remaining_waves`, `blocked_on`, `quality_log`, and `current_wave`. Migrate now (additive — preserves all v1.0 fields) or continue without migration (v1.1 features unavailable for this client)?"
-- Migration is a deterministic transform: bump `schema_version`, add the new fields as empty arrays/objects, recompute `current_wave` as `null` (since v1.0 didn't track waves; the operator may need to backfill).
+- If `schema_version: "1.0"` is detected on load, the orchestrator surfaces: "State file is v1.0; this skill is v1.1. v1.1 adds `waves`, `wave_log`, `planned_remaining_waves`, `blocked_on`, `quality_log`, and `current_wave`. Migrate now (additive — preserves all v1.0 fields), or continue at v1.0 (the file stays v1.0 and must stay within v1.0 fields only — no wave/quality-log features for this client)?"
+- **"Continue at v1.0" does not mean "use v1.1 features without bumping."** It means the file stays v1.0 *and the orchestrator must not write any v1.1 field*. The moment a v1.1 field would be written — whether the operator chose explicit migration or not — Write convention 9's auto-bump fires: `schema_version` bumps to `1.1` and a `_schema_version_history` entry is appended in the same write. So "continue at v1.0" is only honored as long as no v1.1 field is actually written; there is no path where a v1.1 field lands in a file still stamped v1.0.
+- Explicit migration (operator chose "migrate now") is a deterministic transform: bump `schema_version`, add the new fields as empty arrays/objects, recompute `current_wave` as `null` (since v1.0 didn't track waves; the operator may need to backfill), and append the `_schema_version_history` entry. Auto-bump (a v1.1 field written without an explicit migration choice) produces the same end state via the same audit entry — explicit migration just front-loads the empty scaffolding.
 - **`failures` array preserves as-is during migration.** v1.0's failure entries remain valid under v1.1's semantic distinction (catastrophic errors that stopped the orchestrator). Don't try to retroactively classify them as quality-loop entries.
 
 ## Related
