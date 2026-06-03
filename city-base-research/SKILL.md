@@ -1,5 +1,6 @@
 ---
 name: city-base-research
+version: 1.1
 description: Produce a Tier-2 city base brief — cross-client, cross-service — that downstream Phase 3b scaffolders consume to author the city-universal half of `data/cities/<city-slug>.json`. Triggers on phrases like "research the city of Vienna VA," "produce a city base brief for X," "run city SEO research on Y," "write the Tier-2 brief for Z city," "do a city-level base brief for [city]," "what's the local context look like for [city]," "city-research [slug]," or any time the operator wants a city-level (not service-level, not client-level, not service-by-city) research output. One argument: the city slug with state suffix (e.g. `vienna-va`, `bethesda-md`). Output: a single markdown file at second-brain/05_shared-intelligence/research-briefs/cities/<city-slug>.md following the locked template at second-brain/05_shared-intelligence/research-briefs/_template-city-brief.md.
 ---
 
@@ -133,6 +134,201 @@ If the template has moved or been renamed, search the vault by
 filename (Glob `_template-city-brief.md`). If not found, the
 template's content is described in the template file linked above —
 fall back to that.
+
+---
+
+## Jurisdiction anomaly check (run before Phase 2)
+
+Before Phase 2 fires, run a focused check for jurisdiction-level
+anomalies that break regional utility / AHJ defaults. Most US cities
+follow their regional pattern — Northern Virginia suburbs default to
+Dominion Energy electric, Washington Gas, county-run water, and
+county-level AHJ. But a meaningful subset deviate: a city operates its
+own electric utility, or it's an independent jurisdiction (not a county
+subdivision), or one of its utilities differs from the surrounding
+county's default. If the sub-agent assumes the default without
+checking, §1 of the brief ships factually wrong — and a downstream
+Phase 3b scaffolder run produces client pages that reference the wrong
+utility or the wrong permit office.
+
+This check exists because the v1.0 skill assumed defaults and required
+operator catches at Gate 2 PROVISION to prevent drift (Manassas Wave
+A4, May 2026 — Manassas Electric Department framing). The operator-
+gate catch is fragile — it depends on the operator knowing the
+relevant local utility geography. For cities where nobody on the chat
+knows the local quirks, the skill itself must catch them.
+
+### The 3 anomaly classes
+
+**Class 1 — Municipal electric utility.** A subset of US cities and
+towns operate their own electric utility instead of using the regional
+investor-owned utility (Dominion Energy in Virginia, ConEd in NYC,
+PG&E in California, etc.). Virginia has 16 government-owned electric
+systems per the Municipal Electric Power Association of Virginia
+(MEPAV) — see `references/jurisdiction-anomaly-known-list.md` for the
+full roster. Examples: Manassas (Manassas Electric Department), Front
+Royal, Harrisonburg, Danville, Bristol/BVU, Salem, Martinsville,
+Radford. If the city you're researching is one of these, electric
+utility ≠ regional default. Source authority: American Public Power
+Association (APPA) member roster, the state municipal-electric
+association, the state public service commission, and the city's own
+`.gov` site.
+
+**Class 2 — Independent city vs Census Designated Place.** Virginia
+has 38 independent cities (separate jurisdictions from any county).
+Other states have similar structures: Baltimore MD, St. Louis MO,
+Carson City NV (consolidated city-county), the District of Columbia.
+An independent city has its own AHJ at the city level, NOT at the
+surrounding county. If the city you're researching is an independent
+city, AHJ ≠ surrounding county's permit office. Source authority:
+state code (Code of Virginia for VA) and Census Bureau's incorporated-
+place designation.
+
+**Class 3 — Utility-mismatch-with-county.** Even when a city is a
+county subdivision (not independent), individual utilities may differ
+from the county default. Private water utilities (Virginia American
+Water, Aqua America), municipal water districts, regional sewer
+authorities (Alexandria Renew Enterprises, DC Water). If the city's
+water, sewer, gas, or trash utility differs from the county default,
+flag and document the actual provider with a primary-source citation.
+Source authority: the utility's own service-territory map + the city
+government's "utilities" page.
+
+**Important note — the three classes are orthogonal.** Finding Class 2
+(independent city) does NOT automatically imply Class 1 (municipal
+electric). Alexandria, VA is an independent city but uses Dominion
+Energy electric. Manassas Park, VA is an independent city immediately
+adjacent to Manassas (which has its own muni electric), but Manassas
+Park does not — Dominion/NOVEC serves it. The reverse also holds — a
+town can run its own electric utility while remaining a county
+subdivision (Bedford, Front Royal, Culpeper, and the other 6 confirmed
+VA muni-electric towns). Run all three checks independently for every
+city; don't shortcut.
+
+**Class 1 × Class 2 — the 4 combinations.** The two structural anomaly
+classes produce four distinct profiles. Use this 2×2 grid when
+assessing borderline or unfamiliar cities — every Virginia city/town
+falls into one of these four cells:
+
+| | **Class 2 fires** (independent city) | **Class 2 does NOT fire** (county subdivision) |
+|---|---|---|
+| **Class 1 fires** (muni electric) | Full anomaly: city-run electric + city-level AHJ. Examples: Manassas, Bristol/BVU, Danville, Franklin, Harrisonburg, Martinsville, Radford, Salem. | Muni-electric town within county: city-run electric + county-level AHJ. Examples: Front Royal, Bedford, Elkton, Blackstone, Culpeper, Richlands, Wakefield. |
+| **Class 1 does NOT fire** (regional electric) | Independent city, third-party electric: regional electric + city-level AHJ. Examples: Alexandria (Dominion), Manassas Park (Dominion/NOVEC), Falls Church (Dominion). | Regional default: regional electric + county-level AHJ. Examples: Vienna (Dominion + Fairfax County), Bethesda CDP (Pepco/Potomac Edison + Montgomery County). |
+
+Class 3 (utility-mismatch-with-county) layers on top of any of these
+four cells — Alexandria for instance sits in the bottom-left cell but
+also fires Class 3 partially (Virginia American Water for water,
+AlexRenew for sewer). Treat Class 3 as a per-utility check that runs
+inside the cell, not as a fifth dimension.
+
+### The 3 sub-step check procedure
+
+This check runs ONCE per city, before Phase 2 begins. Total expected
+cost: $0.02–$0.05 in Sonar + 5–15 minutes of cross-reference per city
+(realistic estimate — don't budget "a few minutes," that's how sub-
+agents skip Sub-step 2). Skip this and the brief risks shipping wrong.
+
+**Skip-clause:** Sub-step 2 (cross-reference) may be skipped only if
+the city appears in `references/jurisdiction-anomaly-known-list.md`
+with current `[source: ...]` attribution AND the cited entry is dated
+within 90 days. Otherwise, run the full check.
+
+**Sub-step 1 — Probe via Sonar.** Run a single targeted query using
+`~/workspace/second-brain-tier3/automation/scripts/perplexity_sonar.py`
+on `sonar-pro`. Use this query template (English-anchoring suffix at
+the end is load-bearing per the Prework B 2026-06-03 lesson on Sonar
+language drift — without it `sonar-pro` occasionally returns French-
+language sources, especially on civic-infrastructure queries):
+
+```
+Does the city of [CITY_NAME], [STATE] operate its own municipal electric
+utility, or is it served by the regional investor-owned utility
+[REGIONAL_DEFAULT_UTILITY, e.g., Dominion Energy]? Is [CITY_NAME] an
+independent city or a Census Designated Place / county subdivision within
+[SURROUNDING_COUNTY]? What are the actual current electric, gas, water,
+sewer, and trash utilities serving [CITY_NAME] as of [CURRENT_YEAR]?
+Please respond in English; cite English-language sources where available.
+```
+
+The query is intentionally compound — it covers all three anomaly
+classes in one Sonar call to keep cost minimal. Expect 4–8 cited
+sources back.
+
+**Sub-step 2 — Cross-reference against authoritative sources.** Don't
+trust Sonar's synthesis alone — independently verify the load-bearing
+claims via `mcp__workspace__web_fetch` against at least one
+authoritative primary source per anomaly class:
+
+- Class 1 (municipal electric) — fetch the APPA member directory OR
+  the state's municipal-electric association OR the state's public
+  service commission utility-territory map. Confirm whether the city
+  appears.
+- Class 2 (independent city) — fetch the state code's list of
+  independent cities (Code of Virginia § 15.2 for VA) OR the Census
+  Bureau's incorporated-place data. Confirm jurisdiction status.
+- Class 3 (utility mismatch) — fetch the actual utility's service-
+  territory map (Dominion's service-area page, Washington Gas's
+  service-territory PDF, the local water authority's "who we serve"
+  page). Confirm coverage.
+
+If sources disagree (Sonar says X, primary source says Y), trust the
+primary source and capture the disagreement as a methodology footnote
+in the brief's §12. Confident-but-wrong is a worse failure mode than
+honest-range-with-citations.
+
+**Sub-step 3 — Encode findings into the brief's §1 + §6.** §1 (City
+identity and administrative basics) names the ACTUAL utility for each
+service (electric / gas / water / sewer / trash) with `[source: ...]`
+attribution per the existing source-attribution rule. If any anomaly
+class fires (Class 1, 2, or 3), add a `> [!warning]` callout block to
+§1 noting the anomaly. The callout uses this 3-field shape (the
+content fields are load-bearing — the callout has to teach a
+downstream sub-agent what to do differently, not just flag):
+
+```markdown
+> [!warning] Jurisdiction anomaly: <Class N — e.g., "Class 1 (Municipal electric utility)">
+>
+> <one-sentence anomaly statement with primary-source citation. e.g., "City of Manassas operates Manassas Electric Department (MED), not Dominion Energy [source: APPA member directory, fetched 2026-06-XX].">
+>
+> Implications for Phase 3b scaffolder pages: <one-sentence operational consequence. e.g., "All service-disconnect, EV-charger permit, and outage-response references must route to MED, not Dominion. See §6 for full detail.">
+```
+
+Then write a `## §6 anomaly implications` sub-paragraph inside Section
+6 (Local infrastructure quirks) that explains the service-pattern
+consequences — e.g., for a municipal electric city, disconnect
+coordination, residential service drops, EV-charger circuit
+permitting, and outage response all route through a city-run utility
+rather than Dominion's standard processes; for an independent city,
+all electrical permits route through a city-level AHJ rather than the
+surrounding county's permit office.
+
+If NO anomaly fires (the city follows its regional default on all
+three classes), §1 still names the default utilities with citations,
+and §6 omits the anomaly-implications sub-paragraph. The brief's §12
+Methodology section notes "Jurisdiction anomaly check: ran on
+YYYY-MM-DD, no anomaly identified — city follows regional default for
+[region]."
+
+### Reference
+
+`references/jurisdiction-anomaly-known-list.md` — growing list of US
+jurisdictions with known anomalies. Check this list first; if the city
+is on it, the anomaly is pre-identified and Sub-step 1's Sonar query
+becomes a confirmation rather than a discovery. New anomalies
+discovered during city research get appended to the reference file at
+chat close via the Knowledge Capture Audit.
+
+### Worked examples
+
+- `manassas-va.md` — full anomaly (Class 1 + Class 2 both fire).
+  Caught at Gate 2 PROVISION in S&H wave A4 (May 2026); v1.0 framing
+  drift required operator catch, which is the precipitating event for
+  this v1.1 section.
+- `alexandria-va.md` — partial anomaly (Class 2 fires, Class 1 does
+  NOT — Dominion electric). S&H wave A5 (closed 2026-06-03); shipped
+  PASS first-iteration. Demonstrates the orthogonality lesson — the
+  three classes are independent; finding one does not imply the
+  others.
 
 ---
 
@@ -585,35 +781,45 @@ Per the [[vault-stewardship-principles]]:
 
 ## Verification — before declaring done
 
-1. **Frontmatter check** — frontmatter is valid YAML, has all
+1. **§1 jurisdiction anomaly check ran.** Sub-step 1 Sonar query
+   either fired this run OR was skipped under the 90-day skip-clause
+   with the reference-file entry cited. City identity block (§1)
+   reflects actual utilities (electric / gas / water / sewer /
+   trash), not regional defaults. If any anomaly class fired (1, 2,
+   or 3), §1 contains the `> [!warning]` callout in the locked 3-
+   field shape AND §6 contains the `## §6 anomaly implications`
+   sub-paragraph. If no anomaly fired, §12 Methodology notes the
+   anomaly check ran with no anomaly identified.
+
+2. **Frontmatter check** — frontmatter is valid YAML, has all
    required fields (`type`, `brief-tier`, `status`, `created`,
    `updated`, `city-slug`, `city-name`, `state`, `county`,
    `research-date`, `researcher`, `tools-used`, `sources-cited`,
    `tags`).
 
-2. **Section completeness** — all 12 template sections present,
+3. **Section completeness** — all 12 template sections present,
    each opens with its "What this feeds" line.
 
-3. **Source-attribution check** — every claim has an inline
+4. **Source-attribution check** — every claim has an inline
    citation. Run a grep for sentences with numbers
    (demographic stats, drive times, ZIP codes, monthly volume)
    and confirm each has a `[source: …]` tag.
 
-4. **Wikilink check** — extract wikilinks via grep and confirm
+5. **Wikilink check** — extract wikilinks via grep and confirm
    peer links resolve.
 
-5. **Plain-language scan** — scan for unglossed jargon. AHJ,
+6. **Plain-language scan** — scan for unglossed jargon. AHJ,
    ACS, NEC, IRC, HOA, CDP, GSC should be defined inline on
    first use.
 
-6. **JSON-shape compatibility check** — walk the "How the
+7. **JSON-shape compatibility check** — walk the "How the
    scaffolder consumes this brief" table at the bottom of the
    template and confirm the brief surfaces data for every JSON
    field in `data/cities/vienna-va.json` (the reference shape).
    Any gap that isn't explicitly deferred to Phase 2c is a
    brief defect.
 
-7. **Plain-language pass on a sample paragraph.** Pick the
+8. **Plain-language pass on a sample paragraph.** Pick the
    densest paragraph in the brief and confirm it reads as
    plain language. If not, run the [[plain-language-translation]]
    skill on the brief retroactively.
@@ -707,7 +913,15 @@ When you need them, read these:
 - `~/workspace/second-brain/05_shared-intelligence/research-briefs/cities/_README.md`
   — Tier 2 cities folder README
 - `~/workspace/second-brain/05_shared-intelligence/research-briefs/cities/vienna-va.md`
-  — the worked example
+  — the worked example (no anomaly — regional default)
+- `~/workspace/second-brain/05_shared-intelligence/research-briefs/cities/manassas-va.md`
+  — worked example, full anomaly (Class 1 + Class 2 both fire)
+- `~/workspace/second-brain/05_shared-intelligence/research-briefs/cities/alexandria-va.md`
+  — worked example, partial anomaly (Class 2 fires, Class 1 does NOT —
+  Dominion electric)
+- `references/jurisdiction-anomaly-known-list.md` — growing list of US
+  jurisdictions with known anomalies (Class 1, 2, 3). Read during the
+  `Jurisdiction anomaly check (run before Phase 2)` step.
 - `~/workspace/repos/ai-agency-core/scripts/data/cities/vienna-va.json`
   and `~/workspace/repos/ai-agency-core/scripts/data/cities/fairfax-va.json`
   — the JSON shape the brief's data feeds
@@ -767,6 +981,57 @@ that references the wrong AHJ URL or the wrong utility name.
 **How to fix:** Annual refresh check on §1 (administrative
 basics) and §6 (infrastructure quirks). If anything moved, the
 brief gets a focused update; the rest of the brief stays.
+
+### M4: Callout convention introduced (added 2026-06-03, v1.1)
+
+**The issue:** v1.1 introduces Obsidian-native callout syntax
+(`> [!warning]`) for the §1 jurisdiction-anomaly callout block.
+This is the first use of callouts anywhere in
+`05_shared-intelligence/research-briefs/`. Pre-v1.1 briefs do
+not use them.
+
+**How it surfaces:** Briefs rendered outside Obsidian (raw
+markdown viewers, GitHub previews, plain-text consumers) show
+the callout as plain quoted text with the `[!warning]` tag
+visible. Degraded but readable. Briefs rendered in Obsidian
+get the styled callout box.
+
+**How to fix:** No action needed for v1.1. If a future
+brief-formatting convention introduces additional callout types
+(`[!note]`, `[!info]`, `[!danger]`), update the locked template
+to enumerate the approved set so sub-agents don't ad-lib new
+callout types.
+
+**Why it wasn't designed away:** The callout is semantically
+right for an anomaly finding (warrants attention, doesn't
+break the brief if rendered as plain text). Avoiding it would
+mean inventing a bespoke convention that future skills wouldn't
+know about.
+
+### M5: Jurisdiction anomaly check added (added 2026-06-03, v1.1)
+
+**The issue:** v1.0 had no jurisdiction-anomaly check; sub-
+agents assumed regional utility / AHJ defaults and required
+operator catches at Gate 2 PROVISION to prevent drift. The
+catch was fragile — only worked if the operator knew the local
+utility geography.
+
+**How it surfaces:** Pre-v1.1, briefs for Manassas-like cities
+(Class 1 + Class 2 anomalies) shipped to PROVISION naming
+"Dominion Energy" as the electric utility instead of the
+city-run department, requiring a quality-loop iteration to fix.
+
+**How to fix:** v1.1 adds the `Jurisdiction anomaly check (run
+before Phase 2)` section + the `references/jurisdiction-
+anomaly-known-list.md` reference file. The check fires before
+§1 research, catches anomalies upstream of operator review, and
+encodes findings into §1 callouts + §6 sub-paragraphs.
+
+**Why it wasn't designed away:** v1.0 was scoped to the
+default-pattern case and assumed operator review would catch
+the rare anomaly cases. Two waves (S&H A4 Manassas, S&H A5
+Alexandria) demonstrated that the operator-catch was load-
+bearing and fragile. v1.1 internalizes the check.
 
 ---
 
