@@ -48,7 +48,14 @@ Edit `<TRACKER_PATH>`:
 - Add a scannable one-liner to "Recently completed (past 7 days)"
 - If this chat cleared a downstream chat's blocker, **move** that downstream chat from Tier-2 or Tier-3 to "Ready to spawn next" — again, move, don't strikethrough
 - Update the section's callout-line item count (e.g., "1 chat currently in flight" → "0 chats currently in flight" when you remove the last in-flight row)
-- If the chat cleared any other chat's blocker, promote that chat (move from queue → Ready-to-spawn OR strike-through and add a pointer)
+- If the chat cleared any other chat's blocker, promote that chat by **moving** the row from queue → Ready-to-spawn. Delete the source row entirely. Do **NOT** leave a strikethrough pointer behind — the destination section is the canonical location.
+- **Verify no strikethrough pointers landed.** After all row moves are complete, disk-grep the tracker for strikethrough on the chat-name column:
+
+\`\`\`
+grep -nE '^\| ~~' <TRACKER_PATH>
+\`\`\`
+
+Expected output: empty (zero matches). If grep finds any matches, those rows broke the move-don't-strikethrough rule — delete them entirely and re-verify before declaring done. Strikethrough pointers create drift the next chat will read as stale state. This enforcement step exists because two prior closes (S&H wave A6 at pass 98; transcript-fix at pass 110) left strikethrough pointers despite the rule being documented in three places. The grep is the gate the documentation alone couldn't enforce.
 - Bump frontmatter `last-change` value — **keep the single-quote wrapper around the value** per the "How to use this file" convention (the YAML colon-space trap has bitten the file repeatedly)
 
 **Step 4 — Verify YAML parses cleanly.**
