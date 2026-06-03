@@ -38,6 +38,7 @@ SCHEMA_FIELDS = {
     "ingest", "confirmed_services", "confirmed_cities",
     "research_status", "data_files", "wp_auth", "page_status",
     "internal_linking", "report", "failures",
+    "operator_decisions_pending",
   },
   "1.1": {  # v1.0 set + six additive fields
     "schema_version", "client_slug", "started_at", "updated_at",
@@ -45,11 +46,14 @@ SCHEMA_FIELDS = {
     "ingest", "confirmed_services", "confirmed_cities",
     "research_status", "data_files", "wp_auth", "page_status",
     "internal_linking", "report", "failures",
+    "operator_decisions_pending",
     "current_wave", "waves", "wave_log", "planned_remaining_waves",
     "blocked_on", "quality_log",
   },
 }
 ```
+
+> **Registry is disk-verified, not doc-derived.** This set was reconciled against the live S&H `onboarding.json` on 2026-06-03, which surfaced `operator_decisions_pending` — a real, populated top-level field the documented "Full schema" example never listed. It's in BOTH version sets because it is not one of the six documented v1.1 additions; it's a base operator-decision queue (see field semantics below). **Lesson:** build this registry by reading every live state file's top-level keys, not by transcribing the documented schema — the doc and disk had already drifted. When you add a new version's field set, diff it against every on-disk `onboarding.json` first.
 
 **`_schema_version_history` is version-agnostic.** It is the audit array the auto-bump rule writes into; it is allowed in any version and writing it NEVER counts as additive drift (otherwise the bump would recurse). Treat it as implicitly present in every `SCHEMA_FIELDS[<version>]` — do not list it, do not let it trigger a bump.
 
@@ -295,6 +299,10 @@ Each step's per-step state lives in its own top-level key:
 ### Failures array
 
 - **`failures`** — append-only log. Each entry: `step` + identifying context (`page_slug`, `service_slug`, etc.) + `error` text + `timestamp` + `operator_action` field that the skill updates when the operator decides what to do (`deferred` / `retried` / `accepted` / `pending`).
+
+### Operator-decision queue
+
+- **`operator_decisions_pending`** — array of decisions awaiting the operator that are NOT failures (the skill isn't blocked from an error; it needs an operator *choice* before a step's scope is settled). Each entry: `decision_id` (kebab-case slug) + `surfaced_at` (ISO 8601 UTC) + `context` (one-paragraph plain-language description of the choice and why it matters). Distinct from `failures` (catastrophic errors that stopped the orchestrator) and from `quality_log` decisions (per-artifact verdict routing): this is the "I need you to pick a direction" queue. Example from S&H: a `research-scope-staging` decision surfaced because real Phase 2 research was 42 briefs (~12h) vs. the handoff's ~5-8h estimate, so the operator had to pick a staging approach before research fired. *(This field shipped in practice on the S&H file but was undocumented until 2026-06-03 Phase 5B reconciled the registry against disk — see "Schema field registry" note.)*
 
 ## `failures` vs `quality_log` — semantic distinction
 
