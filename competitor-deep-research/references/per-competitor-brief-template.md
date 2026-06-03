@@ -1,8 +1,12 @@
 # Per-competitor brief template
 
-Copy this template for each competitor. Fill in every section. If a section truly doesn't apply, write "Not applicable because…" rather than skipping silently — operators need to know whether a gap is in the competitor or in your audit.
+Copy this template for each Tier-1 competitor. Fill in every section. If a section truly doesn't apply, write "Not applicable because…" rather than skipping silently — operators need to know whether a gap is in the competitor or in your audit.
 
-The template uses 9 sections in a fixed order. Keeping the order consistent across all competitors is what makes the synthesis writable later.
+The template uses **11 sections in a fixed order** (Sections 3.5 and 7.5 were added by the 2026-06-03 enhancements; the section numbering preserves the original sequence so synthesis-reading code stays compatible). Keeping the order consistent across all competitors is what makes the synthesis writable later.
+
+For Tier-1 **primaries**, fill every section including 3.5 (≥5 audited pages) and 7.5 (5–10 top-trafficked pages). For Tier-1 **secondaries**, Section 3.5 is required (2–3 audited pages minimum) and Section 7.5 is optional (drop it if budget is short, but note the omission).
+
+For **Tier-2 light-scan competitors**, do NOT use this template — they get a single structured row inside the synthesis's Tier-2 light-scan table instead.
 
 ---
 
@@ -85,6 +89,35 @@ Where the content moat lives — or doesn't.
 
 ---
 
+## Per-page deep audit
+
+*(2026-06-03 enhancement — the "stalker-level" detail layer.)*
+
+Run the per-page audit per `competitor-deep-research/SKILL.md` Phase 3 Step 8. One row per audited page. Tier-1 primaries: 5+ rows minimum (homepage + 2 service pages + 2 city pages). Tier-1 secondaries: 2–3 rows minimum.
+
+Annotate the **Method** for each row (DataForSEO / free-toolkit-PageSpeed-Insights / mixed) so the data lineage stays auditable.
+
+| URL | Page type | Words | Sents | Paras | H1 / H2 / H3 | Images | Alt-quality | Schema types | FAQs | Int. links (in-body) | Ext. links | Page load | LCP / INP / CLS | Pricing pub? | Method |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| / | homepage | | | | | | | | | | | | | | |
+| /services/<svc>/ | service | | | | | | | | | | | | | | |
+| /<region>/<city>/ | city | | | | | | | | | | | | | | |
+| /services/<svc2>/ | service | | | | | | | | | | | | | | |
+| /<region>/<city2>/ | city | | | | | | | | | | | | | | |
+
+**Cross-page observations:**
+
+Once 5+ rows are filled, scan the columns vertically. What's consistent across this competitor's pages? Examples to surface:
+
+- "All 5 of AJ Long's audited pages share a 5-FAQ inline structure."
+- "Mr. Electric's homepage is 1,400 words but the city pages drop to 620 — content depth is concentrated at the top."
+- "Schema types are identical across the 5 audited pages (LocalBusiness + Service); FAQPage absent from every one."
+- "Alt-text quality is high on the homepage hero (descriptive) but generic on service-page screenshots."
+
+These per-page observations seed the Section 7.5 top-5-pages-pattern detection.
+
+---
+
 ## SEO signals
 
 - **Title tag patterns:** Quote 2–3 actual titles you observed and identify the pattern (e.g., `[keyword] [city] | [brand]`).
@@ -127,6 +160,43 @@ Free-tools only by default — Ahrefs Free Backlink Checker, BrightLocal scan if
 3. It's a customer-trust mechanism even outside SEO (warranty, history, transparent pricing)
 
 Lead with the strongest 2–3. Operators reading this for the first time should grasp the competitor's main strengths from the first three bullets alone.
+
+---
+
+## Top-5-pages pattern (what their best pages systematically do)
+
+*(2026-06-03 enhancement — required for Tier-1 primaries; optional for secondaries.)*
+
+Run per `competitor-deep-research/SKILL.md` Phase 3 Step 9. Identify the 5–10 most-trafficked pages on this competitor's site (DataForSEO Labs `relevant_pages/live` / SimilarWeb free / sitemap + nav-heuristic / operator-named). Apply the Section 3.5 audit columns to each. Document the structural traits present in **≥80% of the audited top pages** (4 of 5, 8 of 10).
+
+**Top-5 (or top-10) pages audited:**
+
+1. <URL> — <page type> — <one-line "what this page is">
+2. <URL> — …
+3. <URL> — …
+4. <URL> — …
+5. <URL> — …
+
+**Shared structural traits (present in ≥80%):**
+
+| Trait | Page-share | What the trait looks like in practice |
+|---|---|---|
+| Word count band | 4 of 5 | "3,500–4,000 words" |
+| Why-choose-us tile structure | 5 of 5 | "6-tile grid above the fold" |
+| Named-neighborhood density | 5 of 5 | "5+ specific neighborhoods named" |
+| FAQ count | 4 of 5 | "Exactly 5 FAQs inline" |
+| Case studies | 5 of 5 | "1 case study with named city + scenario" |
+| Schema types | 5 of 5 | "LocalBusiness + Service; FAQPage absent" |
+| Internal-link density | 5 of 5 | "≥10 sibling city-page links in body" |
+| Image treatment | 4 of 5 | "Hero photo of real technician on job site" |
+
+**What this tells us:**
+
+One paragraph naming the structural blueprint. Example: "AJ Long's winning pattern is the city-localized service-deep page: 3,500-word body, 6-tile differentiators, 5 named neighborhoods, embedded permit references, 5 FAQs, 1 case study, dense internal linking. Every top-trafficked page matches this template; their lower-trafficked pages (blog posts, generic service pages) don't. Reproducing this blueprint is what the client's Core 30 build should match-or-beat."
+
+**Source of traffic data:**
+
+- `<source name + date + URL when applicable>` — `<which method used: DataForSEO Labs / SimilarWeb free / sitemap-heuristic / operator-named>`
 
 ---
 

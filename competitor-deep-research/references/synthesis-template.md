@@ -1,8 +1,10 @@
 # Synthesis template
 
-The synthesis is the deliverable that operators refer to when planning the client's Core 30 build or SEO foundation. Per-competitor briefs are inputs; the synthesis turns them into a plan.
+The synthesis is the deliverable that operators refer to when planning the client's Core 30 build or SEO foundation. Per-competitor briefs and the Tier-2 light-scan rows are inputs; the synthesis turns them into a plan.
 
-Use this template after every brief is written. Don't try to write the synthesis in parallel with the briefs — the cross-competitor patterns only become visible once you've seen all of them.
+Use this template after every Tier-1 brief is written AND the Tier-2 rows are collected. Don't try to write the synthesis in parallel with the briefs — the cross-competitor patterns only become visible once you've seen all of them.
+
+The template uses **12 sections in a fixed order** (Sections 1.5 and 4.5 were added by the 2026-06-03 enhancements; the section numbering preserves the original sequence).
 
 ---
 
@@ -34,17 +36,50 @@ Sibling briefs:
 
 ## 1. Quick-reference comparison table
 
-One row per competitor. Make it scannable. Operators screenshot this table and paste it into client decks.
+One row per Tier-1 competitor + the client. Make it scannable. Operators screenshot this table and paste it into client decks.
 
 | Operator | Reviews | Rating | Links | Authority | Tech stack | Pages | Rank for top keyword |
 |---|---|---|---|---|---|---|---|
-| Competitor A | | | | | | | |
-| Competitor B | | | | | | | |
-| Competitor C | | | | | | | |
-| Competitor D | | | | | | | |
+| Competitor A (Tier 1 primary) | | | | | | | |
+| Competitor B (Tier 1 primary) | | | | | | | |
+| Competitor C (Tier 1 secondary) | | | | | | | |
+| Competitor D (Tier 1 secondary) | | | | | | | |
 | **Client** | | | | | | | |
 
 Source notes: cite the ranking-data source + date.
+
+---
+
+## 1.5. Tier-2 light-scan table
+
+*(2026-06-03 enhancement — produces the cross-validation layer for the Tier-1 findings.)*
+
+One row per Tier-2 competitor (top 10 in the SERP / ranking-source). The Tier-1 competitors appear here too with full data; Tier-2-only competitors get the same row shape. Sort by **Avg rank for head keyword** ascending.
+
+| # | Domain | Pages | Tech stack | Top 5 keywords | Backlinks | DA / DR | Avg rank | Service-page words | FAQs | Schema types |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | <Tier-1 A> | | | | | | | | | |
+| 2 | <Tier-1 B> | | | | | | | | | |
+| 3 | <Tier-2> | | | | | | | | | |
+| 4 | <Tier-2> | | | | | | | | | |
+| 5 | <Tier-1 C> | | | | | | | | | |
+| 6 | <Tier-2> | | | | | | | | | |
+| 7 | <Tier-1 D> | | | | | | | | | |
+| 8 | <Tier-2> | | | | | | | | | |
+| 9 | <Tier-2> | | | | | | | | | |
+| 10 | <Tier-2> | | | | | | | | | |
+
+**Per-row source annotation** — append a one-line citation row beneath the table naming the method per row (DataForSEO / free-toolkit / mixed). Example: `Rows 1, 2, 5, 7 — DataForSEO Labs ranked_keywords + Backlinks Summary 2026-06-03; Rows 3, 4, 6, 8, 9, 10 — free-toolkit (BrightLocal Feb 2026 + Ahrefs Free Backlink Checker + sitemap probe).`
+
+**Light-scan observations:**
+
+A few bullets surfacing the patterns visible in the 10-row table that aren't already in the Tier-1 deep dives:
+
+- Page-count distribution (where do most fall? who are the outliers?)
+- Tech-stack distribution (WordPress vs static vs enterprise vs hosted-builder)
+- Schema saturation (how many emit JSON-LD at all? which types are common?)
+- FAQ saturation (proportion of pages with embedded FAQs)
+- The 1–2 Tier-2-only competitors that look surprisingly strong (potential Tier-1-promotion candidates for the next refresh cycle)
 
 ---
 
@@ -88,6 +123,39 @@ Number them. Each gets a one-paragraph treatment with:
 - How the client can exploit it (specific to the client's actual capabilities and strategy)
 
 Typical count: 7–12 differentiation opportunities.
+
+---
+
+## 4.5. Cross-competitor structural pattern
+
+*(2026-06-03 enhancement — the "what does winning content look like at the page structural level" rollup.)*
+
+Roll up the per-competitor top-5-pages findings (from each Tier-1 brief's Section 7.5) into one cross-competitor view. This is the structural blueprint the Phase 3a scaffolder should reproduce.
+
+**Per-trait cross-competitor table:**
+
+| Structural trait | Competitor A top-5 | Competitor B top-5 | Competitor C top-5 | Competitor D top-5 | Cross-competitor verdict |
+|---|---|---|---|---|---|
+| Word count band | 5 of 5 @ 3,500–4,000 | 4 of 5 @ 1,800–2,400 | 3 of 5 @ 1,200–1,500 | 5 of 5 @ 2,000–2,800 | Winning pages cluster at 2,000–4,000; sub-2,000 trails |
+| Why-choose-us tile structure | 5 of 5 (6 tiles) | 4 of 5 (4 tiles) | 3 of 5 (any) | 5 of 5 (4 tiles) | Universal — 4–6 tiles standard |
+| Named-neighborhood density | 5 of 5 (5+) | 1 of 5 (≥1) | 0 of 5 | 2 of 5 (≥3) | Only the strongest competitor does this consistently |
+| FAQ count band | 4 of 5 (5 FAQs) | 2 of 5 (3 FAQs) | 0 of 5 | 4 of 5 (6 FAQs) | 4–6 inline FAQs is the winning range |
+| Case studies inline | 5 of 5 (1 named) | 0 of 5 | 0 of 5 | 2 of 5 (1 generic) | Strongest competitor's signature; weakest don't do it at all |
+| Schema types | 0 of 20 emit FAQPage | — | — | — | Universal gap across all 4 competitors |
+| Internal-link density to siblings | 5 of 5 (10+) | 3 of 5 (5–8) | 1 of 5 (2–4) | 4 of 5 (6–10) | High density correlates with ranking |
+| Hero treatment | 5 of 5 (real tech photo) | 5 of 5 (stock) | 5 of 5 (illustration) | 5 of 5 (stock) | Only the strongest uses real photos consistently |
+
+**The winning structural blueprint:**
+
+One paragraph naming the structural pattern the data points to. Example: "Winning Fairfax-electrician pages systematically: (a) run 2,000–4,000 words, (b) embed a 4–6 tile differentiator section above the fold, (c) name 3–5+ specific neighborhoods, (d) include 4–6 inline FAQs, (e) embed at least 1 city-specific case study, (f) link densely to sibling city pages in-body. Schema markup is absent across all top-5-trafficked pages on all 4 Tier-1 competitors — a market-wide gap. Hero photography quality differentiates the strongest from the rest. The client's Core 30 build should match every (a)–(f) trait and add FAQPage + AggregateRating schema to take the universal gap."
+
+**Tier-1 vs Tier-2 cross-validation:**
+
+Do the traits in the table above also appear in the Tier-2 light-scan rows? If yes, the structural blueprint is market-wide. If a trait shows up only in Tier-1 (not in the Tier-2-only competitors), it may be specific to the strongest few — call that out. Example: "The 2,000+ word count band holds across both tiers; the 4–6 inline FAQs pattern is concentrated in the Tier-1 set and absent from most Tier-2-only competitors — Tier-1-specific, possibly idiosyncratic."
+
+**Per-trait source annotation:**
+
+Cite which top-5-pages set + which method (DataForSEO Labs / SimilarWeb / sitemap-heuristic) contributed each verdict, so future refreshes can re-derive cleanly.
 
 ---
 

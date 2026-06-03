@@ -73,11 +73,27 @@ Oliver's standing feedback memory).
 
 4. **Existing-research carry-overs.** Has a competitor-deep-research
    run for a relevant client already happened? (E.g. the EV Electric
-   competitor synthesis from 2026-05-23 covers AJ Long, Mr. Electric,
-   Absolute, Kolb for residential electrical in Fairfax County.)
-   Carrying those findings forward avoids re-research. If yes, name
-   the synthesis file so the skill reads it instead of re-fetching
-   the competitors.
+   enhanced competitor synthesis from 2026-06-03 covers Tier-1 deep
+   dives on AJ Long, Mr. Electric, Absolute, Kolb + Tier-2 light-scan
+   rows for 6 additional competitors + cross-competitor structural
+   pattern for residential electrical in Fairfax County.) Carrying
+   those findings forward avoids re-research. If yes, name the
+   synthesis file so the skill reads it instead of re-fetching the
+   competitors.
+
+   **Prefer the most recent enhanced synthesis** (produced via the
+   2026-06-03+ enhanced `competitor-deep-research` skill which
+   includes the Tier-2 light-scan table in §1.5 + per-page deep
+   audit data inside each Tier-1 brief + cross-competitor
+   structural pattern in §4.5). The enhanced shape feeds materially
+   more service-brief sections than the legacy Tier-1-only synthesis:
+   §2 (Top-10 SERP analysis), §5 (Schema patterns), §6 (Content
+   depth norms), §7 (FAQ patterns), §9 (Internal-linking
+   observations), §11 (Pricing visibility), §12 (Trust and
+   authority signal norms) all pull from the enhanced data when
+   available. If only a legacy Tier-1-only synthesis exists, the
+   service brief still works but Section §2 + §6 + §11 carry
+   wider gaps that the brief's methodology should name.
 
 5. **Output folder.** Default:
    `~/workspace/second-brain/05_shared-intelligence/research-briefs/services/`.
@@ -175,10 +191,39 @@ read that file first and capture the findings that apply at the
 service level (not the city level). Most of the top-10 SERP audit
 work, schema audit, and content-depth audit may already be done.
 
+**Enhanced-synthesis consumption map** (when the carried-forward
+synthesis was produced via the 2026-06-03+ enhanced
+`competitor-deep-research` skill):
+
+| Service brief section | Enhanced synthesis source |
+|---|---|
+| §2 Top-10 SERP analysis | §1.5 Tier-2 light-scan table — rebuild as service-specific Top-10 SERP table (re-fetch only for results not already in the Tier-2 set) |
+| §5 Schema patterns | §1.5 schema-types column + §4.5 schema-types row (universal-gap finding lands cleanly into the brief's recommendations) |
+| §6 Content depth norms | §4.5 word-count-band trait + per-Tier-1-brief Section 3.5 (per-page deep audit) — the median + 25/75 distribution is derivable from the Tier-1 audited-page rows |
+| §7 FAQ patterns | §1.5 FAQ-count column + §4.5 inline-FAQ-embedding trait + per-Tier-1-brief Section 3.5 |
+| §9 Internal-linking observations | §4.5 internal-link-density trait + per-Tier-1-brief Section 9 |
+| §11 Pricing visibility | §4.5 transparent-pricing trait |
+| §12 Trust and authority signals | §4.5 hero-treatment + named-neighborhood + permit-references traits |
+
+For each section, the service brief should cite the enhanced
+synthesis section it sourced from (e.g.,
+`[source: [[../../04_projects/clients/_active/ev-electric-services/admin-extracts/competitor-research/synthesis-2026-06-03-enhanced|enhanced synthesis]] §4.5 on 2026-06-03]`).
+
 ---
 
 ## Phase 2 — Top-10 SERP fetch
 
+**Default path (enhanced-synthesis carry-over):** if Phase 1 named
+an enhanced `competitor-deep-research` synthesis (with §1.5 Tier-2
+light-scan table), START by reading the §1.5 rows directly. The
+Tier-2 set is already the top-10-shape; the only fetch work
+remaining is verifying the rows are service-specific (a
+Tier-2 row captured at the client level is general; the service
+brief needs it scoped to the head-keyword SERP). Re-fetch only the
+rows that don't already cover the head-keyword (typically 2–4 of
+the 10).
+
+**Full-fetch path (no enhanced synthesis available):**
 Run `WebSearch` for the head keyword (e.g. `panel upgrade`,
 `electrical troubleshooting`, `ev charger installation`). Capture the
 top 10 organic results, excluding directories (Yelp, BBB, Angi,
@@ -188,12 +233,12 @@ For each result, use `mcp__workspace__web_fetch` to pull the page.
 Capture:
 
 - Domain, page title, URL pattern
-- Word count (estimate from the fetched markdown — use
-  `scripts/count_words.py` in the `competitor-deep-research` skill
-  for hard counts if precision matters)
+- Word count (use `scripts/count_words.py` in the
+  `competitor-deep-research` skill for hard counts; the
+  enhanced-skill workflow assumes hard counts, not estimates)
 - Whether JSON-LD schema is present (search for
-  `application/ld+json`)
-- Whether FAQs are present on-page
+  `application/ld+json`); list the `@type` values
+- Whether FAQs are present on-page; hard count
 - Whether pricing is visible
 
 Build the **Top-10 SERP table** (Section 2 of the template).

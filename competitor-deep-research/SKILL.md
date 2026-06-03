@@ -1,13 +1,16 @@
 ---
 name: competitor-deep-research
-description: Deep competitive intelligence research on a client's direct competitors, producing structured per-competitor briefs and a cross-competitor synthesis that feeds page-build and SEO strategy. Use this skill whenever the user asks to research competitors, do a "competitive analysis," "competitive deep dive," "competitor landscape," "competitive intelligence," or "competitor audit" for a specific client — and any time the user names 2 or more competitors and wants them profiled side-by-side. Also use when the user mentions wanting to feed competitor findings into a Core 30 / page-build / SEO foundation strategy, or when they ask "who else is ranking for [keyword]" and wants more than a list. The skill writes per-competitor markdown briefs and a synthesis file into the client's vault folder under admin-extracts/competitor-research/.
+version: 1.1
+description: Deep competitive intelligence research on a client's direct competitors, producing structured per-competitor briefs AND a Tier-2 light scan AND a cross-competitor synthesis (with cross-competitor structural pattern table) that feeds page-build and SEO strategy. Use this skill whenever the user asks to research competitors, do a "competitive analysis," "competitive deep dive," "competitor landscape," "competitive intelligence," or "competitor audit" for a specific client — and any time the user names 2 or more competitors and wants them profiled side-by-side. Also use when the user mentions wanting to feed competitor findings into a Core 30 / page-build / SEO foundation strategy, or when they ask "who else is ranking for [keyword]" and wants more than a list. The 2026-06-03 v1.1 enhancements (Tier-2 light scan + per-page deep audit + cross-page top-5-trafficked-pages pattern detection) are default-on; they produce the "stalker-level" depth downstream service-research-engine and Phase 3a scaffolders consume. The skill writes per-competitor markdown briefs and a synthesis file into the client's vault folder under admin-extracts/competitor-research/.
 ---
 
-# Competitor Deep Research
+# Competitor Deep Research (v1.1)
+
+> **v1.1 changelog (2026-06-03)** — Three default-on enhancements per `handoff-2026-05-26-competitor-deep-research-enhancements`. (1) Combined Tier-1 deep-dive (4–5 competitors) + Tier-2 light scan (top 10 competitors) in one invocation — no separate modes; the synthesis carries both. (2) Per-page deep audit (Step 8) — structured 15-column stats row per audited page on every Tier-1 brief, captured into brief-template §3.5. (3) Cross-page pattern detection (Step 9) — top-5-trafficked-pages structural fingerprint per Tier-1 competitor at ≥80% page-share threshold, captured into brief-template §7.5 and rolled up into synthesis §4.5 across competitors. Phase numbering grew from 4 → 6 (Phase 2 Tier-2 light scan inserted, Phase 5 folder hygiene + Phase 6 closing). DataForSEO + free-toolkit paths documented side-by-side per enhancement. Brief template + synthesis template files updated in lockstep. Worked example: `synthesis-2026-06-03-enhanced.md` in the EV Electric vault folder, demonstrating the enhancements applied to the 2026-05-23 evidence base at $0.00 paid-API cost via the free-toolkit fallback. Deliberate evolution per `feedback_check_folder_structure_before_writing` discipline — the 2026-05-23 worked example is preserved untouched; v1.1 extends rather than replaces. Self-applying-spec lessons in `05_shared-intelligence/lessons/lesson-competitor-deep-research-v1.1-enhancements-2026-06-03.md`.
 
 A reusable workflow for doing competitive intelligence on a client's direct competitors. Produces per-competitor briefs and a cross-competitor synthesis that grounds page-build and SEO strategy in real data, not assumptions.
 
-This skill was distilled from the 2026-05-23 EV Electric Services Fairfax County competitive research session. The full case study lives at `~/workspace/second-brain/04_projects/clients/_active/ev-electric-services/admin-extracts/competitor-research/` — refer to it when something in this skill is unclear; the synthesis file there shows what a finished output looks like.
+This skill was distilled from the 2026-05-23 EV Electric Services Fairfax County competitive research session. The full case study lives at `~/workspace/second-brain/04_projects/clients/_active/ev-electric-services/admin-extracts/competitor-research/` — refer to it when something in this skill is unclear; the synthesis file there shows what a finished output looks like. The 2026-06-03 enhanced synthesis at the same path shows what the v1.1 default-on output looks like.
 
 ---
 
@@ -38,7 +41,9 @@ Ask for these before starting. Don't guess — wrong inputs produce wrong briefs
 3. **Top competitors (3–5).** Either the operator names them, or there's an existing ranking source to pull from (BrightLocal scan, Ahrefs export, a prior audit). If the operator only knows 1–2, supplement by running a Google search for the target head-keyword and picking the rest from the top organic results.
 4. **Existing data the operator can hand over.** A BrightLocal scan, GBP audit, Ahrefs report, the client's own README — anything that grounds the research in numbers you don't have to re-derive.
 5. **Output folder.** Default to `<client-vault-path>/admin-extracts/competitor-research/` if the client lives in the Knowledge OS vault. The operator can override.
-6. **Time budget.** Useful to know up-front. Typical budget: 90 min for two primaries + 30 min each for secondaries + 30 min for synthesis = ~3 hours.
+6. **Time budget.** Useful to know up-front. Typical budget for the **full enhanced run** (Tier-1 deep dives + Tier-2 light scan + per-page audit + top-5-pages pattern): 3–4 hours per Tier-1 primary, 60–90 minutes per Tier-1 secondary, 10–15 minutes per Tier-2 row, plus 60 minutes for synthesis. For a typical 2-primary + 2-secondary + 6-Tier-2 run that lands roughly **12–16 hours** end-to-end. Single-chat runs cap there cleanly; bigger fan-outs decompose via the vault-orchestrator (one sub-chat per Tier-1 competitor, parallel substrate). Without the enhancements, the legacy 2-primary + 2-secondary + synthesis budget was ~3 hours; the enhanced run is roughly 4–5× that for materially more thorough output.
+
+7. **DataForSEO availability.** Confirm before starting. If the wrapper script (`~/workspace/second-brain-tier3/automation/scripts/dataforseo_query.py`) probes clean and the balance covers the spec'd queries (roughly $0.30–$0.50 for a full Tier-2 light scan + per-page audit using paid endpoints), use the **DataForSEO path** below. If the balance is short or operator wants to defer cost, use the **free-toolkit fallback** explicitly — every enhancement has both paths documented side-by-side. Don't silently mix; pick per-invocation and annotate the methodology section.
 
 If any input is missing, ask the operator before researching. Bad inputs waste research budget.
 
@@ -46,37 +51,109 @@ If any input is missing, ask the operator before researching. Bad inputs waste r
 
 ## High-level workflow
 
-The skill runs in four phases. Don't skip phases — each one feeds the next.
+The skill runs in five phases. Don't skip phases — each one feeds the next. **The Tier-2 light scan, per-page deep audit, and cross-page pattern detection are default-on as of the 2026-06-03 enhancements** — they are not optional modes. They produce the "stalker-level" depth the downstream service-research-engine and Phase 3a scaffolder consume.
 
-1. **Identify the competitor list** — confirm the primaries (operator-named or ranking-source-derived) and add 2–3 secondaries from the live Google search.
-2. **Research each competitor** — for each one, follow the per-competitor research sequence below and produce a brief at `<output-folder>/<competitor-slug>.md`.
-3. **Write the cross-competitor synthesis** — read all the briefs, extract patterns, and write the synthesis at `<output-folder>/synthesis-YYYY-MM-DD.md`.
-4. **Maintain folder hygiene** — write a `_README.md` for the new folder if one doesn't exist, and update the parent folder's `_README.md` to list the new child (per the vault stewardship principle that subfolder creation and README maintenance are one atomic action).
+1. **Identify the competitor list** — confirm the 4–5 Tier-1 competitors (operator-named primaries + secondaries from the live Google search) AND the broader Tier-2 set (top 10 organic + ranking-source competitors, including the Tier-1 set).
+2. **Tier-2 light scan** — for the 10 Tier-2 competitors (which include the Tier-1 set), produce a structured row of metrics per competitor. Fast; ~10–15 minutes per row.
+3. **Per-competitor Tier-1 research** — for each of the 4–5 Tier-1 competitors, follow the per-competitor research sequence below — including the new per-page deep audit (Step 8) and top-5-pages pattern detection (Step 9) — and produce a brief at `<output-folder>/<competitor-slug>.md`.
+4. **Write the cross-competitor synthesis** — read all the Tier-1 briefs + the Tier-2 light-scan rows, extract patterns at the SITE level AND the cross-competitor structural pattern at the PAGE level, and write the synthesis at `<output-folder>/synthesis-YYYY-MM-DD.md`.
+5. **Maintain folder hygiene** — write a `_README.md` for the new folder if one doesn't exist, and update the parent folder's `_README.md` to list the new child (per the vault stewardship principle that subfolder creation and README maintenance are one atomic action).
 
 Mark each phase as a task in the operator's task list so they can see progress.
+
+**Why the enhancements are default-on.** Oliver's 2026-05-26 direction: "I would want the competitor-deep-dive to do both tier 1 and tier 2, not have them as separate modes, I want all the data we can get at once" + "stalker like with all the details we can get so we know the actual stats of stuff and really understand their website." Tier-2 cross-validates that Tier-1 findings are representative across the broader competitive set rather than idiosyncratic to the 4–5 deepest competitors. Per-page audit makes the brief-template's §4.5 (AI-citation hardening checklist) verifiable at the scaffolder gate — every checkbox can be checked against real data, not assumptions. Top-5-pages pattern surfaces the WINNING STRUCTURE inside each competitor's site, which is what the Phase 3a scaffolder reproduces.
 
 ---
 
 ## Phase 1: Identify the competitor list
 
-Two sources of competitor names: the operator's prior data and a fresh Google search.
+Two sources of competitor names: the operator's prior data and a fresh Google search. After the 2026-06-03 enhancements, **two tiers** of competitors get identified up-front — the deep-dive Tier 1 (4–5 names) AND the broader Tier 2 (the rest of the top 10 + ranking-source competitors).
 
-**Prior-data source (preferred when available):** BrightLocal Local Search Grid reports, Ahrefs exports, prior audit notes. Pull the top-ranking competitors for the keywords the client cares about. If a BrightLocal report exists, the operator has done some of this work already — use it.
+**Prior-data source (preferred when available):** BrightLocal Local Search Grid reports, Ahrefs exports, prior audit notes. Pull the top-ranking competitors for the keywords the client cares about. If a BrightLocal report exists, the operator has done some of this work already — use it. The top-10 ranking-source competitors usually map cleanly to the Tier-2 set.
 
-**Live Google search:** Run `WebSearch` for the target head keyword (e.g., "electrician Fairfax VA"). Pick from the top 5 organic results, excluding directories (Yelp, BBB, Angi, Checkbook, Houzz, Thumbtack). The cross-source confirmation matters — competitors that appear in both BrightLocal AND organic Google are more strategically important than competitors that appear in only one.
+**Live Google search:** Run `WebSearch` for the target head keyword (e.g., "electrician Fairfax VA"). Pick from the top 10 organic results, excluding directories (Yelp, BBB, Angi, Checkbook, Houzz, Thumbtack, Yellow Pages, Nextdoor). The cross-source confirmation matters — competitors that appear in both BrightLocal AND organic Google are more strategically important than competitors that appear in only one.
 
-**Primary vs secondary classification:**
+**Tier 1 — full deep-dive briefs (4–5 competitors total):**
 
-- **Primary (full deep-dive brief):** The 2 highest-ranking competitors for the client's most important keyword, OR the operator's named-must-include competitors. Cap at 2.
-- **Secondary (lighter-touch brief):** 2–3 additional competitors that round out the picture — typically the next-ranking organic results plus any operator-flagged-but-not-must-have names. Cap at 3.
+- **Primaries (2):** The 2 highest-ranking competitors for the client's most important keyword, OR the operator's named-must-include competitors. These get the full 9-section brief + per-page deep audit (Step 8) + top-5-pages pattern (Step 9).
+- **Secondaries (2–3):** Additional competitors that round out the picture — typically the next-ranking organic results plus any operator-flagged-but-not-must-have names. Lighter-touch briefs (full 9 sections but fewer per-page audit rows, and top-5-pages pattern is optional).
 
-Total: 4–5 competitors. More than 5 dilutes the synthesis; fewer than 3 doesn't give enough cross-competitor patterns to surface.
+Tier 1 cap is 4–5 because each Tier-1 competitor consumes 3–4 hours with the per-page audit + top-5-pages pattern work. More than 5 crosses a natural single-chat ceiling. If broader Tier-1 coverage is genuinely needed, decompose via the vault-orchestrator (one sub-chat per Tier-1 competitor in parallel).
+
+**Tier 2 — light-scan rows (10 competitors total, INCLUDING the Tier-1 set):**
+
+The Tier-2 set is the top 10 competitors for the head keyword. The 4–5 Tier-1 names appear as Tier-2 rows too (the structured row is a strict subset of the deep brief; producing both costs nothing extra in research time, and the same row format keeps the synthesis table consistent). The remaining 5–6 Tier-2-only competitors come from positions 5–10 in the ranking-source plus any organic Google top-10 not already named.
+
+Each Tier-2 row is the structured metric set spec'd in Phase 2 below (~10–15 minutes per row). The Tier-2 light scan validates that the Tier-1 deep-dive findings are representative — patterns the deep dives surfaced should also appear in the broader scan, and patterns that surface only in deep dives but not in the light scan are flagged in the synthesis as Tier-1-specific (potentially idiosyncratic) rather than market-wide.
+
+If the head-keyword SERP has fewer than 10 real-business results (e.g., directories dominate the top 10), expand the search to adjacent variants (head keyword + closest 1–2 long-tail variants) until 10 real-business results are identified. The methodology section names the expansion if it happened.
 
 ---
 
-## Phase 2: Per-competitor research sequence
+## Phase 2: Tier-2 light scan (run before per-competitor Tier-1 research)
 
-For each competitor, run the same sequence. Mechanizing the sequence is what makes the briefs comparable.
+For each of the 10 Tier-2 competitors, produce a structured row. Don't write a brief — the row IS the deliverable. Rows go into the synthesis as Section 1.5 (Tier-2 light-scan table) once all are collected.
+
+Run the light scan BEFORE Tier-1 deep dives. Doing the broader-but-shallower pass first surfaces market patterns that sharpen the Tier-1 questions ("which Tier-1 competitor matches the market median vs which is the outlier?"). It also catches Tier-2 competitors who turn out to deserve Tier-1 promotion (e.g., a previously-unscanned operator surfaces as the #1 organic ranker with content depth nobody else has).
+
+### Tier-2 row columns (one row per competitor)
+
+Capture these 10 columns. Each cell cites the source inline.
+
+1. **Domain** — canonical root domain.
+2. **Page count** — total URLs in `sitemap.xml`. Bash: `curl -s <domain>/sitemap.xml | grep -c "<loc>"`. Fall back to the parent sitemap index if the top-level lists sub-sitemaps.
+3. **Tech stack fingerprint** — CMS (WordPress / static SSG / enterprise CMS / Wix/Squarespace), hosting (HTTP `server:` header), schema present/absent (grep the homepage HTML for `application/ld+json`). One short line per cell, e.g. `WordPress + WP Engine; schema absent`.
+4. **Top 5 keywords ranked for** — populated from DataForSEO Labs (preferred) or free Ahrefs Site Explorer / free Ahrefs Backlink Checker. List the top 5 by traffic; include the rank if available.
+5. **Total backlink count** — from BrightLocal (if a scan exists), free Ahrefs Backlink Checker, or DataForSEO Backlinks Summary. Cite the source + date.
+6. **Domain Authority** — Moz DA (or Ahrefs DR / SEMrush AS; specify which). Free Moz Link Explorer covers ~10 free queries/month; DataForSEO does not expose Moz DA directly.
+7. **Average rank for the head keyword** — from the ranking-source PDF (BrightLocal Local Search Grid) or DataForSEO SERP `rank_absolute`. Cite source + date.
+8. **Word count of one sampled service page** — pick the service page that matches the client's headline service (e.g., panel upgrade for an electrician). Use the existing `scripts/count_words.py` for a hard count; do not estimate. Cite the URL fetched.
+9. **FAQ count on the sampled page** — hard count of question-answer pairs in the page body. Often visible as `<details>` / `<summary>` or as accordion section headings ending in `?`.
+10. **Schema types on the sampled page** — list the `@type` values found in `application/ld+json` blocks (`LocalBusiness`, `Service`, `FAQPage`, `AggregateRating`, `BreadcrumbList`, etc.). Note "none visible in source" explicitly when absent.
+
+### Method (DataForSEO path)
+
+For the keyword + backlink + rank columns, use the wrapper at `~/workspace/second-brain-tier3/automation/scripts/dataforseo_query.py`. Endpoint cheat-sheet:
+
+| Column | Endpoint | Typical cost |
+|---|---|---|
+| Top 5 keywords ranked for | `dataforseo_labs/google/ranked_keywords/live` (POST) | $0.005–$0.05 per target |
+| Total backlink count | `backlinks/summary/live` (POST) | $0.0005–$0.005 per target |
+| Average rank for head keyword | `serp/google/organic/live/regular` (POST) | $0.0006 per keyword |
+| Page count (cross-check) | `dataforseo_labs/google/relevant_pages/live` (POST) | $0.005 per target |
+
+Run each as a batched call where possible (multiple targets per request). Budget for 10 competitors × the 4 paid endpoints lands around $0.30–$0.50. The wrapper reports `tasks[*].cost` on stderr so the methodology section can record actuals.
+
+### Method (free-toolkit fallback)
+
+When DataForSEO is unavailable or the operator wants to defer cost:
+
+- **Top 5 keywords ranked for** — use free Ahrefs Site Explorer ("top organic keywords" tab; shows top 5 free), or free Ubersuggest (top 5 free per IP per day). For ranking-source-PDF sources (e.g., BrightLocal), cite the keywords the scan tracked rather than re-deriving.
+- **Total backlink count** — use free Ahrefs Backlink Checker (`ahrefs.com/backlink-checker`; shows count + top 100 links per domain per day per IP). Cite the date + source.
+- **Domain Authority** — use free Moz Link Explorer (10 queries/month free). Or accept the ranking-source value if BrightLocal/Ahrefs scan exists.
+- **Average rank for head keyword** — accept the ranking-source PDF value. If none exists, run a manual Google search for the head keyword from an incognito browser in the target geography and record the position.
+- **Word count + FAQ count + schema types** — these are all derivable from `mcp__workspace__web_fetch` on the sampled page + `scripts/count_words.py`. No tool dependency.
+
+Annotate each row with the source path actually used. The synthesis methodology section names which path the run used.
+
+### When to escalate a Tier-2 row to Tier-1
+
+If a Tier-2 row reveals:
+
+- A competitor with 3× the page count of any Tier-1 primary AND ranking position better than 5
+- A competitor with content-depth signals (word count 2,500+, FAQ count 5+, schema present) AND no current Tier-1 brief
+
+…flag to the operator: "Tier-2 row N looks Tier-1-worthy. Promote and run a full deep dive?" The operator decides; don't auto-promote.
+
+### SPA fallback
+
+Same as Step 7 in Phase 3 below. If `web_fetch` returns empty, the site is client-rendered. Escalate to `mcp__Claude_in_Chrome__navigate` + `mcp__Claude_in_Chrome__get_page_text` when available; otherwise mark the row `[SPA — needs browser-rendered fetch]` and proceed. Don't fake values.
+
+---
+
+## Phase 3: Per-competitor Tier-1 research sequence
+
+For each Tier-1 competitor, run the same sequence. Mechanizing the sequence is what makes the briefs comparable. Steps 1–7 are the legacy procedure; Steps 8 and 9 are the 2026-06-03 enhancements (per-page deep audit + top-5-pages pattern detection).
 
 ### Step 1: Fetch the homepage
 
@@ -135,47 +212,145 @@ Briefs typically run 1,500–3,000 words for primaries and 800–1,500 words for
 
 If `web_fetch` returns empty content, the site is likely a client-rendered single-page app (JavaScript renders the content after the page loads). Don't keep retrying — escalate to a browser-rendered tool. In Cowork, that's `mcp__Claude_in_Chrome__navigate` + `mcp__Claude_in_Chrome__get_page_text`. If browser tools aren't available in the current session, flag the competitor as "blocked for re-audit" in the synthesis's "blocked questions" section and move on. Don't fake the analysis.
 
+### Step 8: Per-page deep audit (2026-06-03 enhancement)
+
+This is the "stalker-level" detail layer Oliver asked for. For each audited page on every Tier-1 competitor, capture a structured stats row. Don't substitute prose impressions — the table makes patterns visible at a glance and feeds the brief-template's §4.5 AI-citation hardening checklist directly.
+
+**Pages to audit per Tier-1 primary (5 minimum):**
+
+1. Homepage
+2. Service page matching the client's headline service
+3. City page matching the client's primary geography
+4. A second service page (the client's #2 priority service)
+5. A second city page (a near-primary geography)
+
+For Tier-1 secondaries, 2–3 pages is fine (homepage + the service or city page).
+
+**Columns to capture per page:**
+
+| Column | What it is | How to capture |
+|---|---|---|
+| URL | The page audited | Direct |
+| Page type | homepage / service / city / service×city / FAQ / blog / hub | Visual classification |
+| Word count | Hard count of body text (excluding nav/footer/sidebar) | `scripts/count_words.py` against fetched HTML |
+| Sentence count | Hard count of sentences in the body | Same script; `--mode sentences` flag |
+| Paragraph count | Hard count of `<p>` tags inside main content | Same script; `--mode paragraphs` flag |
+| H1 / H2 / H3 counts | Counts of each heading level | grep for `<h1`, `<h2`, `<h3` in the fetched HTML |
+| Image count | Count of `<img>` tags in the body | grep `<img` |
+| Alt-text quality | Proportion of `<img>` tags with descriptive alt vs empty/generic | grep `alt=""` for empty; manual sample of remaining alts |
+| Schema types emitted | List of `@type` values inside `application/ld+json` | grep + JSON parse |
+| FAQ count | Hard count of Q&A pairs in body | Visual count (often `<details>` / `<summary>` or accordion headings ending in `?`) |
+| Internal-link count (in-body) | Count of `<a href>` inside main content, excluding nav/footer | Bash: extract main content block + grep |
+| External-link count | Count of `<a href>` with hostnames different from the page | Same + filter |
+| Page load time | Total time to load | PageSpeed Insights API or Lighthouse |
+| LCP / INP / CLS | Core Web Vitals — Largest Contentful Paint (how long until the biggest visible element renders), Interaction to Next Paint (input responsiveness), Cumulative Layout Shift (how much the page jumps as it loads) | PageSpeed Insights API field data preferred, lab data fallback |
+| Pricing published | Yes / No — does the page display real numbers? | Visual inspection |
+
+**Method (DataForSEO path):**
+
+For Core Web Vitals + page-load metrics, use the DataForSEO On-Page API:
+
+- `on_page/pagespeed/google/live` — runs Google PageSpeed Insights against the URL. Returns LCP / INP / CLS / Speed Index + lab and field data when available. Cost ~$0.005 per URL.
+
+For schema validation:
+
+- `on_page/instant_pages` — fetches the page with browser rendering (handles SPAs) and returns parsed structured data among the response payload. Cost ~$0.005 per URL.
+
+For 5 pages × 4–5 Tier-1 competitors that's roughly $0.10–$0.15 per competitor on the on-page audit alone.
+
+**Method (free-toolkit fallback):**
+
+- **Word / sentence / paragraph counts** — `scripts/count_words.py` (extend as needed; pure-Python, no API).
+- **CWV + page load** — Google PageSpeed Insights free web UI (`pagespeed.web.dev`). Run each URL manually; capture LCP / INP / CLS / Speed Index from the report. Field data when available, lab data otherwise. Rate-limited but free.
+- **Schema validation** — Google Rich Results Test (`search.google.com/test/rich-results`). Run each URL; capture which schema types pass validation. Definitive verdict per URL.
+- **Heading / image / link counts** — grep against the fetched HTML.
+
+Annotate each page row in the brief with the method actually used.
+
+**Cross-page patterns become visible in the table.** Once 5 pages × 5 competitors = 25 rows exist, scan the columns vertically: do all 5 of AJ Long's audited city pages share a 3,500–4,000 word count? A 6-tile why-choose-us section? 5 named neighborhoods? That observation IS the seed for Step 9.
+
+### Step 9: Top-5-pages cross-page pattern detection (2026-06-03 enhancement)
+
+For each Tier-1 primary (Tier-1 secondaries: optional), identify the 5–10 highest-trafficked pages on the competitor's site and characterize their shared structural traits. This surfaces the WINNING STRUCTURE inside each competitor's site — not "what they do on the panel page" but "what their BEST pages systematically do that their worse pages don't."
+
+**Method (DataForSEO path):**
+
+- `dataforseo_labs/google/relevant_pages/live` — returns the top-trafficked pages on a domain ranked by organic traffic estimate. Cost ~$0.005 per target.
+- Take the top 5–10 results. For each, fetch with `mcp__workspace__web_fetch` and apply the Step 8 audit columns.
+- Look for traits present in 4+ of the 5 (or 5+ of the 10) audited pages — these are the structural patterns.
+
+**Method (free-toolkit fallback):**
+
+Three sources, pick the best available:
+
+- **SimilarWeb free** (`similarweb.com/website/<domain>`) — surfaces the top-trafficked pages on a domain. Free tier shows top 5 pages with ~3-month-stale traffic data. Sufficient for pattern detection.
+- **Sitemap + nav-heuristic** — read `sitemap.xml` and identify the page-types-most-linked-from-the-homepage-or-mega-nav as the proxy for "most-trafficked." Less precise than SimilarWeb but free and always available. For a 274-URL sitemap (AJ Long), the top-cluster pages are typically the city × headline-service combos.
+- **Operator-named** — when the operator already knows the competitor's high-trafficked URLs (e.g., from a prior Ahrefs Pro export), use that list directly.
+
+**Pattern detection rule:**
+
+A structural trait counts as a pattern if it's present in **4 of 5** (or **5 of 10**, or proportional ≥80%) of the audited top-trafficked pages. Lower thresholds inflate noise. Higher thresholds miss real patterns. Document the trait + the page-share count + a one-line "what the pattern looks like in practice" in the brief's Section 7.5 (Top-5-pages pattern).
+
+Examples of the kinds of traits that count:
+
+- Word count band ("4 of 5 are 3,500–4,000 words")
+- Structural section presence ("5 of 5 have a 6-tile why-choose-us section")
+- Named-content density ("5 of 5 name 5+ specific neighborhoods")
+- FAQ count ("4 of 5 have exactly 5 FAQs")
+- Case-study placement ("5 of 5 embed 1 case study mid-page")
+- Schema types ("5 of 5 emit LocalBusiness + Service; 0 of 5 emit FAQPage")
+- Internal-link density to specific page-types ("5 of 5 link to ≥10 sibling city pages in-body")
+- Image-treatment patterns ("4 of 5 use a hero photo of a real technician on a job site")
+
+**Cross-validation with the per-page audit.** The Step 8 audit captured 5+ pages per competitor; some of those overlap the top-5 detected here. When a Step 8 audited page IS one of the top-5 trafficked pages, cite the row directly rather than re-fetching. Reduces fetch budget and keeps the data lineage clean.
+
+The synthesis (Phase 4 below) rolls Step 9's per-competitor patterns into a cross-competitor "what does winning content in THIS niche look like at the structural level" — see Section 4.5 in the synthesis template.
+
 ---
 
-## Phase 3: Cross-competitor synthesis
+## Phase 4: Cross-competitor synthesis
 
-After all briefs are written, write the synthesis at `<output-folder>/synthesis-YYYY-MM-DD.md`. Use the template at `references/synthesis-template.md`.
+After all Tier-1 briefs are written AND the Tier-2 light-scan rows are collected, write the synthesis at `<output-folder>/synthesis-YYYY-MM-DD.md`. Use the template at `references/synthesis-template.md`.
 
-The synthesis is where the strategic value lands. Per-competitor briefs are inputs; the synthesis is the deliverable that operators will refer to when planning the client's Core 30 build or SEO foundation. Don't shortcut it.
+The synthesis is where the strategic value lands. Per-competitor briefs and Tier-2 rows are inputs; the synthesis is the deliverable that operators will refer to when planning the client's Core 30 build or SEO foundation. Don't shortcut it.
 
-Required sections:
+Required sections (in order):
 
-1. **Quick-reference comparison table** — one row per competitor, with reviews, rating, links, authority, tech stack, page count, and top-keyword rank. The table is what operators screenshot and paste into client decks. Make it scannable.
+1. **Quick-reference comparison table** — one row per Tier-1 competitor, with reviews, rating, links, authority, tech stack, page count, and top-keyword rank. The table is what operators screenshot and paste into client decks. Make it scannable.
 
-2. **The headline finding** — the single most important pattern in the data. In the EV Electric case it was "content depth beats domain authority in this niche" (Mr. Electric's 53/100 authority losing to AJ Long's 11/100). Every market will have its own headline finding; surface it explicitly.
+1.5. **Tier-2 light-scan table** *(2026-06-03 enhancement)* — one row per Tier-2 competitor (the 10 rows from Phase 2), using the 10-column structured format. Tier-1 competitors appear here too with their full data; Tier-2-only competitors get the same row shape. Sort by average rank for the head keyword. This is the cross-validation layer for the Tier-1 findings: patterns that surface in both tiers are market-wide; patterns that surface only in Tier-1 are flagged in the next section as Tier-1-specific (potentially idiosyncratic).
 
-3. **Common patterns** — what ALL the competitors do. These are table stakes — the client can't differentiate by doing them, only lose by skipping them.
+2. **The headline finding** — the single most important pattern in the data. In the EV Electric case it was "content depth beats domain authority in this niche" (Mr. Electric's 53/100 authority losing to AJ Long's 11/100). Every market will have its own headline finding; surface it explicitly. Triangulate with the Tier-2 table: does the headline finding hold across the broader 10-competitor set?
 
-4. **Differentiation opportunities** — what NOBODY does well. These are the gaps the client can exploit. Make each one concretely actionable.
+3. **Common patterns** — what ALL the competitors do (Tier 1 + Tier 2). These are table stakes — the client can't differentiate by doing them, only lose by skipping them. Distinguish "all Tier-1" from "all Tier-1 + Tier-2" when the difference matters.
+
+4. **Differentiation opportunities** — what NOBODY does well across BOTH tiers. These are the gaps the client can exploit. Make each one concretely actionable.
+
+4.5. **Cross-competitor structural pattern** *(2026-06-03 enhancement)* — roll up the per-competitor top-5-pages findings (from each Tier-1 brief's Section 7.5) into one cross-competitor view. Answers: "what does winning content in THIS niche look like at the page structural level?" Format: a table of structural traits × cross-competitor presence (e.g., "4,000-word city pages: 3 of 4 Tier-1 / 5 of 6 top-trafficked across competitors"). Surfaces the structural blueprint the Phase 3a scaffolder should reproduce.
 
 5. **Keyword targets ranked by competitiveness** — four tiers (hard, moderate, easy, defensive). Each tier names specific keywords and explains why they're at that difficulty level.
 
-6. **Tech stack patterns: the "winning stack"** — what the data shows about which infrastructure choices correlate with ranking outcomes.
+6. **Tech stack patterns: the "winning stack"** — what the data shows about which infrastructure choices correlate with ranking outcomes. Validate against the Tier-2 table (does the "winning stack" stay winning when the lens widens?).
 
-7. **Top 10 recommendations for the client's page build** — ordered by impact-to-effort ratio. Each recommendation should map to a specific finding from the briefs.
+7. **Top 10 recommendations for the client's page build** — ordered by impact-to-effort ratio. Each recommendation should map to a specific finding from the briefs OR the cross-competitor structural pattern.
 
 8. **Top 3 risks if the client doesn't act** — what happens if they delay.
 
 9. **Blocked questions / follow-up research** — anything that couldn't be confirmed in this round. Honesty about gaps matters more than appearing comprehensive.
 
-10. **Methodology** — append the methodology section (described in `references/synthesis-template.md`) so the work can be reproduced or extended by future researchers.
+10. **Methodology** — append the methodology section (described in `references/synthesis-template.md`) so the work can be reproduced or extended by future researchers. Specify which path the run used (DataForSEO / free-toolkit / mixed) per enhancement.
 
 ---
 
-## Phase 4: Folder hygiene
+## Phase 5: Folder hygiene
 
 If the output folder is new, write a `_README.md` for it (template at `references/folder-readme-template.md`). If the parent folder has its own `_README.md` that lists subfolders, update it to include the new child. This is per the Knowledge OS vault stewardship principle that subfolder creation and README maintenance are one atomic action.
 
 ---
 
-## Phase 5 — Closing step — Auto-invoke output-quality-loop
+## Phase 6 — Closing step — Auto-invoke output-quality-loop
 
-After Phases 1-4 complete (per-competitor briefs written, cross-competitor synthesis landed, folder `_README.md` shipped or updated), emit the standard auto-invoke block per `~/workspace/skills/output-quality-loop/references/auto-invoke-convention.md` and `~/workspace/second-brain/_meta/conventions.md` § "Output quality". This is the closing step every artifact-producing skill emits before declaring the chat done. Convention shipped Phase 5 of the output-quality-loop project (2026-05-28).
+After Phases 1-5 complete (Tier-2 light-scan rows collected, per-competitor Tier-1 briefs written, cross-competitor synthesis landed including the Tier-2 table + cross-competitor structural pattern, folder `_README.md` shipped or updated), emit the standard auto-invoke block per `~/workspace/skills/output-quality-loop/references/auto-invoke-convention.md` and `~/workspace/second-brain/_meta/conventions.md` § "Output quality". This is the closing step every artifact-producing skill emits before declaring the chat done. Convention shipped Phase 5 of the output-quality-loop project (2026-05-28).
 
 **Artifact list for this skill.** Always include: the per-competitor briefs written this run + the cross-competitor synthesis. In design-fingerprint mode also include the design dossier file written into `second-brain/03_domains/website-design/inspiration/high-performing/<reference>/`. The folder `_README.md` is NOT included in the evaluation (it's hygiene metadata, not a content artifact the spec-routing table covers).
 
