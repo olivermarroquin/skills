@@ -327,6 +327,21 @@ If a future need arises to evaluate dispatch-plan COMPLETENESS (did Mode 6 dispa
 
 - v1.2 addition driven by `vault-orchestrator` v1.2 Mode 6 EXECUTE, shipped 2026-06-03. Mirrors the v1.1 + Mode 5 additive pattern (new artifact type → new routing entry), with the explicit `quality-loop-skip` marker.
 
+### Orchestrator gate decision (process-level)
+
+**Disjoint-scope pointer — `gate-peer-reviewer` skill.** This is NOT an output-quality-loop entry. Orchestrator gate decisions (kickoff satisfaction / calibration consistency / domain plausibility / cross-gate + cross-wave coherence / carry-forward management / Knowledge Capture Audit verification) are reviewed by the `gate-peer-reviewer` skill at `skills://gate-peer-reviewer/SKILL.md`, NOT by output-quality-loop. The two skills compose at disjoint scopes:
+
+| Skill | Scope | Fires when | Reviews |
+|---|---|---|---|
+| `output-quality-loop` Modes 1-5 | Artifact-level | After artifact production | Does this brief / page / data file meet spec? |
+| `gate-peer-reviewer` v1.0 | Process-level | After orchestrator gate emission, before operator review | Does this dispatch plan / kickoff prompt / wave-close protocol make sense before any artifacts get produced? |
+
+**Scope disambiguation.** Together they remove most of the operator's spot-check burden while keeping the operator authoritative on genuinely ambiguous catches. Process-level catches upstream (gate-peer-reviewer); artifact-level catches downstream (output-quality-loop). They never compete for the same review.
+
+`quality-loop-skip: true` for orchestrator gate decisions — they route through `gate-peer-reviewer` per its SKILL.md § Composition with output-quality-loop section.
+
+- v1.0 addition driven by `gate-peer-reviewer` skill v1 ship, 2026-06-03.
+
 ## Operator overrides
 
 When the operator runs `quality-check <artifact> against <spec1> <spec2>`, the routing table is bypassed and the operator-named specs are used. Surface the override in the evaluation report so the audit trail names what was actually loaded:
