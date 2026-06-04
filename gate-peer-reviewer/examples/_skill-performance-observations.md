@@ -24,9 +24,9 @@ The actionable rollup. Over N gates this surfaces which checks are weakest → t
 
 | Metric | Count | Notes |
 |---|---|---|
-| Gates observed (skill-fired) | 2 | Gate 001 (wave-1 dispatch) + Gate 002 (wave-2 dispatch), 2026-06-04 |
+| Gates observed (skill-fired) | 3 | Gate 001 (wave-1) + Gate 002 (wave-2) + Gate 003 (wave-3), 2026-06-04 |
 | Uncovered-gate manual reviews logged | 3 | Phase 0 + PROVISION (Mode 3) + cross-cutting pass-collision — see Coverage-gap observations |
-| Skill verdicts that needed meta-correction before operator saw them | 2 of 2 | Gate 001 (full reversal — wave-breaking command); Gate 002 (lighter — caught main issue, missed page 12 + scope). **Trend improving.** |
+| Skill verdicts that needed meta-correction before operator saw them | 2 of 3 | Gate 001 (full reversal); Gate 002 (caught main issue, missed page 12); Gate 003 (NONE — clean + correct). **Trend: miss → undercount → clean.** |
 | Total misses (external caught, skill didn't) | 2 | Gate 001 (Phase 1B command errors); Gate 002 (omitted page 12 from FILL-affected set + underframed 31-field scope) |
 | Total false positives (skill flagged, not real) | 0 | — |
 | Calibration deltas flagged | 0 | cost / confidence / verdict-severity off vs actual |
@@ -157,6 +157,26 @@ The skill has **not yet fired in production** — the EV pages 06-12 run reached
 - **Recurring?** disk-verify-completeness (trace ALL consumers/fields, not the subset you expect) — now at Gate 002 too. Same family as Issue #13. Reinforces [T2-5] B1 (input/consumption-chain verification must enumerate ALL consumers).
 - **Concrete target:** `references/check-spec.md` Check 1 input-existence sub-check must also **enumerate every page/consumer of each shared input** (light-fixture.json → pages 06 AND 12), not just the first.
 - **Verdict-of-verdicts:** YES, but lighter than Gate 001 — skill's verdict was directionally right; meta-correction added page 12 + scope reframe rather than reversing the verdict.
+
+## Gate 003 — ev-electric-services wave-3-internal-link-publish-prep Mode 6 EXECUTE dispatch (2026-06-04)
+
+**Substrate:** claude-code-task
+**Source:** skill JSON inline at the Wave 3 dispatch gate (3rd distinct gate fire)
+
+### Skill output (autonomous)
+- **Verdict:** APPROVE (no catches). Light single-agent link-wiring wave; correctly carried forward the Issue #14 `{...}`-token residual check; noted page-10 fix verified.
+
+### Meta-reviewer independent pass
+- **Verdict:** APPROVE (agree). Disk-verified: page-10 `{city_name}` fix landed (0 tokens); all 5 cross-link targets (pages 01-05) exist on disk with the exact slugs the plan references. Plan is well-scoped, no FILL authoring, no external writes.
+
+### Delta
+- **NO MISS.** First gate where the skill approved clean and was correct. **Enhancement note (not a skill miss):** the dead-link audit verifies 01-05 internal targets match the build-order (disk), not that they resolve on the LIVE evelectric.pro site — a published-URL mismatch would dead-link. Low risk (01-05 published 2026-05-23/25, slugs match), but the audit should HTTP-verify live internal targets, not just build-order match. Surfaced as operator note, not a correction.
+- **AGREEMENT:** clean plan, clean verdict.
+
+### Improvement signal
+- **Recurring?** none new.
+- **Trend:** Gate 001 (full reversal) → Gate 002 (caught main issue, undercounted) → Gate 003 (clean + correct). Maturation curve bending toward trustworthy. Caveat: Gate 003 was a structurally simple wave (link-wiring); the harder test is whether the skill stays clean on a complex wave once [T2-5] B1 ships.
+- **Verdict-of-verdicts:** NO meta-correction needed (first time).
 
 ---
 
