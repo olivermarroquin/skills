@@ -147,7 +147,7 @@ Vault-orchestrator v1.3 adds a peer-reviewer dispatch slot at Mode 6 EXECUTE Ste
 | Conceptual gate | Actual orchestrator gate | Integration status |
 |---|---|---|
 | Gate 1 RESUME | Mode 5 RESUME Step 11 confirmation | **v1.1 (deferred)** — separate mode integration |
-| Gate 2 PROVISION | Mode 3 PROVISION Step 8 single review gate | **v1.1 (deferred)** — separate mode integration |
+| Gate 2 PROVISION | Mode 3 PROVISION Step 9 single review gate | **v1.1 (deferred)** — separate mode integration |
 | Gates 3 + 4 (combined: dispatch plan + dispatch prompts) | Mode 6 EXECUTE Step 6/7 single review gate | **v1.0 (SHIPS HERE)** — single Mode 6 hook |
 | Gate 5 wave-close | Mode 6 EXECUTE Step 10 wave-close | **v1.1 (deferred)** — auto-closes in v1.2; integration when operator-attended wave-close lands |
 | Step 9 conditional sub-agent gates | Routed via `operator-gate-routing` | **v1.1 (deferred)** — separate routing channel |

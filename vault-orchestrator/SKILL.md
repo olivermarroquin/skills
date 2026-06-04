@@ -3,11 +3,13 @@ name: vault-orchestrator
 description: Five-mode orchestrator skill that sits above `multi-chat-coordination` and `master-tracker-aggregator`. Reads the entire vault state — master tracker (including the aggregator's generated rollup section), per-project `_chat-tracker.md` + `_chat-status.md` digests, hot decisions, scheduled tasks, `03_domains/` knowledge surfaces, recently-closed chats, execution-log activity, project state files, and the inter-chat event log — and produces operator-facing decision support plus (in Mode 3) drafted handoffs + a substrate-agnostic spawn queue plus (in Mode 6) dispatched sub-agents that produce per-artifact outputs under orchestrator coordination. **Mode 1 (SURVEY):** plain-language state-of-the-vault report with nine ordered sections (in-flight / ready / queued / open decisions / scheduled / recent wins / domain signals / stale signals / cross-project signals). **Mode 2 (NEXT-MOVES):** composes with multi-chat-coordination's NEXT-MOVE ranking, then layers session-budget totals (neutral, no editorializing), parallel-work detection (disjoint file sets), serial-blocked detection (high-leverage unblockers), per-candidate substrate recommendation (Claude Code / Cowork / either) per the working-surfaces convention, decision-research convention on ranking ties or priority conflicts, and a recommended session plan capped at 8 hours. **Mode 3 (PROVISION):** composes with multi-chat-coordination's DECOMPOSE to split a project goal into N drafted handoffs, runs decision-research at every meaningful decomposition decision, tags each drafted handoff with a `preferred-substrate:` field, scans drafted + in-flight + queued handoffs for shared-file conflicts (edit-zone detection), appends substrate-agnostic copy-paste-ready rows to `_meta/handoffs/_spawn-queue.md`, registers the new project at the appropriate tracker tier, integrates the chat-resilience checkpoint reminder into long-running handoffs, ties the operator-fatigue heuristic to queue totals (warns at >10h queued), and produces a plain-language operator summary. **Mode 5 (RESUME):** project-scoped mid-project visibility — reads a named project's state file, execution logs newest-first, per-project chat tracker + digest, the event log delta since the state file's `updated_at`, the master tracker rows naming this project, and the handoff files whose `client:` field matches; produces a six-section plain-language report (project state summary + available next-wave handoffs + cross-project unblockers + decomposition diagram text + stale-state reconciliations + what-I-read audit trail), surfaces every stale-state reconciliation Mode 5 applied (state-file-says-X-but-event-log-says-Y) with operator confirmation prompts, and chains into Mode 3 PROVISION when the operator wants the ready-waves drafted into handoffs. **Mode 6 (EXECUTE):** multi-agent control plane — takes a specific next-wave handoff (Mode-3-PROVISION-drafted or operator-drafted) + dispatches narrowly-scoped per-artifact sub-agents under orchestrator coordination, with substrate-adaptive dispatch (true parallel on Claude Code Task tool; sequential one-shot on Cowork Agent tool; push-driven on future Hermes-harness), inter-agent coordination via the project state file's per-key write isolation, operator-gate routing via a per-project `_pending-operator-decisions.md` file, and parallel-safe coordination via reuse of Phase 4's edit-zone conflict detection over the sub-agent set. Closes the EXECUTION side of v1.1 known-gap-1; with Mode 5 + Mode 6 shipped the v1.2 trio (RESUME → PROVISION → EXECUTE) closes known-gap-1 end-to-end. All five modes auto-invoke `output-quality-loop` on their artifacts EXCEPT Mode 6 (per lesson D-05, the per-sub-agent four-substep loops cover quality at the artifact level; an aggregated wave-close roll-up substitutes). Modes 1, 2, and 5 are read-only on vault content; Mode 3 writes drafted handoffs + queue rows + tracker rows + new project subfolders only after operator approval at a single review gate; Mode 6 writes the project state file (via sub-agents' per-key writes), the gate file, and the dispatch log only after operator approval of the dispatch plan at a single review gate. Phase 3 + Phase 4 + v1.2 Phase 1 + v1.2 Phase 2 of the vault-orchestrator project (2026-06-01 + 2026-06-02 + 2026-06-03). Trigger phrases include "run vault-orchestrator," "survey the vault," "state of the vault," "what's the state of play," "give me the vault rollup," "what should I work on next," "what should I spawn next," "rank my next moves," "next-moves recommendation," "session plan for tonight," "give me the spawnable list," "what's the highest-leverage move right now," "provision <goal>," "draft handoffs for <goal>," "decompose this project into chats," "set up a spawn queue for <goal>," "scaffold this initiative," "resume <project>," "where are we on <project>," "what's next for <project>," "show wave status for <project>," "decompose what's left for <project>," "execute wave-<id> for <project>," "dispatch sub-agents for <wave>," "run wave-<id> through the orchestrator," "fire the next wave for <project>."
 ---
 
-# Vault Orchestrator (v1.3.1)
+# Vault Orchestrator (v1.4)
+
+> **v1.4 changelog (2026-06-04)** — Added mandatory disk-verify step to Mode 3 PROVISION (new Step 3, between DECOMPOSE composition and decision-research; all subsequent PROVISION steps renumbered +1, now 12 steps total). PROVISION now `ls`/greps every input artifact each wave consumes before emitting a gap analysis — the "exists vs not found" set is built from disk only, never from the model's assumption. Full consumption chain traced (briefs + data files + scripts + templates), not one layer. Missing inputs default to inserting an upstream authoring wave; hard-reject only when the input genuinely can't be produced in-pipeline. Disk-verified asset-inventory table emitted per wave in the Step 9 review-gate proposal. Producer-side enforcement of `pattern-disk-verify-integration-target-before-drafting`. **Why:** EV pages 06-12 PROVISION (first production run) claimed a non-existent troubleshooting brief existed AND missed McLean/Oakton city data files — both would have broken Wave 2; caught only by manual peer-review. See `execution-log-2026-06-03-core-30-pages-06-12-dataforseo-run.md` Issue #7. Cross-references updated: PROVISION flags, peer-reviewer gate-type registry, calibration watches. Event-log row appended for the version bump.
 
 > **v1.3.1 changelog (2026-06-03)** — Hardened the Mode 6 peer-reviewer graceful-degradation behavior: a skipped peer-reviewer (skill unavailable on substrate) now MUST surface a LOUD operator-visible warning block at the dispatch-plan gate, not just a buried event-log line. **Why:** the prior behavior (skip + log warning to event log only) meant an operator approving a plan mid-run could mistake an un-reviewed plan for a reviewed one — the operator isn't grepping the event log at the gate. The run still does not hard-block (degradation preserved); it just fails loudly instead of quietly. Surfaced during pre-first-run review of the EV/S&H page-build wiring; quiet failure is a bad property for any future unattended run too. Event-log row appended for the version bump.
 
-> **v1.3 changelog (2026-06-03)** — Added peer-reviewer dispatch slot at Mode 6 EXECUTE Step 6/7 single review gate per `gate-peer-reviewer` skill v1.0 ship. Single additive block (~30 lines), no Mode 6 rewrites. Cross-mode integration (Mode 5 RESUME Step 11 + Mode 3 PROVISION Step 8 + Mode 6 Step 10 wave-close + Step 9 conditional sub-agent gates) deferred to v1.1 of gate-peer-reviewer as production calibration data drives expansion. Deliberate evolution per `feedback_check_folder_structure_before_writing` discipline — vault-orchestrator v1.2 had 1 explicit Mode 6 operator-attended gate, not 5; v1.3 honestly reflects this in the integration block + the gate-peer-reviewer registry. Self-applying-spec demonstration documented in gate-peer-reviewer build lesson D-row.
+> **v1.3 changelog (2026-06-03)** — Added peer-reviewer dispatch slot at Mode 6 EXECUTE Step 6/7 single review gate per `gate-peer-reviewer` skill v1.0 ship. Single additive block (~30 lines), no Mode 6 rewrites. Cross-mode integration (Mode 5 RESUME Step 11 + Mode 3 PROVISION Step 9 + Mode 6 Step 10 wave-close + Step 9 conditional sub-agent gates) deferred to v1.1 of gate-peer-reviewer as production calibration data drives expansion. Deliberate evolution per `feedback_check_folder_structure_before_writing` discipline — vault-orchestrator v1.2 had 1 explicit Mode 6 operator-attended gate, not 5; v1.3 honestly reflects this in the integration block + the gate-peer-reviewer registry. Self-applying-spec demonstration documented in gate-peer-reviewer build lesson D-row.
 
 The hierarchical orchestration layer above `multi-chat-coordination`. Oliver's "vault chief of staff" — the role that today lives in Oliver's head plus the master `_active-chats-tracker.md`. The orchestrator surveys every part of the vault, surfaces what's happening, and ranks what's most valuable to work on next. It does not replace operator judgment. It removes the bottleneck where every "what's the state of play?" or "what should I spawn next?" question requires the operator to mentally walk every project and domain.
 
@@ -427,14 +429,15 @@ See `examples/first-next-moves-2026-06-01.md` for the first real-use run against
 For an operator-provided project goal (or a NEXT-MOVES output chained directly into PROVISION), Mode 3 returns:
 
 1. **A decomposition proposal** — N proposed phase handoffs with dependencies, estimated times, deliverables, and tier classification (Tier 1 ready-to-spawn / Tier 2 same-week queue / Tier 3 explicit-trigger queue)
-2. **A per-handoff substrate tag** — `preferred-substrate: claude-code | cowork | either` baked into each drafted handoff's frontmatter, plus a one-line rationale in the proposal
-3. **A conflict scan** — every drafted handoff's file-set checked against in-flight + queued handoffs' file-sets, with severity scored per [[edit-zone-conflict-detection]]
-4. **Decision-research calls** — every meaningful decomposition decision (phase ordering, scope cuts, dependency choices, substrate ambiguity) run through the five-step decision-research convention with the call documented inline in the proposal
-5. **Checkpoint reminders** — chat-resilience checkpoint reminder section inserted into each drafted handoff whose estimate crosses 2 hours, per [[checkpoint-integration]]
-6. **Spawn-queue rows** — one row per drafted handoff, substrate-agnostic copy-paste-ready prompt, ready to append to `_meta/handoffs/_spawn-queue.md` per [[spawn-queue-shape]]
-7. **Master-tracker rows** — proposed rows at the appropriate tier (default Tier 2 for new projects; Tier 1 only when the operator names a phase as ready-to-spawn immediately)
-8. **Operator-fatigue check** — sum of all drafted-handoff hours; if the spawn queue would exceed 10 hours total, a warning banner is surfaced and the operator can re-rank, defer, or split before approval
-9. **A plain-language operator summary** — "I drafted N handoffs for project X. K conflicts flagged. M ready for Claude Code Task tool, P ready for Cowork paste, Q decisions surfaced for your call before any spawn."
+2. **A disk-verified asset-inventory table** — per-wave enumeration of every input artifact each wave consumes, `ls`/grep-verified on disk, with "exists on disk" or "not found on disk" status and cited paths; every gap maps to an upstream authoring wave
+3. **A per-handoff substrate tag** — `preferred-substrate: claude-code | cowork | either` baked into each drafted handoff's frontmatter, plus a one-line rationale in the proposal
+4. **A conflict scan** — every drafted handoff's file-set checked against in-flight + queued handoffs' file-sets, with severity scored per [[edit-zone-conflict-detection]]
+5. **Decision-research calls** — every meaningful decomposition decision (phase ordering, scope cuts, dependency choices, substrate ambiguity) run through the five-step decision-research convention with the call documented inline in the proposal
+6. **Checkpoint reminders** — chat-resilience checkpoint reminder section inserted into each drafted handoff whose estimate crosses 2 hours, per [[checkpoint-integration]]
+7. **Spawn-queue rows** — one row per drafted handoff, substrate-agnostic copy-paste-ready prompt, ready to append to `_meta/handoffs/_spawn-queue.md` per [[spawn-queue-shape]]
+8. **Master-tracker rows** — proposed rows at the appropriate tier (default Tier 2 for new projects; Tier 1 only when the operator names a phase as ready-to-spawn immediately)
+9. **Operator-fatigue check** — sum of all drafted-handoff hours; if the spawn queue would exceed 10 hours total, a warning banner is surfaced and the operator can re-rank, defer, or split before approval
+10. **A plain-language operator summary** — "I drafted N handoffs for project X. K conflicts flagged. M ready for Claude Code Task tool, P ready for Cowork paste, Q decisions surfaced for your call before any spawn."
 
 PROVISION surfaces all of this as a **single review gate**. The operator approves the full proposal, edits individual rows, or aborts. No file is written until approval lands.
 
@@ -471,21 +474,64 @@ PROVISION consumes DECOMPOSE's output as the starting point. The orchestrator do
 
 If DECOMPOSE returns a single-unit decomposition (one handoff, no dependencies), PROVISION surfaces the result as "this looks like a single-chat unit — propose `handoff-YYYY-MM-DD-<slug>.md` at the root of `_meta/handoffs/` instead of a project subfolder?" The operator confirms or asks PROVISION to push for a multi-phase decomposition.
 
-**Step 3 — Run decision-research at every meaningful decomposition decision.**
+**Step 3 — Disk-verify the input-consumption chain for every wave.**
+
+DECOMPOSE (Step 2) returns a decomposition with waves, deliverables, and dependencies. Before any decision-research or proposal emission, PROVISION grounds the gap analysis in disk reality — never in the model's assumption about what "obviously exists."
+
+For every wave in the decomposition:
+
+1. **Enumerate every input artifact the wave consumes.** Trace the full consumption chain, not one layer. A page-scaffold wave consumes service data JSON + city data JSON + research briefs + the scaffolder script. A publish wave consumes drafted HTML + imagery assets + the publish script + credentials config. List every artifact at every layer the wave's tools/scripts will read at execution time.
+
+2. **`ls` or grep each enumerated artifact on disk.** Build the "exists on disk vs not found on disk" set from these results only. A file is "exists on disk" if the path resolves; this step does NOT verify the file's content correctness, template version, or schema completeness — those are downstream quality concerns, not input-existence concerns.
+
+3. **Build the disk-verified asset-inventory table.** Every wave gets a table in the proposal with this shape:
+
+   ```
+   Wave N — <wave name>
+   | Input artifact | Expected path | Disk status | Source |
+   |---|---|---|---|
+   | vienna-va.json | repos/ai-agency-core/scripts/data/cities/vienna-va.json | ✅ exists | ls |
+   | mclean-va.json | repos/ai-agency-core/scripts/data/cities/mclean-va.json | ❌ not found | ls |
+   | troubleshooting brief | second-brain/05_shared-intelligence/research-briefs/services/brief-troubleshooting.md | ❌ not found | ls |
+   | scaffold-core-30-page.py | repos/ai-agency-core/scripts/scaffold-core-30-page.py | ✅ exists | ls |
+   ```
+
+   Every "exists" claim cites the verified path. No claimed-existing input ships unverified.
+
+4. **For every "not found" input, insert an upstream authoring wave that produces it.** This is the constructive default — a missing input triggers a new wave (or extends an existing earlier wave) so the consuming wave's dependencies are satisfied at execution time. Examples: if `mclean-va.json` is not found, an earlier wave must run `scaffold-city-data.py` to produce it; if a service brief is missing, an earlier wave must author it.
+
+5. **Hard-reject the decomposition only when a missing input genuinely cannot be produced in-pipeline** — e.g., the input requires an external system the pipeline has no access to, or producing it would violate a scope constraint the operator set. In that case, surface the gap to the operator at the review gate (Step 9) with the constraint that blocks in-pipeline production, and wait for operator judgment.
+
+6. **Verify wave ordering satisfies the production chain.** Every authoring wave that produces a missing input must be sequenced upstream of (earlier than) the wave that consumes it. If the decomposition's dependency graph doesn't already enforce this ordering, adjust it before proceeding to Step 4 (decision-research).
+
+7. **Emit the asset-inventory summary for the Step 9 review-gate proposal.** Aggregate per-wave tables into a top-level summary block:
+
+   ```
+   Disk-verified asset inventory:
+   - <N> inputs verified across <M> waves
+   - <K> gaps detected → <K> authoring waves inserted (see per-wave tables below)
+   - 0 unresolved gaps | <P> unresolvable gaps requiring operator decision
+   ```
+
+   The per-wave tables and this summary become part of the Step 9 proposal so the operator sees exactly what PROVISION verified on disk.
+
+This step is the producer-side enforcement of `pattern-disk-verify-integration-target-before-drafting`. The asset-inventory table surfaces disk reality at the review gate — not the model's belief about disk reality.
+
+**Step 4 — Run decision-research at every meaningful decomposition decision.**
 
 DECOMPOSE makes several non-obvious decisions during decomposition. PROVISION's added discipline is to surface those decisions and run the five-step decision-research convention (see [[decision-research-composition]] and `~/workspace/second-brain/_meta/decision-research-conventions.md`) on each one. Typical fire points:
 
 - **Phase ordering.** Two equally-valid orderings (e.g., research-then-build vs build-then-research-during-iteration). Fire the convention; document the call.
 - **Scope cuts.** A proposed phase is too large; should it split into 2 phases or merge two adjacent narrow phases? Fire the convention.
 - **Dependency choices.** A handoff could depend on either of two upstream handoffs; the choice affects parallelizability. Fire the convention.
-- **Substrate ambiguity at draft time.** A drafted handoff's work shape could fit either Claude Code or Cowork; the substrate tag (Step 5) is ambiguous. Fire the convention.
+- **Substrate ambiguity at draft time.** A drafted handoff's work shape could fit either Claude Code or Cowork; the substrate tag (Step 6) is ambiguous. Fire the convention.
 - **Tier classification.** A handoff is borderline Tier 2 vs Tier 3; the trigger condition isn't clearly named. Fire the convention.
 
 Document each call inline in the PROVISION proposal under a "Decision-research calls" subsection. Each call gets: the question, the option set considered, the recommendation, the rationale.
 
 The convention does NOT fire on every choice — only meaningful ones. PROVISION's job is to err toward firing rather than burying decisions; over-firing produces noise but under-firing produces silent drift.
 
-**Step 4 — Scan for cross-project edit-zone conflicts.**
+**Step 5 — Scan for cross-project edit-zone conflicts.**
 
 For each drafted handoff, parse its `## Files to edit` and `## Files to create` sections. Build a file-set per drafted handoff. Then run the detection algorithm in [[edit-zone-conflict-detection]]:
 
@@ -497,7 +543,7 @@ For each flagged pair, name the suggested resolution (serialize via queue order,
 
 Self-conflicts (a drafted handoff that writes to `_spawn-queue.md` or claims to edit the orchestrator's own owned files) are rejected at draft time, not deferred to approval. PROVISION re-drafts or surfaces the contract violation.
 
-**Step 5 — Tag preferred substrate per drafted handoff.**
+**Step 6 — Tag preferred substrate per drafted handoff.**
 
 For each drafted handoff, set `preferred-substrate: claude-code | cowork | either` in its frontmatter. Rules:
 
@@ -509,7 +555,7 @@ Cite the working-surfaces convention's "Default routing" table in the rationale 
 
 The substrate tag is the source of truth for the spawn-queue row's "Substrate rec" cell (see [[spawn-queue-shape]] invariant 4).
 
-**Step 6 — Inject the chat-resilience checkpoint reminder where triggers fire.**
+**Step 7 — Inject the chat-resilience checkpoint reminder where triggers fire.**
 
 For each drafted handoff, check the checkpoint triggers from [[checkpoint-integration]]:
 
@@ -522,7 +568,7 @@ Where any trigger fires, insert the "Chat-resilience checkpoint reminder" sectio
 
 Record the inclusion/skip decision in the proposal: "Included checkpoint reminder in Phases 2, 3, 4 (each >2h); skipped Phase 1 (45min, single-file)."
 
-**Step 7 — Compute the operator-fatigue check.**
+**Step 8 — Compute the operator-fatigue check.**
 
 Sum the estimated build times across all drafted handoffs. Add to the current spawn-queue total (the queue may already hold rows from prior PROVISION runs). If the resulting queue total exceeds **10 hours**, surface a warning banner at the top of the proposal:
 
@@ -532,7 +578,7 @@ Sum the estimated build times across all drafted handoffs. Add to the current sp
 
 The warning is advisory — the operator can approve anyway. Do not block approval on this; the operator's judgment owns the decision. The warning also lands at the top of `_spawn-queue.md` "Queued" section after approval if the threshold is crossed.
 
-**Step 8 — Surface the single review gate.**
+**Step 9 — Surface the single review gate.**
 
 Present the full proposal to the operator in plain language with this shape:
 
@@ -553,12 +599,14 @@ N proposed handoffs:
    Deliverable: <what ships>
    Checkpoint reminder: included | skipped
    Conflicts: none | flagged → see conflict table
+   Asset inventory: N inputs verified, K gaps → authoring waves inserted | see table
 
 2. phase-2a-<short> — <purpose> (Tier 2, ~Nh, cowork)
    Prereqs: phase-1-<short>
    Deliverable: <what ships>
    Checkpoint reminder: included
    Conflicts: serial-required with "<in-flight chat name>" on `_meta/conventions.md` → see conflict table
+   Asset inventory: N inputs verified, K gaps → authoring waves inserted | see table
 
 ... (continue for each phase)
 
@@ -575,6 +623,13 @@ Conflict-flag table:
 | Conflicts with | Shared file | Severity | Suggested resolution |
 |---|---|---|---|
 | ... | ... | ... | ... |
+
+Disk-verified asset inventory (Step 3):
+- <N> inputs verified across <M> waves
+- <K> gaps detected → <K> authoring waves inserted (see per-wave tables below)
+- 0 unresolved gaps | <P> unresolvable gaps requiring operator decision
+
+<per-wave asset-inventory tables here>
 
 Operator-fatigue check:
 Drafted handoff total: <Nh>
@@ -605,7 +660,7 @@ Reply with one of:
 
 Wait for explicit operator approval. Do not write any file until the operator says so.
 
-**Step 9 — On approval, write everything atomically.**
+**Step 10 — On approval, write everything atomically.**
 
 After approval:
 
@@ -622,7 +677,7 @@ After approval:
 
 The writes are atomic per run — handoff written but tracker row missing is a contract violation. If any step fails, surface to operator with a roll-back proposal.
 
-**Step 10 — Tell the operator what to do next.**
+**Step 11 — Tell the operator what to do next.**
 
 Render the plain-language operator summary:
 
@@ -657,7 +712,7 @@ Operator-fatigue check: <under-ceiling | ⚠️ over-ceiling at Nh — consider 
 What's next: review the spawn queue, resolve any conflicts, then spawn rows in your preferred order. Master tracker is updated; spawn queue is the audit trail.
 ```
 
-**Step 11 — Auto-invoke output-quality-loop.**
+**Step 12 — Auto-invoke output-quality-loop.**
 
 PROVISION's writes are artifacts (drafted handoffs + queue rows + tracker rows + new project README). Per the auto-invoke convention, emit the standard block at completion:
 
@@ -679,9 +734,9 @@ Per the multi-chat-coordination DECOMPOSE convention, tracker edits are NOT in t
 
 - `--dry-run` — produce the proposal without ever writing on approval. Useful for previewing decomposition without committing.
 - `--tier <1|2|3>` — override the default tier-2 registration for the new project's tracker rows.
-- `--skip-conflict-scan` — skip Step 4 conflict detection. Use only when the operator explicitly accepts the risk; PROVISION still records the flag in the proposal so it's auditable.
-- `--skip-decision-research` — skip Step 3's convention firing. Falls back to "decomposition left as DECOMPOSE proposed." Discouraged.
-- `--skip-checkpoint-reminders` — skip Step 6 checkpoint-reminder injection for all drafted handoffs. Discouraged for handoffs >2h.
+- `--skip-conflict-scan` — skip Step 5 conflict detection. Use only when the operator explicitly accepts the risk; PROVISION still records the flag in the proposal so it's auditable.
+- `--skip-decision-research` — skip Step 4's convention firing. Falls back to "decomposition left as DECOMPOSE proposed." Discouraged.
+- `--skip-checkpoint-reminders` — skip Step 7 checkpoint-reminder injection for all drafted handoffs. Discouraged for handoffs >2h.
 - `--fatigue-ceiling H` (default 10) — override the operator-fatigue warning threshold.
 - `--chain-from-next-moves` — read the most recent NEXT-MOVES output for goal context (used when chaining; usually inferred from operator phrasing).
 
@@ -1001,7 +1056,7 @@ After the dispatch plan emits (end of Step 6), BEFORE the operator sees it for c
 
 **Cross-mode integration (v1.3 scope clarification).** The peer-reviewer's `gate-type-registry.md` names 5 conceptual gates (1 RESUME / 2 PROVISION / 3 dispatch plan / 4 dispatch prompts / 5 wave-close). In Mode 6 v1.2's actual architecture, these map across modes:
 - Gate 1 RESUME = Mode 5 RESUME Step 11 confirmation (separate mode; future v1.1 integration point)
-- Gate 2 PROVISION = Mode 3 PROVISION Step 8 single review gate (separate mode; future v1.1 integration point)
+- Gate 2 PROVISION = Mode 3 PROVISION Step 9 single review gate (separate mode; future v1.1 integration point)
 - **Gates 3 + 4 (combined) = Mode 6 EXECUTE Step 6/7 single review gate (THIS integration point; v1.3 ships)**
 - Gate 5 wave-close = Mode 6 EXECUTE Step 10 wave-close (auto-closes in v1.2; future v1.1 integration point when operator-attended wave-close lands)
 - Conditional sub-agent gates surfaced in Step 9 = handled by `operator-gate-routing` separately
@@ -1068,7 +1123,7 @@ project: <slug>
 wave: <wave-id>
 mode: execute
 skill: vault-orchestrator
-skill-version: v1.2
+skill-version: v1.4
 tags: [report, vault-orchestrator, execute, <slug>, <wave-id>]
 ---
 ```
@@ -1247,7 +1302,7 @@ These observations seed at skill creation. Promote to standalone notes if they g
 
 **10. Watch for substrate-tag accuracy (PROVISION).** Each drafted handoff gets a `preferred-substrate:` tag. If the operator regularly overrides at review-gate ("downgrade Phase 3 to cowork"), the substrate-tagging heuristics need refinement. Detection: log operator edits during PROVISION review gates.
 
-**11. Watch for checkpoint-reminder over-inclusion or under-inclusion (PROVISION).** Step 6 triggers should fire on long-running handoffs and skip short ones. If short handoffs regularly arrive with checkpoint reminders (noise) or long ones arrive without (missed discipline), refine the trigger thresholds. Detection: spot-check drafted handoffs from each PROVISION run.
+**11. Watch for checkpoint-reminder over-inclusion or under-inclusion (PROVISION).** Step 7 triggers should fire on long-running handoffs and skip short ones. If short handoffs regularly arrive with checkpoint reminders (noise) or long ones arrive without (missed discipline), refine the trigger thresholds. Detection: spot-check drafted handoffs from each PROVISION run.
 
 **12. Watch for stale-state reconciliation false-positives (RESUME).** Step 7 fires reconciliations when the event log + state file appear to disagree. False-positives (reconciliation fires but operator says "no, state file is correct") indicate the detection rules are too aggressive. Detection: log operator confirmation responses; if >20% of reconciliations get a "no" response, refine the detection rules in [[resume-input-sources]] § "Stale-state reconciliation rules."
 

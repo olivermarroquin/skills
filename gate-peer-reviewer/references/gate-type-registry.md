@@ -51,7 +51,7 @@ The 5 conceptual gates this registry models DO NOT all live inside Mode 6 EXECUT
 | Conceptual gate | Actual orchestrator location | v1.0 hook? |
 |---|---|---|
 | Gate 1 RESUME | Mode 5 RESUME Step 11 confirmation | No (v1.1 deferred) |
-| Gate 2 PROVISION | Mode 3 PROVISION Step 8 single review gate | No (v1.1 deferred) |
+| Gate 2 PROVISION | Mode 3 PROVISION Step 9 single review gate | No (v1.1 deferred) |
 | Gate 3 dispatch plan + Gate 4 dispatch prompts (combined) | Mode 6 EXECUTE Step 6/7 single review gate | **YES — v1.0 ships here** |
 | Gate 5 wave-close | Mode 6 EXECUTE Step 10 wave-close (auto-closes in v1.2) | No (v1.1 deferred) |
 | Conditional sub-agent gates | Routed via `operator-gate-routing` | No (separate channel) |

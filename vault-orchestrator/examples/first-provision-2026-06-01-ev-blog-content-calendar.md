@@ -11,7 +11,7 @@ tags: [worked-example, vault-orchestrator, provision, ev-electric-services, cont
 
 This is the first real-use PROVISION run, executed as part of vault-orchestrator Phase 4 verification. The run produces a proposal for a new initiative — a content calendar generator for the EV Electric blog — covering 4 drafted phase handoffs plus a deliberately-staged shared-file conflict to verify the edit-zone conflict detector fires correctly.
 
-**Important:** This worked example renders the **proposal stage** of PROVISION (Step 8 — single review gate). No files were written. The operator can approve the proposal later to materialize the new project subfolder + 4 handoffs + 4 spawn-queue rows + 4 tracker rows. The conflict-flag table and substrate routing are produced verbatim from the actual PROVISION logic against the live vault state as of 2026-06-01.
+**Important:** This worked example renders the **proposal stage** of PROVISION (Step 9 — single review gate). No files were written. The operator can approve the proposal later to materialize the new project subfolder + 4 handoffs + 4 spawn-queue rows + 4 tracker rows. The conflict-flag table and substrate routing are produced verbatim from the actual PROVISION logic against the live vault state as of 2026-06-01.
 
 ## Operator input
 
@@ -57,7 +57,7 @@ Phase 3 (depends on Phase 1 + Phase 2a)
 
 Total: ~11-15h across 4 chats.
 
-## Step 3 — Decision-research calls
+## Step 4 — Decision-research calls
 
 PROVISION runs the five-step decision-research convention on each meaningful decomposition decision.
 
@@ -84,9 +84,9 @@ PROVISION runs the five-step decision-research convention on each meaningful dec
 
 **Call 4 — Deliberate conflict stage on Phase 1:**
 
-PROVISION deliberately stages Phase 1's `## Files to edit` to include `_meta/conventions.md` (to update naming conventions for the new `04_projects/clients/_active/ev-electric-services/blog-content-calendar/` subfolder) — overlapping with an existing in-flight chat ("client-onboarding-automation Phase 0") which the master tracker shows also touches `_meta/conventions.md` in its discussion-chat scope. This stages the verification target for Step 4 conflict detection.
+PROVISION deliberately stages Phase 1's `## Files to edit` to include `_meta/conventions.md` (to update naming conventions for the new `04_projects/clients/_active/ev-electric-services/blog-content-calendar/` subfolder) — overlapping with an existing in-flight chat ("client-onboarding-automation Phase 0") which the master tracker shows also touches `_meta/conventions.md` in its discussion-chat scope. This stages the verification target for Step 5 conflict detection.
 
-## Step 4 — Conflict scan
+## Step 5 — Conflict scan
 
 PROVISION builds file-sets for the 4 drafted handoffs, then scans against in-flight handoffs in the master tracker.
 
@@ -116,7 +116,7 @@ PROVISION builds file-sets for the 4 drafted handoffs, then scans against in-fli
 
 **Verification:** ✅ The deliberately-staged conflict on `_meta/conventions.md` is detected. Severity is `serial-required` (both touch the conventions file end-to-end; no section qualifier in either handoff body). Suggested resolution is rendered with two options. Conflict-detection logic works as specified.
 
-## Step 5 — Substrate tags
+## Step 6 — Substrate tags
 
 | # | Phase | Substrate | Rationale (one-line, cites working-surfaces) |
 |---|---|---|---|
@@ -125,7 +125,7 @@ PROVISION builds file-sets for the 4 drafted handoffs, then scans against in-fli
 | 2b | distribution + repurposing | `either` | Could fit either; templates are file-output but each surface needs judgment on tone; operator picks by current context |
 | 3 | generator script | `claude-code` | Script build with autonomous testing loop; matches working-surfaces "I want a chat that runs unattended for 2 hours" row |
 
-## Step 6 — Checkpoint reminders
+## Step 7 — Checkpoint reminders
 
 | # | Phase | Estimate | Trigger fires? | Reminder included? |
 |---|---|---|---|---|
@@ -136,7 +136,7 @@ PROVISION builds file-sets for the 4 drafted handoffs, then scans against in-fli
 
 All four handoffs cross the 2-hour threshold; all four include the chat-resilience checkpoint reminder section.
 
-## Step 7 — Operator-fatigue check
+## Step 8 — Operator-fatigue check
 
 - Drafted handoff total: 11-15h (midpoint 13h)
 - Current spawn-queue total (before this run): 0h (queue empty)
@@ -151,7 +151,7 @@ Warning banner would land at the top of `_spawn-queue.md` "Queued" section after
 
 The warning is advisory; the operator can approve as proposed (and stage spawns across multiple sessions), or defer Phase 3 to Tier 3 (waits on Phases 1 + 2a + 2b shipping) to reduce immediate queue depth.
 
-## Step 8 — Single review gate (the proposal as presented to operator)
+## Step 9 — Single review gate (the proposal as presented to operator)
 
 ```
 PROVISION PROPOSAL — 2026-06-01
@@ -258,7 +258,7 @@ For this worked example, the operator's approval is **deferred** — this is a v
 
 This is the spec-correct behavior for a verification run that did not request a real spawn.
 
-## Step 10 — Plain-language operator summary (would have been rendered on approval)
+## Step 11 — Plain-language operator summary (would have been rendered on approval)
 
 ```
 ✅ PROVISION proposed for "EV Electric blog content calendar generator."
