@@ -468,9 +468,24 @@ The skill does NOT keep checking the staging folder or polling. It waits for the
 **Action per page:**
 1. **Ask which variant won.** "For page <slug>, which hero variant did you keep (1-N)? Which about variant? Which scene variant (if generated)?"
 2. **Organize.** Run `organize-image-downloads.py --client <slug> --page-folder <path> --image-type hero --selected-variant <N>`. Once per slot type.
-3. **Wire.** Run `wire-page-images.py --page-folder <path> --config <config-path>`. Optimizes keeper PNG, uploads to WP, rewrites HTML, re-publishes.
-4. **Update state.** `page_status[<slug>].imagery_keepers_picked: true`, `wired: true`, `published: true`. Update execution log.
-5. **Indexing.** If `gsc_service_account_path` is configured, `wire-page-images.py → publish-core-30-page.py` auto-submits to GSC Indexing API. Confirm in script's stdout. Mark `indexed: true`.
+3. **Wire.** Run `wire-page-images.py --page-folder <path> --config <config-path>`. Optimizes keeper PNG, uploads to WP, rewrites HTML, re-publishes. (`wire-page-images.py` enforces template-parity before wiring — refuses if the page lacks the current image-integration CSS. If refused, re-scaffold to current template first.)
+4. **Live-rendered, cache-busted verification (convention-class — SOP prose, not deterministic code).** After publish, fetch the LIVE published URL with a cache-buster (`?v=<timestamp>`) and verify:
+   - `modified_time` advanced past the prior value (confirms WP actually updated the page).
+   - H1 matches the expected eyebrow + clean-H1 form (not a combined serif H1 or stale content).
+   - Title visibility: the WP page title is hidden (no duplicate theme title above the hero).
+   - Font family: the page renders in sans-serif via `.evp-corepage` styling (serif fallback = the style wrapper didn't survive upload — fail).
+   - Image fill: hero + about images fill their containers edge-to-edge (no dashed border / blue frame / placeholder chrome).
+   - Map fill: Google Maps embed fills its container (not undersized / not a placeholder).
+   - Zero placeholder text: no `[…placeholder…]`, `<!-- MISSING -->`, `{tokens}`, `FILL:`, or `TBD` visible on the rendered page.
+   - Compare RENDERED structure to a named known-good sibling page (e.g., page 07 for McLean pages, page 04 for Fairfax pages). A grep of `post_content` HTML is NOT acceptance — it cannot detect serif fallback, a duplicate theme title, or old-vs-new content structure.
+   **If any check fails, do NOT proceed to indexing. Surface the failure to the operator with the specific finding.**
+   **Enforcement note:** this check is convention-class (SOP prose guiding the orchestrator's behavior, not a deterministic script gate). Same honest-limitation framing as the Phase 5B schema-auto-bump fix — it documents the rule but relies on the LLM-orchestrator following it. A deterministic live-verification script is a future hardening candidate.
+5. **Cache-purge + incognito re-check (convention-class — SOP prose, not deterministic code).** After verifying the logged-in render, purge the page cache (LiteSpeed Cache → Purge this page, or equivalent CDN purge) and re-fetch the public URL logged-out / cache-busted (`?v=<new-timestamp>`) to confirm anonymous visitors + Googlebot get the new version. A stale cached snapshot at the canonical URL means real visitors see the old page until cache expires.
+   - If the cache-busted anonymous fetch returns different content than the logged-in render, the page cache is stale — purge again + wait + re-check.
+   - If a `web_fetch` / tool-fetch conflicts with an operator screenshot, treat it as a **cache question first**, not a "the other agent lied" conclusion. Never override direct operator visual evidence with a single anonymous tool fetch.
+   **Enforcement note:** convention-class, same as substep 4.
+6. **Update state.** `page_status[<slug>].imagery_keepers_picked: true`, `wired: true`, `published: true`, `live_verified: true`. Update execution log.
+7. **Indexing.** If `gsc_service_account_path` is configured, `wire-page-images.py → publish-core-30-page.py` auto-submits to GSC Indexing API. Confirm in script's stdout. Mark `indexed: true`. Only fires AFTER substep 4 passes — never submit an unverified page to GSC.
 
 **Operator gate:** after each page completes, surface live URL + indexing status. Confirm before next page (or "process all the rest" to batch).
 
@@ -492,8 +507,12 @@ This step produced (per page):
 
 **Failure modes:**
 - `organize-image-downloads.py` fails → ask operator to re-check Higgsfield downloads folder.
+- `wire-page-images.py` refuses with template-parity error → page is on a stale template. Re-scaffold to the current template (carries image-integration CSS + maps embed) before retrying. See Issue #27.
 - `wire-page-images.py` fails on upload → capture into `failures`, mark `wired: false`, keep going if operator confirms.
-- `publish-core-30-page.py` fails → capture, surface, don't auto-retry.
+- `publish-core-30-page.py` fails (placeholder hard-block) → fix the draft (remove placeholder text / MISSING comments / unrendered tokens), then re-run. See Issues #15/#24/#26.
+- `publish-core-30-page.py` fails (disk sync refusal) → the on-disk draft changed between validation and publish. Re-run from the current disk version.
+- Live-rendered verification fails (substep 4) → do NOT proceed to indexing. Surface the specific failure to the operator. Common causes: stale page cache (purge + re-check), old content still live (REST push didn't render — check if page is Elementor-built), template style wrapper not applying (serif font visible).
+- Cache-purge re-check shows stale content (substep 5) → purge again, wait, re-check. If persistent, check CDN/LiteSpeed cache settings.
 - GSC indexing fails → never blocks publish. Capture, surface at Step 11.
 
 ### Step 9 — Indexing pass

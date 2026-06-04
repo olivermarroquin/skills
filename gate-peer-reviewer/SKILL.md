@@ -55,6 +55,16 @@ Full verbatim spec at `references/check-spec.md`. Summary:
 | No domain-specific claims surface in Check 3 triage | Skip Sonar fire; Check 3 returns PASS without cost |
 | First wave of an orchestrator run (no prior wave to compare) | Skip Sub-check 4b |
 
+## Live-verification discipline (folded in from T2-7, Issue #28)
+
+Three rules for any peer-reviewer pass that touches live page state (publish gates, backfill gates, any gate where the reviewer assesses whether a page is "done" or "clean"). Source: `[[lesson-core-30-publishing-verification-template-parity-2026-06-04]]` Issues #26/#27/#28.
+
+1. **Verify live-rendered + cache-busted, never grep-only.** When assessing whether a live page is correct, fetch the LIVE published URL with a cache-buster (`?v=<timestamp>`) and compare the RENDERED structure against a named known-good sibling page — H1 form, title visibility, font-family (serif = fail), image fill, map fill, zero placeholder text. A grep of `post_content` HTML for class names ("`evp-corepage` present", "serif title: 0") is NOT acceptance — it cannot detect serif fallback, a duplicate theme title, or old-vs-new content structure. Class presence ≠ rendered styling.
+
+2. **A fetch-vs-operator-screenshot conflict is a cache question first.** When a `web_fetch` or tool fetch returns different content than an operator's screenshot, treat the discrepancy as a **page-cache staleness issue**, not a "the other agent lied" conclusion. Never override direct operator visual evidence (a screenshot of the logged-in render) with a single anonymous tool fetch. The correct sequence: cache-bust the fetch (`?v=ts`), compare, and if still conflicting, recommend cache purge + incognito re-check. A stale cached snapshot at the canonical URL is itself a real finding — anonymous visitors + Googlebot may see the old page.
+
+3. **Don't scope a page as "fine, minor fix" from a prior run note — disk-verify its actual state first.** Before scoping a page as "images render acceptably — only needs the map" (or any similar assessment from a prior note), disk-verify the page's current wired-image + style-wrapper state. The reviewer mis-scoped page 01 as "fine" from an old run note while on disk its hero was never wired and its live content was the old version. Same class as `pattern-disk-verify-integration-target-before-drafting` applied to the reviewer's own scoping.
+
 ## Substrate detection (3-probe sequence)
 
 The peer-reviewer runs under three substrates without spec changes:
