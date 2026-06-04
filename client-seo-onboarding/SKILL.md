@@ -1,10 +1,12 @@
 ---
 name: client-seo-onboarding
-version: 1.2
+version: 1.3
 description: One-Cowork-message entry point for onboarding a brand-new SEO client end-to-end. v1.1 wraps the v1.0 11-step pipeline (research → author data → verify WP → scaffold → imagery → publish → index → internal links → report) with three load-bearing additions — per-step `output-quality-loop` integration (Mode 1 EVALUATE + Mode 4 AUTO-RESEARCH + Mode 5 AUTO-APPROVE per artifact), multi-chat wave decomposition baked into the plan-bullet opening (scope-estimation gate computes hours + chat count + wave shape before any work fires), and the AI-surface reachability matrix that replaces "Cowork can't reach X" framing with concrete per-surface paths (Perplexity Sonar + OpenAI + Gemini + Anthropic Claude all working today via tier-3 carve-out; AI Overviews via Claude in Chrome). Triggers on phrases like "process this new client," "onboard this client for SEO," "run client-seo-onboarding on <slug>," "kick off the Core 30 build for <client>," "set up <client> end to end," "ingest these meeting notes and start the onboarding," or any time the operator hands over meeting notes + an intake form + a client slug and wants the full Core 30 pipeline run. Also use to resume a partially-completed onboarding when the operator says "pick up <slug>'s onboarding where we left off" — the skill detects the state file at 04_projects/clients/_active/<slug>/_state/onboarding.json and continues from the last completed step (or last in-progress wave for multi-chat runs).
 ---
 
-# Client SEO Onboarding (orchestrator skill, v1.2)
+# Client SEO Onboarding (orchestrator skill, v1.3)
+
+> **v1.3 changelog (2026-06-04, [T2-7] + [T2-6])** — Two rounds of substantive Step 6/7/8 edits. **(1) [T2-7] publish-verification hardening (2026-06-04):** Step 8 expanded from 3 substeps to 7 — added substep 4 (live-rendered cache-busted verification: modified_time, eyebrow H1, title visibility, font family, image fill, map fill, zero placeholder text, rendered-structure comparison to known-good sibling), substep 5 (cache-purge + incognito re-check with stale-cache/screenshot-conflict rules), substep 6 (state update with `live_verified: true`), substep 7 (GSC indexing only after substep 4 passes). Both substeps 4 and 5 are convention-class (SOP prose, not deterministic gates). Failure modes updated for template-parity, placeholder hard-block, disk-sync refusal, live-verification failure, stale-cache persistence. Sourced from EV pages 06-12 run Issues #24-#28. **(2) [T2-6] imagery-wave integration (2026-06-04):** Step 6 enhanced — `generate-imagery-prompts.py` now takes `--hero-style {ahmad-centric,service-scene,hands-only}`, emits self-documenting per-prompt headers (Type / Reference photos / Aspect / Produces), carries embroidered-no-patch wardrobe clause (Issue #20), references `marketing-assets/reference-photos/` home per `_meta/conventions.md` § "Client imagery reference assets," surfaces About-portrait reuse from prior-log cache. Step 7 pause message enhanced with self-documenting prompt guidance + reference-photo home path + variant-selection flow preview. Step 8 substep 1 enhanced — variant-selection now routed through `_pending-operator-decisions.md` gate file per `operator-gate-routing`; multi-page same-service batch guidance added. Substep 2 enhanced with `--copy-to` mode for multi-page batches (Issue #19). Publish-depends-on-imagery guard added after Step 8 failure modes (Issue #15: no publish with dangling placeholder image refs unless explicit operator-approved bypass via gate file). Sourced from EV pages 06-12 run Issues #15-#20.
 
 > **v1.2 changelog (2026-06-03, Phase 5B)** — Closed the silent schema-drift hole sweep [4] caught on S&H's `onboarding.json` (file sat at `schema_version: "1.0"` while wave writers added v1.1 fields for 24+ hours). Added to `state-schema.md`: (1) a canonical `SCHEMA_FIELDS` registry (version-keyed top-level field sets), (2) Write convention 9 — schema-version auto-bump + `_schema_version_history` audit on any additive write; refuse non-additive changes (field removal / type change). Reconciled two pre-existing contradictions that previously said additive writes need no bump (the `schema_version` field-semantics line + the migration-notes section). **No schema-shape change** (`schema_version` stays `1.1`); this is a writer-behavior + documentation change. **Enforcement is LLM-convention-class — the same reliability class that drifted at sweep [4]** — it documents the rule and kills the contradiction but is not deterministic. A hard, un-skippable guard (the Python pre-write hook the Phase 5B handoff originally specified) was REJECTED for now because no Python state writer exists — `onboarding.json` is written by this orchestrator following prose conventions, not by a code module. The deterministic guard is parked as Phase 5B Path B, conditional on state writes becoming script-mediated.
 
@@ -412,11 +414,25 @@ This step produced (per page; one block emitted per page landing):
 
 **Input:** scaffolded page folders from Step 5.
 
-**Action:** for each scaffolded page, run `generate-imagery-prompts.py --page-folder <path> --client <slug>`. Creates `<page-folder>/imagery-prompts-log.md` per page.
+**Action:** for each scaffolded page, run `generate-imagery-prompts.py --page-folder <path> --client <slug> --hero-style <style>` where `<style>` is one of `ahmad-centric` (default — owner performing the task), `service-scene` (the installed result / work scene, no face), or `hands-only` (faceless worker's hands at the task). The operator chooses the hero style per page or per service at the Step 6 operator gate; the default is `ahmad-centric` for backward compatibility.
 
-Aggregate into `04_projects/clients/_active/<slug>/_state/imagery-prompt-summary.md` listing per-page: slug + position + hero/about/scene prompts + reference photo URLs.
+Each generated prompt carries a **self-documenting header** (per Issue #17 from `execution-log-2026-06-03-core-30-pages-06-12-dataforseo-run`):
+- **Type:** PURE SCENE / HANDS-ONLY / AHMAD-CENTRIC
+- **Reference photos to upload:** NONE / logo-only / headshot+logo (keyed to the type)
+- **Aspect ratio**
+- **Produces:** one-line description
 
-**Operator gate:** surface summary path + one-line briefing.
+The generated log also includes a types-legend and the save/name/organize flow so the operator never guesses what to upload or where files go.
+
+**Reference photos** are sourced from `04_projects/clients/_active/<client>/marketing-assets/reference-photos/` per `_meta/conventions.md` § "Client imagery reference assets." The prompt headers name which files to pull from that folder. If the folder is missing or empty, Step 6 surfaces the gap before generating prompts.
+
+**About-portrait reuse:** when `generate-imagery-prompts.py` detects a keeper About portrait already exists for the same city (via its prior-log scanning / learning loop), it marks the About prompt with a REUSE NOTE. The operator can skip the Higgsfield run for that slot.
+
+**Embroidered-no-patch wardrobe (Issue #20):** any prompt that may show the uniform (AHMAD-CENTRIC always; HANDS-ONLY when chest/shoulder may render) carries the embroidered-no-patch clause: "embroidered directly onto the fabric — yellow-gold lightbulb + navy 'EV ELECTRIC', no patch, no white background." The generator NEVER instructs uploading the uniform mockup (its white callout boxes cause white name-patches).
+
+Aggregate into `04_projects/clients/_active/<slug>/_state/imagery-prompt-summary.md` listing per-page: slug + position + hero type + hero/about/scene prompts + reference photo requirements.
+
+**Operator gate:** surface summary path + per-page hero-style choices + one-line briefing. The operator can adjust hero styles per page before proceeding to Higgsfield.
 
 **Output:** all `imagery-prompts-log.md` written. Aggregate summary written. Step 6 marked done.
 
@@ -449,14 +465,24 @@ Last message before stopping:
 ```
 **Paused at Higgsfield gate.**
 
-Imagery prompts written. Open:
+Imagery prompts written (auto-generated by generate-imagery-prompts.py). Open:
 - Aggregate summary: <filepath>
 - Per-page logs: each <page-folder>/imagery-prompts-log.md
 
-Generate variants in Higgsfield for each page. When a page's downloads are ready, tell me:
+Each prompt has a self-documenting header telling you:
+- TYPE (PURE SCENE / HANDS-ONLY / AHMAD-CENTRIC)
+- REFERENCE PHOTOS to upload (NONE / logo-only / headshot+logo)
+- ASPECT RATIO to set in Higgsfield
+- What it PRODUCES (one-line)
+
+Reference photos to upload are at: <client>/marketing-assets/reference-photos/
+
+Generate 4 variants in Higgsfield for each prompt. When a page's downloads are ready, tell me:
 "images are in for <page-slug>" (or "images are in for all pages")
 
-I'll resume per-page processing from there. You can close this chat — state is saved at `<state-file-path>`.
+I'll ask you to pick the best variant per slot (the only human-judgment step), then handle organize → wire → publish automatically.
+
+You can close this chat — state is saved at `<state-file-path>`.
 ```
 
 The skill does NOT keep checking the staging folder or polling. It waits for the operator's next message.
@@ -466,8 +492,9 @@ The skill does NOT keep checking the staging folder or polling. It waits for the
 **Trigger:** operator says "images are in for <page-slug>" or "for all pages" or "process page <N>".
 
 **Action per page:**
-1. **Ask which variant won.** "For page <slug>, which hero variant did you keep (1-N)? Which about variant? Which scene variant (if generated)?"
-2. **Organize.** Run `organize-image-downloads.py --client <slug> --page-folder <path> --image-type hero --selected-variant <N>`. Once per slot type.
+1. **Variant-selection gate (operator decision via gate file).** Write a gate row to `_pending-operator-decisions.md` per [[operator-gate-routing]]: "Pick the best variant per slot for <page-slug>: hero (1-N), about (1-N or REUSE from <city-keeper>), scene (1-N or SKIP)." Wait for the operator's variant picks before proceeding. When processing multiple pages in batch ("process all the rest"), write all gate rows at once; the operator can respond with all picks in one message.
+   **For same-service multi-page batches** (e.g., ev-charger for pages 03+09): surface that distinct variants should be picked per page for SEO uniqueness. If the operator generated one batch for multiple pages, recommend option (a) generate a fresh batch per page, or (b) organize into the first page then copy an alternate to the second page (per `organize-image-downloads.py` `--copy-to` mode or manual copy — see Issue #19).
+2. **Organize.** Run `organize-image-downloads.py --client <slug> --page-folder <path> --image-type hero --selected-variant <N>`. Once per slot type. For multi-page sharing from a single batch, use `--copy-to <second-page-folder>` to copy a chosen alternate without consuming staging files.
 3. **Wire.** Run `wire-page-images.py --page-folder <path> --config <config-path>`. Optimizes keeper PNG, uploads to WP, rewrites HTML, re-publishes. (`wire-page-images.py` enforces template-parity before wiring — refuses if the page lacks the current image-integration CSS. If refused, re-scaffold to current template first.)
 4. **Live-rendered, cache-busted verification (convention-class — SOP prose, not deterministic code).** After publish, fetch the LIVE published URL with a cache-buster (`?v=<timestamp>`) and verify:
    - `modified_time` advanced past the prior value (confirms WP actually updated the page).
@@ -514,6 +541,8 @@ This step produced (per page):
 - Live-rendered verification fails (substep 4) → do NOT proceed to indexing. Surface the specific failure to the operator. Common causes: stale page cache (purge + re-check), old content still live (REST push didn't render — check if page is Elementor-built), template style wrapper not applying (serif font visible).
 - Cache-purge re-check shows stale content (substep 5) → purge again, wait, re-check. If persistent, check CDN/LiteSpeed cache settings.
 - GSC indexing fails → never blocks publish. Capture, surface at Step 11.
+
+**Publish-depends-on-imagery guard (v1.2, Issue #15).** Step 8 (imagery wiring) must complete for a page BEFORE that page proceeds to publish in any downstream wave. If a page reaches a publish wave with dangling placeholder image references (`*-PLACEHOLDER.png` filenames, `[…placeholder…]` text, or `<!-- MISSING -->` comments in the hero/about slots), the publish script must refuse that page. The only bypass is an explicit operator-approved "publish without images" decision routed through `_pending-operator-decisions.md` — this is never a silent default. When the operator approves publish-without-images, the decision must be matched to the existing imageless-page pattern (consistent with already-live pages that also lack images) — never a one-off that creates inconsistency. This guard closes the gap where EV pages 06-12 almost shipped with 404-returning placeholder image URLs (Issue #15).
 
 ### Step 9 — Indexing pass
 
