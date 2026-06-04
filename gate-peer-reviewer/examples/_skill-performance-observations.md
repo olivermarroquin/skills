@@ -24,10 +24,10 @@ The actionable rollup. Over N gates this surfaces which checks are weakest → t
 
 | Metric | Count | Notes |
 |---|---|---|
-| Gates observed (skill-fired) | 1 | Gate 001 — EV wave-1 Mode 6 dispatch, 2026-06-04 |
+| Gates observed (skill-fired) | 2 | Gate 001 (wave-1 dispatch) + Gate 002 (wave-2 dispatch), 2026-06-04 |
 | Uncovered-gate manual reviews logged | 3 | Phase 0 + PROVISION (Mode 3) + cross-cutting pass-collision — see Coverage-gap observations |
-| Skill verdicts that needed meta-correction before operator saw them | 1 of 1 | Gate 001 — skill said APPROVE-WITH-NOTES; correct verdict was REJECT-AND-REDO (wave-breaking command) |
-| Total misses (external caught, skill didn't) | 1 | Gate 001 — Phase 1B command errors on missing intersection-brief files |
+| Skill verdicts that needed meta-correction before operator saw them | 2 of 2 | Gate 001 (full reversal — wave-breaking command); Gate 002 (lighter — caught main issue, missed page 12 + scope). **Trend improving.** |
+| Total misses (external caught, skill didn't) | 2 | Gate 001 (Phase 1B command errors); Gate 002 (omitted page 12 from FILL-affected set + underframed 31-field scope) |
 | Total false positives (skill flagged, not real) | 0 | — |
 | Calibration deltas flagged | 0 | cost / confidence / verdict-severity off vs actual |
 
@@ -35,7 +35,7 @@ The actionable rollup. Over N gates this surfaces which checks are weakest → t
 
 | Check | Misses | Weakest-check rank |
 |---|---|---|
-| 1 — Contract satisfaction | 1 | Gate 001 — missed that Phase 1B command references non-existent intersection-brief files (needs input/file-existence sub-check) |
+| 1 — Contract satisfaction | 2 | Gate 001 (command refs non-existent files); Gate 002 (omitted page 12 from FILL-affected set — needs to enumerate ALL consumers of a shared input). **Weakest check — both misses here.** |
 | 2 — Calibration consistency | 0 | — |
 | 3 — Domain plausibility | 0 | — |
 | 4 — Cross-gate / cross-wave coherence | 0 | — |
@@ -135,6 +135,28 @@ The skill has **not yet fired in production** — the EV pages 06-12 run reached
 - **Verdict-of-verdicts:** YES — the skill's output needed meta-correction before the operator acted (it would have approved a wave-breaking command). Headline metric: on its first production fire, the skill required human override on a load-bearing call.
 
 **Re-emission (post-correction):** the corrected dispatch plan dropped `--intersection-briefs` (city-brief-only graceful path). Independent meta-review: **clean** — no new load-bearing issues; Phase 1A unchanged + sound, Phase 1B fix correct, sequencing + `--client-slug` resolution verified. The skill's re-emitted JSON correctly self-documented the Gate 001 miss (new D-02 high-severity catch + `pattern-disk-verify-integration-target` 4th-occurrence signal). Good transparency. The run (not the skill) did the disk-verify on the corrected command. **Follow-up (not done this turn — avoid mid-run churn):** bump `pattern-disk-verify-integration-target-before-drafting` times-observed 2→4 (my registry close-miss + Gate 001) + add Known Variation "applies to dispatch-plan shell commands, not just integration-spec drafting" — do at [T2-5] B1 ship.
+
+## Gate 002 — ev-electric-services wave-2-page-scaffold-draft Mode 6 EXECUTE dispatch (2026-06-04)
+
+**Substrate:** claude-code-task
+**Source:** skill JSON emitted inline at the Wave 2 dispatch gate (skill's 2nd distinct gate fire)
+
+### Skill output (autonomous)
+- **Verdict:** APPROVE-WITH-NOTES. **Caught (good, on its own):** the 31-FILL-per-file content gap in the service data files — flagged that the scaffolder renders FILL strings verbatim and sub-agents must author inline. This is a real load-bearing catch the skill made itself — clear improvement over Gate 001 (which missed entirely). Also good: dry-ran the two weakest pages (07, 12).
+
+### Meta-reviewer independent pass
+- **Verdict:** APPROVE-WITH-NOTES (with corrections to the skill's enumeration).
+- **Disk-verified:** 5/6 service files = 31 FILLs each (ev-charger, light-fixture, smoke-alarm, outlet, panel-upgrade); troubleshooting = 0. Confirms 07/11 are content-complete from the data file; 06/08/09/10/12 need full content authoring.
+
+### Delta
+- **PARTIAL MISS (load-bearing):** skill named pages "06, 08, 09, 10" as FILL-affected but **omitted page 12** (uses the same FILL'd `light-fixture.json`). Page 12 falls in a gap: the dispatch's inline-authoring instruction covers 07/11/12 for empty city slots; the FILL note covers 06/08/09/10 for FILLs — page 12's 31 FILLs are covered by neither. Would ship verbatim FILLs. **Should have been caught by Check 1** (trace every data file → every page consuming it).
+- **UNDERFRAME:** skill framed 31 prose fields as "find/replace FILL"; actually it's the entire page copy. Wave 2 = the real content-authoring wave; estimate + cost are light.
+- **AGREEMENT / improvement:** skill caught the core FILL issue unprompted (vs Gate 001 total miss) + dry-ran weakest pages. The calibration curve is bending the right way: Gate 001 = total miss; Gate 002 = caught main issue, undercounted scope.
+
+### Improvement signal
+- **Recurring?** disk-verify-completeness (trace ALL consumers/fields, not the subset you expect) — now at Gate 002 too. Same family as Issue #13. Reinforces [T2-5] B1 (input/consumption-chain verification must enumerate ALL consumers).
+- **Concrete target:** `references/check-spec.md` Check 1 input-existence sub-check must also **enumerate every page/consumer of each shared input** (light-fixture.json → pages 06 AND 12), not just the first.
+- **Verdict-of-verdicts:** YES, but lighter than Gate 001 — skill's verdict was directionally right; meta-correction added page 12 + scope reframe rather than reversing the verdict.
 
 ---
 
