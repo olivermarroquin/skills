@@ -134,6 +134,8 @@ The skill has **not yet fired in production** — the EV pages 06-12 run reached
 - **Concrete target:** `references/check-spec.md` Check 1 — add an **input/file-existence verification sub-check**: for every file/command the gate output references, grep disk; flag any that don't exist; for shell commands, verify the referenced inputs resolve. This would have flipped Gate 001 to REJECT-AND-REDO correctly.
 - **Verdict-of-verdicts:** YES — the skill's output needed meta-correction before the operator acted (it would have approved a wave-breaking command). Headline metric: on its first production fire, the skill required human override on a load-bearing call.
 
+**Re-emission (post-correction):** the corrected dispatch plan dropped `--intersection-briefs` (city-brief-only graceful path). Independent meta-review: **clean** — no new load-bearing issues; Phase 1A unchanged + sound, Phase 1B fix correct, sequencing + `--client-slug` resolution verified. The skill's re-emitted JSON correctly self-documented the Gate 001 miss (new D-02 high-severity catch + `pattern-disk-verify-integration-target` 4th-occurrence signal). Good transparency. The run (not the skill) did the disk-verify on the corrected command. **Follow-up (not done this turn — avoid mid-run churn):** bump `pattern-disk-verify-integration-target-before-drafting` times-observed 2→4 (my registry close-miss + Gate 001) + add Known Variation "applies to dispatch-plan shell commands, not just integration-spec drafting" — do at [T2-5] B1 ship.
+
 ---
 
 ## Related
