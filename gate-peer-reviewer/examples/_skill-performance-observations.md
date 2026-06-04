@@ -24,7 +24,8 @@ The actionable rollup. Over N gates this surfaces which checks are weakest → t
 
 | Metric | Count | Notes |
 |---|---|---|
-| Gates observed | 0 | — |
+| Gates observed (skill-fired) | 0 | skill not yet fired in production — first fire is EV Wave 1 EXECUTE (Phase 1c) |
+| Uncovered-gate manual reviews logged | 3 | Phase 0 + PROVISION (Mode 3) + cross-cutting pass-collision — see Coverage-gap observations |
 | Skill verdicts that needed meta-correction before operator saw them | 0 | the headline efficiency metric: how often the meta-layer still has to intervene |
 | Total misses (external caught, skill didn't) | 0 | — |
 | Total false positives (skill flagged, not real) | 0 | — |
@@ -43,7 +44,7 @@ The actionable rollup. Over N gates this surfaces which checks are weakest → t
 
 **Recurring-gap watchlist** (a gap that appears 2+ times → promote to a v1.1 spec-patch handoff):
 
-_None yet. A gap lands here on its 2nd occurrence with a one-line pointer to both entries._
+- **`disk-verify-integration-target` (3 occurrences) → PROMOTE.** Asserting an input/integration target exists without grepping disk. Seen: gate-peer-reviewer build "5 gates" vs 1; [T2-4] schema registry doc-derived vs disk (lesson D-06); EV pages 06-12 PROVISION gap analysis (run Issue #7). **Fix:** input-existence / consumption-chain verification sub-check on Check 1, fired at the PROVISION gate. Tracked: handoff [T2-5] Phase B. Underlying pattern already promoted: `pattern-disk-verify-integration-target-before-drafting`.
 
 ---
 
@@ -94,7 +95,21 @@ Lower-friction fallback when no run is persisting to disk: the operator pastes t
 
 ## Observations
 
-_Awaiting the first production gate (first EV or S&H execution wave). Entries append below as `## Gate 001`, `## Gate 002`, …_
+### Coverage-gap observations (EV pages 06-12 run, 2026-06-03/04)
+
+The skill has **not yet fired in production** — the EV pages 06-12 run reached Phase 1b (PROVISION) but the skill's only hook is the Mode 6 EXECUTE dispatch gate (Phase 1c). So every catch below came from the **manual meta-layer at gates the skill does not cover.** These are the calibration evidence base for extending coverage (handoff [T2-5] Phase B is gated on this).
+
+**Uncovered gate: Phase 0 (measurement).** Manual review caught: (a) DataForSEO pulled at US-national + organic-only for a local-SEO client (wrong ranking surface; would have shipped "EV has zero visibility" — false); (b) the run's analysis noticed the Map-Pack-vs-organic distinction in prose but didn't act on it ("noticed-but-didn't-act"). → A future Check 3 (domain plausibility) extension should verify geo-targeting matches client locality + flag prose-vs-measurement mismatches. Source: run Issues #2.
+
+**Uncovered gate: Phase 1b (PROVISION / Mode 3).** Manual review caught: gap analysis built from the pipeline model, not disk — claimed a non-existent troubleshooting brief existed + missed McLean/Oakton city data files; both would have broken Wave 2. → This is the literal job of a PROVISION-gate Check 1 with an **input-existence verification sub-check** (grep every claimed input; trace the full consumption chain). Source: run Issue #7. **This is exactly `pattern-disk-verify-integration-target-before-drafting` recurring at an uncovered gate.**
+
+**Cross-cutting: pass-number collision.** Two chats nearly wrote the same changelog pass (116) because snapshots go stale. → A coherence check at any tracker-writing gate should re-read the pass counter from disk before allocating. Source: run Issue #9.
+
+**Recurring-gap signal for the watchlist:** `disk-verify-integration-target` has now appeared as a catch at **3 uncovered gates/contexts** (gate-peer-reviewer build "5 gates" + [T2-4] schema registry doc-vs-disk + this PROVISION gap analysis). It is the single highest-value thing for the skill to automate via an input-existence / consumption-chain verification sub-check once coverage extends. → **Promote to the v1.1 spec-patch agenda** (see [T2-5] Phase B).
+
+### Per-gate entries (skill-fired)
+
+_The first skill-fired entry lands when Wave 1 EXECUTE (Phase 1c) dispatches — the first gate the skill actually covers. It will use the `## Gate 001` schema above._
 
 ---
 
