@@ -24,9 +24,9 @@ The actionable rollup. Over N gates this surfaces which checks are weakest → t
 
 | Metric | Count | Notes |
 |---|---|---|
-| Gates observed (skill-fired) | 3 | Gate 001 (wave-1) + Gate 002 (wave-2) + Gate 003 (wave-3), 2026-06-04 |
+| Gates observed (skill-fired) | 4 | Gate 001 (wave-1) + 002 (wave-2) + 003 (wave-3) + 004 (wave-4 publish), 2026-06-04 |
 | Uncovered-gate manual reviews logged | 3 | Phase 0 + PROVISION (Mode 3) + cross-cutting pass-collision — see Coverage-gap observations |
-| Skill verdicts that needed meta-correction before operator saw them | 2 of 3 | Gate 001 (full reversal); Gate 002 (caught main issue, missed page 12); Gate 003 (NONE — clean + correct). **Trend: miss → undercount → clean.** |
+| Skill verdicts that needed meta-correction before operator saw them | 3 of 4 | 001 (full reversal); 002 (missed page 12); 003 (NONE — clean); 004 (HOLD — missed known Issue #15 broken images). Trend non-monotonic: clean Gate 003 was a simple wave; Gate 004 (complex, high-stakes) regressed. |
 | Total misses (external caught, skill didn't) | 2 | Gate 001 (Phase 1B command errors); Gate 002 (omitted page 12 from FILL-affected set + underframed 31-field scope) |
 | Total false positives (skill flagged, not real) | 0 | — |
 | Calibration deltas flagged | 0 | cost / confidence / verdict-severity off vs actual |
@@ -177,6 +177,27 @@ The skill has **not yet fired in production** — the EV pages 06-12 run reached
 - **Recurring?** none new.
 - **Trend:** Gate 001 (full reversal) → Gate 002 (caught main issue, undercounted) → Gate 003 (clean + correct). Maturation curve bending toward trustworthy. Caveat: Gate 003 was a structurally simple wave (link-wiring); the harder test is whether the skill stays clean on a complex wave once [T2-5] B1 ships.
 - **Verdict-of-verdicts:** NO meta-correction needed (first time).
+
+## Gate 004 — ev-electric-services wave-4-wordpress-publish Mode 6 EXECUTE dispatch (2026-06-04)
+
+**Substrate:** claude-code-task (operator-attended publish wave)
+**Source:** skill JSON inline at the Wave 4 dispatch gate (4th distinct fire; highest-stakes — external writes to live site)
+
+### Skill output (autonomous)
+- **Verdict:** APPROVE, 1 note (JSON-LD schema — verify embedded; run confirmed it is). Caught the JSON-LD question (real, useful). Confirmed the 4 operator-requested items (draft-first, no-clobber HTTP-verified, GSC-after-200, per-page confirmation).
+
+### Meta-reviewer independent pass
+- **Verdict:** HOLD / APPROVE-WITH-EDITS — do not publish until images resolved.
+- **MISS (load-bearing, and it was a KNOWN issue):** the dispatch + the skill both **omitted Issue #15** — pages reference dangling `<slug>-hero-PLACEHOLDER.png` / `-about-PLACEHOLDER.png` that almost certainly 404 → broken hero+about images on every live page. The run HTTP-verified page slugs (404/200) but did NOT HTTP-verify the image assets. This was already flagged by the meta-layer the prior turn (Issue #15); it still didn't reach the dispatch (operator follow-up message didn't land before the run generated the plan) AND the skill didn't independently catch it.
+
+### Delta
+- **Compounding miss:** at the highest-stakes gate (live publish), neither the skill nor the dispatch caught a visible-defect issue that was already documented. Partial safety net: Option A manual publish has a draft-preview step (7) where the operator would SEE broken images before flipping live — so not a silent ship, but reactive.
+- **AGREEMENT:** JSON-LD catch was good; no-clobber HTTP verification was solid diligence; manual Option A is the right call (no WP publish scripts/creds exist).
+
+### Improvement signal
+- **Recurring?** disk/asset-existence verification (verify ALL referenced assets — image URLs, not just page slugs) — same family as Gate 001/Issue #13/#15. Reinforces [T2-5] B1: input-existence sub-check must cover referenced **image/media assets**, not only page slugs + briefs + data files.
+- **Concrete target:** Check 1 input-existence sub-check + the publish (Wave 4) handoff template must HTTP-verify referenced media assets resolve, not just page slugs.
+- **Verdict-of-verdicts:** YES — meta-correction needed (HOLD on a clean-looking APPROVE). Note: this miss is partly a process gap (a known flagged issue didn't reach the dispatch) + partly skill (didn't independently re-catch).
 
 ---
 
