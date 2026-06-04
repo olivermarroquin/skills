@@ -24,10 +24,10 @@ The actionable rollup. Over N gates this surfaces which checks are weakest → t
 
 | Metric | Count | Notes |
 |---|---|---|
-| Gates observed (skill-fired) | 0 | skill not yet fired in production — first fire is EV Wave 1 EXECUTE (Phase 1c) |
+| Gates observed (skill-fired) | 1 | Gate 001 — EV wave-1 Mode 6 dispatch, 2026-06-04 |
 | Uncovered-gate manual reviews logged | 3 | Phase 0 + PROVISION (Mode 3) + cross-cutting pass-collision — see Coverage-gap observations |
-| Skill verdicts that needed meta-correction before operator saw them | 0 | the headline efficiency metric: how often the meta-layer still has to intervene |
-| Total misses (external caught, skill didn't) | 0 | — |
+| Skill verdicts that needed meta-correction before operator saw them | 1 of 1 | Gate 001 — skill said APPROVE-WITH-NOTES; correct verdict was REJECT-AND-REDO (wave-breaking command) |
+| Total misses (external caught, skill didn't) | 1 | Gate 001 — Phase 1B command errors on missing intersection-brief files |
 | Total false positives (skill flagged, not real) | 0 | — |
 | Calibration deltas flagged | 0 | cost / confidence / verdict-severity off vs actual |
 
@@ -35,7 +35,7 @@ The actionable rollup. Over N gates this surfaces which checks are weakest → t
 
 | Check | Misses | Weakest-check rank |
 |---|---|---|
-| 1 — Contract satisfaction | 0 | — |
+| 1 — Contract satisfaction | 1 | Gate 001 — missed that Phase 1B command references non-existent intersection-brief files (needs input/file-existence sub-check) |
 | 2 — Calibration consistency | 0 | — |
 | 3 — Domain plausibility | 0 | — |
 | 4 — Cross-gate / cross-wave coherence | 0 | — |
@@ -109,7 +109,30 @@ The skill has **not yet fired in production** — the EV pages 06-12 run reached
 
 ### Per-gate entries (skill-fired)
 
-_The first skill-fired entry lands when Wave 1 EXECUTE (Phase 1c) dispatches — the first gate the skill actually covers. It will use the `## Gate 001` schema above._
+## Gate 001 — ev-electric-services wave-1-research-gap-close Mode 6 EXECUTE dispatch (2026-06-04)
+
+**Substrate:** claude-code-task
+**Source:** skill JSON emitted inline at the Mode 6 dispatch gate (first-ever production fire of the skill)
+
+### Skill output (autonomous)
+- **Verdict:** APPROVE-WITH-NOTES
+- **Catches:** 3 notes — (1) no project state file exists, must init at Step 8; (2) cost/wall-clock uncalibrated (first run); (3) Phase 1B `--intersection-briefs` names services without briefs but "scaffold-city-data.py degrades gracefully." + 1 D-row candidate (state-file init schema).
+- **Cost / Sonar:** $0 / 0
+- **Stated confidence:** n/a (no field)
+
+### Meta-reviewer independent pass
+- **Verdict:** REJECT-AND-REDO
+- **Catches:** Phase 1B command **will error and break the wave.** `scaffold-city-data.py` (lines 1236-1238) returns exit code 2 when a named `--intersection-briefs` file is missing; it does NOT skip. The command names 5 intersection briefs (`ev-charger,light-fixture,troubleshooting,smoke-alarm,outlet`) that resolve to `intersections/<svc>--mclean-va.md` / `--oakton-va.md` — none exist on disk. Fix: drop `--intersection-briefs` entirely (city-brief-only = the documented graceful empty-slots case; Wave 2 fills inline).
+
+### Delta
+- **MISS (load-bearing):** skill approved a Phase 1B command that errors on execution. **Should have been caught by Check 1** (does the command's referenced inputs exist?). **Why it wasn't:** Check 1 has no input/file-existence verification sub-check; the skill accepted the dispatch plan's "degrades gracefully" assertion without grepping for the named intersection-brief files. This is the SAME `disk-verify-integration-target` pattern the skill exists to automate — it missed an instance of its own core pattern.
+- **CALIBRATION:** skill's other 2 notes (state-file init, uncalibrated cost) were correct + useful.
+- **AGREEMENT:** state-file-init catch was a good, real Check 1 find.
+
+### Improvement signal
+- **Recurring?** disk-verify-integration-target — now ALSO at the EXECUTE dispatch gate (4th context). On watchlist; reinforces [T2-5] Phase B.
+- **Concrete target:** `references/check-spec.md` Check 1 — add an **input/file-existence verification sub-check**: for every file/command the gate output references, grep disk; flag any that don't exist; for shell commands, verify the referenced inputs resolve. This would have flipped Gate 001 to REJECT-AND-REDO correctly.
+- **Verdict-of-verdicts:** YES — the skill's output needed meta-correction before the operator acted (it would have approved a wave-breaking command). Headline metric: on its first production fire, the skill required human override on a load-bearing call.
 
 ---
 
