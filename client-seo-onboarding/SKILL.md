@@ -1,10 +1,12 @@
 ---
 name: client-seo-onboarding
-version: 1.3
+version: 1.4
 description: One-Cowork-message entry point for onboarding a brand-new SEO client end-to-end. v1.1 wraps the v1.0 11-step pipeline (research → author data → verify WP → scaffold → imagery → publish → index → internal links → report) with three load-bearing additions — per-step `output-quality-loop` integration (Mode 1 EVALUATE + Mode 4 AUTO-RESEARCH + Mode 5 AUTO-APPROVE per artifact), multi-chat wave decomposition baked into the plan-bullet opening (scope-estimation gate computes hours + chat count + wave shape before any work fires), and the AI-surface reachability matrix that replaces "Cowork can't reach X" framing with concrete per-surface paths (Perplexity Sonar + OpenAI + Gemini + Anthropic Claude all working today via tier-3 carve-out; AI Overviews via Claude in Chrome). Triggers on phrases like "process this new client," "onboard this client for SEO," "run client-seo-onboarding on <slug>," "kick off the Core 30 build for <client>," "set up <client> end to end," "ingest these meeting notes and start the onboarding," or any time the operator hands over meeting notes + an intake form + a client slug and wants the full Core 30 pipeline run. Also use to resume a partially-completed onboarding when the operator says "pick up <slug>'s onboarding where we left off" — the skill detects the state file at 04_projects/clients/_active/<slug>/_state/onboarding.json and continues from the last completed step (or last in-progress wave for multi-chat runs).
 ---
 
-# Client SEO Onboarding (orchestrator skill, v1.3)
+# Client SEO Onboarding (orchestrator skill, v1.4)
+
+> **v1.4 changelog (2026-06-05, Build wave 4)** — gate-peer-reviewer v2 autonomous dispatch integration. After each artifact-producing step's quality-loop exit (Steps 3/5/6/8/11), the orchestrator spawns the peer-reviewer as a Claude Code Task sub-agent that runs registered Check 1 satisfaction targets (full-placeholder-family-sweep, source-client-leak-audit, live-rendered-cache-busted-verification per gate type) + Checks 2-6. Returns structured JSON verdict inlined alongside gate output for operator — single approve surface, no manual paste-transport. REJECT-AND-REDO auto-fixes before surfacing (capped at 2 iterations). Graceful degradation logs `peer-reviewer-skipped` to event log if Task fails. Steps 1/2/4/7/9/10 excluded (no template-derived artifacts or covered by other orchestrators). See § "Peer-reviewer dispatch (v1.4)" for the full integration block.
 
 > **v1.3 changelog (2026-06-04, [T2-7] + [T2-6])** — Two rounds of substantive Step 6/7/8 edits. **(1) [T2-7] publish-verification hardening (2026-06-04):** Step 8 expanded from 3 substeps to 7 — added substep 4 (live-rendered cache-busted verification: modified_time, eyebrow H1, title visibility, font family, image fill, map fill, zero placeholder text, rendered-structure comparison to known-good sibling), substep 5 (cache-purge + incognito re-check with stale-cache/screenshot-conflict rules), substep 6 (state update with `live_verified: true`), substep 7 (GSC indexing only after substep 4 passes). Both substeps 4 and 5 are convention-class (SOP prose, not deterministic gates). Failure modes updated for template-parity, placeholder hard-block, disk-sync refusal, live-verification failure, stale-cache persistence. Sourced from EV pages 06-12 run Issues #24-#28. **(2) [T2-6] imagery-wave integration (2026-06-04):** Step 6 enhanced — `generate-imagery-prompts.py` now takes `--hero-style {ahmad-centric,service-scene,hands-only}`, emits self-documenting per-prompt headers (Type / Reference photos / Aspect / Produces), carries embroidered-no-patch wardrobe clause (Issue #20), references `marketing-assets/reference-photos/` home per `_meta/conventions.md` § "Client imagery reference assets," surfaces About-portrait reuse from prior-log cache. Step 7 pause message enhanced with self-documenting prompt guidance + reference-photo home path + variant-selection flow preview. Step 8 substep 1 enhanced — variant-selection now routed through `_pending-operator-decisions.md` gate file per `operator-gate-routing`; multi-page same-service batch guidance added. Substep 2 enhanced with `--copy-to` mode for multi-page batches (Issue #19). Publish-depends-on-imagery guard added after Step 8 failure modes (Issue #15: no publish with dangling placeholder image refs unless explicit operator-approved bypass via gate file). Sourced from EV pages 06-12 run Issues #15-#20.
 
@@ -754,6 +756,65 @@ v1.1 says the orchestrator routes EVERY artifact through `output-quality-loop` p
 **The per-step block format** is documented in each step's `Quality loop:` subsection. Step 11's final-report block aggregates the run rather than newly evaluating prior artifacts.
 
 **Operator bypass.** Honors `--bypass-quality-loop` (or "skip the quality loop") in the original onboarding request. The skill still produces all artifacts; just skips the Mode 1-5 invocations and writes a bypass entry to each relevant `_quality-log.md`. Per-artifact bypass also supported via `--skip-quality-loop-this-artifact <path>`.
+
+## Peer-reviewer dispatch (v1.4) — autonomous gate review
+
+> **v1.4 changelog (2026-06-05, Build wave 4)** — gate-peer-reviewer v2 integration. After each artifact-producing step's quality-loop exit, the orchestrator spawns the peer-reviewer as a Task sub-agent. The peer-reviewer runs the registered Check 1 satisfaction targets for that gate type (named procedures: full-placeholder-family-sweep, source-client-leak-audit, live-rendered-cache-busted-verification) + Checks 2-5 (when applicable) + Check 6 (closing gates only). Returns a structured JSON verdict the orchestrator inlines alongside the gate output for operator review. Operator sees one combined surface (gate output + peer-review verdict) and approves with one action. No more manual paste-transport between chats.
+
+**Dispatch shape.** ONE additive block per artifact-producing step, inserted AFTER the quality-loop exit and BEFORE the operator gate. Concrete integration points:
+
+| Step | Gate type | Dispatch fires after | Operator sees |
+|---|---|---|---|
+| 3 — Author data files | G-data | Quality-loop four-substep exit on all JSONs | Data files + peer-review verdict |
+| 5 — Bulk scaffold | G-scaffold | Quality-loop four-substep exit on all pages | Scaffolded pages + peer-review verdict |
+| 6 — Imagery prompts | G-imagery | Quality-loop four-substep exit on all logs | Imagery prompts + peer-review verdict |
+| 8 — Resume per page | G-publish | Substep 3 (wire) completes, before substep 4 | Published page + peer-review verdict |
+| 11 / Closing Protocol | G-wave-close | Wave close state writes complete | Wave-close summary + KCA peer-review |
+
+**Per-gate dispatch block (Claude Code substrate):**
+
+```
+## Peer-reviewer dispatch
+
+Gate type: <G-data | G-scaffold | G-imagery | G-publish | G-wave-close>
+Orchestrator: client-seo-onboarding
+Project: <client-slug>
+Wave: <current_wave>
+
+Context paths for the Task sub-agent:
+- Gate output: <the artifact(s) just produced — file paths or inline text>
+- Gate-type registry: ~/workspace/skills/gate-peer-reviewer/references/gate-type-registry.md
+- Check spec: ~/workspace/skills/gate-peer-reviewer/references/check-spec.md
+- State file: ~/workspace/second-brain/04_projects/clients/_active/<slug>/_state/onboarding.json
+- Build-order: ~/workspace/second-brain/04_projects/clients/_active/<slug>/website-archive/new/core-30/_build-order.md
+- Client JSON: ~/workspace/repos/ai-agency-core/scripts/data/client-<slug>.json
+- Service JSONs: ~/workspace/repos/ai-agency-core/scripts/data/services/<slug>/ (client-override dir) + shared
+- Lesson files: ~/workspace/second-brain/05_shared-intelligence/lessons/ (most recent for this client)
+
+Task instruction: Read the gate-type registry entry for <gate_id>. Run Check 1 satisfaction targets
+(including all named procedures listed). Run Checks 2-5 per check-spec.md skip logic. If closing gate,
+run Check 6. Return the structured JSON verdict per references/return-contract.md.
+```
+
+**What the orchestrator does with the verdict:**
+
+- `APPROVE` → proceed to operator gate (operator sees gate output + "Peer review: APPROVED").
+- `APPROVE-WITH-NOTES` → proceed to operator gate with notes inlined (operator decides on notes).
+- `REJECT-AND-REDO` → DO NOT surface to operator. Fix the catch, re-run the step, re-dispatch peer-reviewer. Cap at 2 peer-review iterations per gate; on 3rd REJECT, escalate to operator with full catch history.
+- `ESCALATE-AMBIGUOUS` → surface to operator with the peer-reviewer's ambiguity framing; operator decides.
+
+**Graceful degradation.** If the Task sub-agent fails (peer-reviewer skill unavailable, context too large, timeout), the orchestrator logs a `peer-reviewer-skipped` row to `_meta/_event-log.md` per the graceful-degradation format in gate-peer-reviewer SKILL.md and proceeds to the operator gate WITHOUT peer review. The operator sees the gate output alone + a note that peer review was skipped with the reason. Skipping is acceptable as long as it's tracked; silently dropping the review step is not.
+
+**Steps that do NOT dispatch the peer-reviewer:**
+
+| Step | Why |
+|---|---|
+| 1 — Ingest | Extraction, not a template-derived artifact; low leak/placeholder risk |
+| 2 — Research briefs | Research-brief gates are vault-orchestrator territory (Mode 6); this orchestrator delegates research to sub-skills |
+| 4 — Verify WP REST API | Verification step; no artifact to review |
+| 7 — Pause (Higgsfield) | Wait state; no artifact |
+| 9 — Indexing confirmation | State-based cross-check; no artifact |
+| 10 — Internal-link pass | Link proposals are low-risk for source-client leaks + have their own quality loop |
 
 ## Related
 

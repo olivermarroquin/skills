@@ -1,17 +1,17 @@
 ---
 type: reference
 skill: gate-peer-reviewer
-skill-version: 1.0
+skill-version: 2.0
 created: 2026-06-03
-updated: 2026-06-03
-tags: [reference, gate-type-registry, substrate-agnostic, future-orchestrator-friendly]
+updated: 2026-06-05
+tags: [reference, gate-type-registry, substrate-agnostic, future-orchestrator-friendly, page-build, client-seo-onboarding]
 ---
 
 # Gate-type registry
 
 The peer-reviewer reads this registry to know what to expect at any gate type — making the skill substrate-agnostic and future-orchestrator-friendly without hard-coding any single orchestrator's gates.
 
-**v1 scope (deliberate).** v1 seeds the registry with vault-orchestrator Mode 6 EXECUTE's 5 gates as the canonical instance + documents the registration shape. Future orchestrators self-register at their build time. Cross-orchestrator generalization is **deferred by design (Build wave 4 per handoff), not by omission** — v1 ships the SHAPE and one full instance; expansion happens when v1 production calibration data surfaces additional gate shapes worth modeling.
+**v2 scope.** v1 seeded the registry with vault-orchestrator Mode 6 EXECUTE's 5 research-brief gates as the canonical instance + documented the registration shape. v2 (Build wave 4, 2026-06-05) adds client-seo-onboarding's 5 page-build gates as the second registered instance + 3 reusable named verification procedures that any gate type can reference. Two orchestrators, two artifact classes (research briefs + built pages), one engine.
 
 ## Registration shape
 
@@ -175,18 +175,223 @@ v1.0 ships with the single Mode 6 Step 6/7 hook because it covers Gates 3 + 4 (c
   registered_at: 2026-06-03
 ```
 
+## Reusable named verification procedures (project-agnostic)
+
+Named procedures any gate type can reference in `check_1_satisfaction_targets`. Each procedure defines a disk-verification discipline the peer-reviewer runs at Check 1 time. Procedures are ADDITIVE to check-spec.md's Check 1 contract-satisfaction logic — they don't modify the 6-check engine, they feed it.
+
+### Procedure: `full-placeholder-family-sweep`
+
+**Purpose.** Verify an artifact contains zero residual placeholder tokens. A page/draft/data file is clean ONLY when ALL of these regexes return zero matches (minus documented expected exceptions like pre-imagery image-URL FILLs):
+
+```
+FILL:
+<!-- MISSING
+<!-- TBD
+\bTBD\b
+<TBD
+\[.*placeholder.*\]
+\{[a-z_]+\}    (unrendered template braces)
+```
+
+**Calibration source.** S&H Core 30 peer-review PR-15 (reviewer missed `<TBD>` Q&A bodies because token list only had `FILL:` + `<!-- MISSING -->`) + PR-16 (`{phone_display}` leaked because publish hard-block had the same incomplete family). The full family was codified in `publish-core-30-page.py` `check_placeholder_gate()` during the run.
+
+**How to run.** Grep the artifact for each regex. Report per-regex hit count. Expected exceptions (e.g., 2 image-URL FILL entries before Step 8 imagery wiring) must be named in the gate-type entry's `expected_exceptions` field — any FILL not in the exception list is a catch.
+
+**Applies at gate types.** Any gate reviewing a text artifact that may contain templates, drafts, or data files. Currently: G-data, G-scaffold, G-imagery, G-publish.
+
+---
+
+### Procedure: `source-client-leak-audit`
+
+**Purpose.** Verify that artifacts derived from a prior client's templates carry zero source-client-specific content. Audits 6 surfaces:
+
+| Surface | What to check | Calibration source |
+|---|---|---|
+| 1. Slug/prefix keys | `page_slug_template` prefix in service JSONs matches THIS client's build-order slug, not the source client's | PR-01 (EV's `ev-charger` prefix vs S&H's `ev-charger-installation`) |
+| 2. Related-cards catalog | `related_cards` entries point only to THIS client's services, not the source's | PR-07 (EV's 5-service catalog on S&H pages → dead links) |
+| 3. Image-URL domains | `hero_image_url`, `about_image_url`, JSON-LD `image` use THIS client's domain, not the source's | PR-07 (`evelectric.pro` URLs in S&H files) |
+| 4. Owner/brand names in prose | Zero occurrences of source client's owner name or business name in rendered text | PR-04 ("Ahmad" in S&H files), PR-37 (maps iframe title + CSS comment) |
+| 5. Brand-mark in imagery prompts | Wardrobe/uniform clause names THIS client's mark, not the source's | PR-19a (EV Electric logo hardcoded in S&H imagery prompts — costliest catch) |
+| 6. Face reference in imagery | Face-reference path points to THIS client's owner face crop in `reference-photos/`, not `brand_image_url` or other non-face file | PR-19b (`brand_image_url` used instead of owner face crop) |
+
+**How to run.** Read the source client's identity fields from their JSON (`name`, `alternate_name`, `owner_name`) OR from the `check_brand_leak_gate()` deterministic guard's `foreign_brands` list. Grep the artifact under review for each identity string. Also verify surfaces 1-3 structurally (prefix match, related_cards membership, domain match). Any hit = catch.
+
+**Applies at gate types.** Any gate reviewing artifacts derived from a prior client template. Currently: G-data (surfaces 1-4), G-imagery (surfaces 4-6), G-scaffold (surfaces 1-4), G-publish (surface 4 via rendered text).
+
+---
+
+### Procedure: `live-rendered-cache-busted-verification`
+
+**Purpose.** Verify a published page renders correctly in the browser, not just in post_content HTML. A grep of HTML source is NOT acceptance — it cannot detect serif fallback, duplicate theme titles, or old-vs-new content structure.
+
+**Verification steps (all required):**
+
+1. Fetch the LIVE published URL with a cache-buster (`?v=<timestamp>`).
+2. Verify `modified_time` advanced past the prior value (confirms WP actually updated).
+3. Verify H1 matches expected eyebrow + clean-H1 form (not a combined serif H1 or stale content).
+4. Verify title visibility: WP page title is hidden (no duplicate theme title above the hero). **Per-client theme adaptation required** — the hide-selectors must match THIS client's theme, not the source client's (PR-17: S&H's theme title element not in EV's selector list).
+5. Verify font-family: page renders in sans-serif via `.evp-corepage` styling (serif fallback = style wrapper didn't survive upload → fail).
+6. Verify image fill: hero + about images fill containers edge-to-edge (no dashed border / blue frame / placeholder chrome).
+7. Verify map fill: Google Maps embed fills its container (not undersized / not a placeholder).
+8. Verify zero placeholder text on the RENDERED page (runs `full-placeholder-family-sweep` on the live-fetched content).
+9. Compare RENDERED structure to a named known-good sibling page (same client, same template generation).
+10. **Cache-purge re-check:** after logged-in render verification, purge page cache + re-fetch public URL logged-out/cache-busted. Anonymous visitors + Googlebot must get the new version.
+11. **Fetch-vs-screenshot conflict rule:** when a tool fetch conflicts with an operator screenshot, treat as a cache question first, not a "the other agent lied" conclusion. Never override operator visual evidence with a single anonymous tool fetch.
+
+**Calibration source.** PR-17 (duplicate theme title on S&H — CSS hide-selectors tuned to EV theme missed S&H's title element), EV lesson Issues #26/#27/#28 (live-verification failure modes).
+
+**Applies at gate types.** G-publish (mandatory), any gate that touches live page state.
+
+---
+
+## v2.0 seed registry — client-seo-onboarding page-build gates (5 gates)
+
+Registered by Build wave 4. Calibrated against the S&H Core 30 page-build peer-review corpus (PR-01..PR-40, 2026-06-04/05). The 5 gates map to the artifact-producing steps in client-seo-onboarding v1.3's 11-step pipeline.
+
+```yaml
+- orchestrator: client-seo-onboarding
+  mode: page-build
+  gate_id: G-data
+  fires_at: after Step 3 (Author data files) quality-loop exit, before operator gate
+  emits: per-client service JSONs, city JSONs, client JSON — the data layer all downstream scaffolding reads
+  contract_source: skills/client-seo-onboarding/SKILL.md § Step 3
+  is_closing_gate: false
+  expects:
+    check_1_satisfaction_targets:
+      - service JSON page_slug_template prefix matches build-order slug for each service (PR-01 class)
+      - related_cards point ONLY to this client's services, not the source client's (PR-07 class)
+      - image-URL domains use this client's domain, not the source's (PR-07 class)
+      - zero source-client owner/brand names in prose fields (PR-04 class)
+      - full-placeholder-family-sweep = 0 (minus expected pre-imagery image-URL FILLs)
+      - named procedure: source-client-leak-audit (surfaces 1-4)
+      - named procedure: full-placeholder-family-sweep
+    check_1_expected_exceptions:
+      - hero_image_url FILL (deferred to Step 8 imagery wiring)
+      - about_image_url FILL (deferred to Step 8 imagery wiring)
+    check_2_calibration_metrics:
+      - none (page-build steps do not predict cost/wall-clock)
+    check_3_domain_probe_classes:
+      - none (data file correctness is structural, not jurisdiction-specific)
+    check_4_cross_wave_artifact_type: service-city-client-json
+    check_4_within_wave_prior_gate: null
+  registered_by: gate-peer-reviewer-build-wave-4-202606051000
+  registered_at: 2026-06-05
+
+- orchestrator: client-seo-onboarding
+  mode: page-build
+  gate_id: G-scaffold
+  fires_at: after Step 5 (Bulk scaffold) quality-loop exit, before operator gate
+  emits: per-page draft-v1.md + draft-v1-WP-WRAPPED.html — the scaffolded page drafts
+  contract_source: skills/client-seo-onboarding/SKILL.md § Step 5
+  is_closing_gate: false
+  expects:
+    check_1_satisfaction_targets:
+      - client-override fork actually fired (0 source-client refs in rendered content) — verify on a fork-using page, not just dry-run resolution (PR-07 class)
+      - exactly 1 <h1> per page (SEO requirement)
+      - hero structure matches a known-good sibling (same generation template)
+      - maps iframe carries a real embed key, not a placeholder
+      - full-placeholder-family-sweep = 0 (minus expected pre-imagery image-URL FILLs)
+      - named procedure: source-client-leak-audit (surfaces 1-4)
+      - named procedure: full-placeholder-family-sweep
+    check_1_expected_exceptions:
+      - hero_image_url FILL (deferred to Step 8 imagery wiring)
+      - about_image_url FILL (deferred to Step 8 imagery wiring)
+    check_2_calibration_metrics:
+      - none
+    check_3_domain_probe_classes:
+      - none (scaffold structure is template-driven, not domain-claim-driven)
+    check_4_cross_wave_artifact_type: page-draft-html
+    check_4_within_wave_prior_gate: G-data
+  registered_by: gate-peer-reviewer-build-wave-4-202606051000
+  registered_at: 2026-06-05
+
+- orchestrator: client-seo-onboarding
+  mode: page-build
+  gate_id: G-imagery
+  fires_at: after Step 6 (Imagery prompts) quality-loop exit, before operator gate
+  emits: per-page imagery-prompts-log.md — the prompts Higgsfield/CLI generates from
+  contract_source: skills/client-seo-onboarding/SKILL.md § Step 6
+  is_closing_gate: false
+  expects:
+    check_1_satisfaction_targets:
+      - brand mark is THIS client's, not the source client's — highest-stakes check (PR-19a: EV Electric logo hardcoded in S&H prompts would have produced 16 pages of competitor-branded owner photos)
+      - face reference points to owner face crop in reference-photos/, not brand_image_url or other non-face file (PR-19b)
+      - owner name is THIS client's owner, not the source's (PR-04 class)
+      - zero source-client brand/owner strings in any prompt text
+      - zero unrendered template tokens in prompt text
+      - named procedure: source-client-leak-audit (surfaces 4-6)
+      - named procedure: full-placeholder-family-sweep
+    check_1_expected_exceptions: []
+    check_2_calibration_metrics:
+      - none
+    check_3_domain_probe_classes:
+      - none
+    check_4_cross_wave_artifact_type: imagery-prompts-log
+    check_4_within_wave_prior_gate: G-scaffold
+  registered_by: gate-peer-reviewer-build-wave-4-202606051000
+  registered_at: 2026-06-05
+
+- orchestrator: client-seo-onboarding
+  mode: page-build
+  gate_id: G-publish
+  fires_at: after Step 8 (Resume per page) substep 3 (wire) completes, BEFORE substep 4 (live-rendered verification)
+  emits: published live page at canonical URL — the production artifact visible to customers and Googlebot
+  contract_source: skills/client-seo-onboarding/SKILL.md § Step 8
+  is_closing_gate: false
+  expects:
+    check_1_satisfaction_targets:
+      - named procedure: live-rendered-cache-busted-verification (all 11 steps)
+      - named procedure: full-placeholder-family-sweep (on live-fetched content)
+      - named procedure: source-client-leak-audit (surface 4 — brand names in rendered text)
+      - Yoast (or AIOSEO) title + meta description + focus keyword populated in page source (PR-11 class)
+      - page-options theme meta persists after REST re-publish (PR-17 class — per-client theme config)
+      - JSON-LD schema image = page hero, not brand_image_url (PR-25)
+      - modified_time advanced (confirms WP actually updated)
+    check_1_expected_exceptions: []
+    check_2_calibration_metrics:
+      - none
+    check_3_domain_probe_classes:
+      - none (live page correctness is structural + visual, not domain-claim)
+    check_4_cross_wave_artifact_type: live-published-page
+    check_4_within_wave_prior_gate: G-imagery
+  registered_by: gate-peer-reviewer-build-wave-4-202606051000
+  registered_at: 2026-06-05
+
+- orchestrator: client-seo-onboarding
+  mode: page-build
+  gate_id: G-wave-close
+  fires_at: at any wave's Closing Protocol (not only Step 11 — intermediate waves close after their scope completes)
+  emits: wave-close state writes + wave_log entry + report (Step 11 only) + handoff for next wave
+  contract_source: skills/client-seo-onboarding/SKILL.md § Closing Protocol + § Step 11
+  is_closing_gate: true
+  expects:
+    check_1_satisfaction_targets:
+      - wave_log entry captures all artifacts produced + verdicts + failures
+      - planned_remaining_waves updated (closed wave removed, estimates recomputed)
+      - current_wave cleared
+      - event-log row appended
+      - next-wave handoff spawned (if planned_remaining_waves non-empty)
+    check_2_calibration_metrics:
+      - none (page-build waves don't predict cost/wall-clock the same way research waves do)
+    check_3_domain_probe_classes:
+      - none
+    check_4_cross_wave_artifact_type: wave-close-shape
+    check_4_within_wave_prior_gate: G-publish
+    check_6_kca_applies: true
+  registered_by: gate-peer-reviewer-build-wave-4-202606051000
+  registered_at: 2026-06-05
+```
+
 ## How future orchestrators register
 
 When a new orchestrator skill is built (Phase 5 project-surveyor / project-analyst / project-decider; mission-control-dashboard backend operations; Hermes-daemon spawned waves; any future client- or project-specific orchestrator), the orchestrator's build chat appends entries to this registry covering each of its gate types.
 
 Registration entries land at chat close + are validated by the peer-reviewer's next invocation. Invalid entries (missing required fields, contradicting an existing entry without acknowledgment) trigger a Check 4 cross-wave coherence catch on the registration itself.
 
-## Build wave 4 — cross-orchestrator generalization
+## Build wave 4 — cross-orchestrator generalization (SHIPPED 2026-06-05)
 
-Per the build handoff, Build wave 4 expands this registry to cover client-seo-onboarding skill's gates + any other orchestrator's gates surfaced by v1 production calibration data. v1 ships only Mode 6's 5 gates because:
+Build wave 4 expanded this registry to cover client-seo-onboarding's 5 page-build gates (G-data, G-scaffold, G-imagery, G-publish, G-wave-close) + 3 reusable named verification procedures (full-placeholder-family-sweep, source-client-leak-audit, live-rendered-cache-busted-verification). Calibrated against the S&H Core 30 page-build peer-review corpus (PR-01..PR-40, 2026-06-04/05).
 
-1. Mode 6 is the only orchestrator emitting gate decisions in vault production today.
-2. Gate shapes for future orchestrators aren't yet stable enough to model — modeling them now would carry forward incorrect assumptions.
-3. v1's job is to ship the registration SHAPE + one full canonical instance. The shape is reusable; the canonical instance demonstrates the shape's coverage.
+**Architecture:** The 6-check engine remained untouched. Page-build gates are a registered instance — the same registry shape v1 designed for vault-orchestrator Mode 6 gates. Named verification procedures are project-agnostic reusable check blocks referenced by `check_1_satisfaction_targets`. Future orchestrators self-register at their build time using the same shape + referencing the same (or new) named procedures.
 
-Cross-orchestrator generalization is **deferred by design, not by omission.** Build wave 4 fires once 2-3 production runs of v1 surface enough data to model additional gate shapes accurately.
+**Acceptance:** The registered gate types + named procedures independently reproduce catches PR-01 (slug-prefix mismatch), PR-07 (source-client related_cards leak), PR-15 (TBD Q&A bodies), PR-16 (unrendered {phone_display}), PR-17 (duplicate theme title), PR-19a (competitor brand in imagery prompts), PR-19b (wrong face reference) — unprompted, from Check 1 satisfaction targets alone.
