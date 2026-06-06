@@ -2,3 +2,12 @@
 *.bak
 *.bak.*
 cache/
+
+# --- workspace cleanup 2026-06-06: ignore local cruft ---
+.DS_Store
+**/.DS_Store
+__pycache__/
+**/__pycache__/
+node_modules/
+**/node_modules/
+.claude/
