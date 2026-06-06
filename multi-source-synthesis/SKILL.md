@@ -415,6 +415,25 @@ The draft report stays in working memory — the chat does NOT declare done yet.
    don't run silently. See `~/workspace/skills/intel-routing/SKILL.md` for the full
    PUSH specification.
 
+5. **Client-driven shape only: house-voice-rewrite Mode 2 composition.**
+   When `synthesis-shape` is `client-driven`, invoke house-voice-rewrite Mode 2
+   on the synthesis draft before the auto-invoke output-quality-loop block fires.
+
+   - Pass the synthesis file path as the draft path.
+   - Pass the client's personality file at
+     `04_projects/clients/_active/<client-slug>/_state/personality-<client-slug>.md`
+     as the personality source.
+   - **Graceful degradation:** if the personality file does not exist at the
+     expected path, skip the house-voice-rewrite invocation entirely and log a
+     note in the completion report: "House-voice-rewrite skipped — personality
+     file not found at `<expected-path>`. Create the file and re-invoke
+     manually if client voice shaping is desired."
+
+   This step runs after companion skills complete and after the optional
+   intel-routing PUSH offer, but strictly before Stage 7. The rewritten
+   synthesis replaces the draft in-place; Stage 7's quality-loop evaluates the
+   post-rewrite version.
+
 ### Stage 7 — Auto-invoke output-quality-loop on the synthesis (and companion artifacts)
 
 After Stage 6 completes (synthesis file written, companion skills invoked, all files in working memory), the skill hands off to [[output-quality-loop]] for a structured evaluation pass. This is the closing step. The synthesis gets quality-checked before the chat declares done.

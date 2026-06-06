@@ -399,6 +399,202 @@ Registered by Build wave 4. Calibrated against the S&H Core 30 page-build peer-r
   registered_at: 2026-06-05
 ```
 
+## v3.0 seed registry — research-brief + knowledge-artifact gates (9 gate types)
+
+Registered by the toolkit-wide quality-tool integration audit (2026-06-06). These 9 gate types cover the artifact-producing skills that have explicit operator-review points but were not previously registered. Priority-ordered by cascade risk (a wrong brief propagates to every page that consumes it).
+
+```yaml
+# P1: service-seo-research
+- orchestrator: service-seo-research
+  mode: research
+  gate_id: G-service-brief
+  fires_at: after Phase 8 knowledge-growth hooks + AI-citation checklist §4.5, before closing
+  emits: Tier-1 service base brief at research-briefs/services/<service-slug>.md
+  contract_source: skills/service-seo-research/SKILL.md § Phase 8 + §4.5
+  is_closing_gate: true
+  expects:
+    check_1_satisfaction_targets:
+      - 15-section template fully populated (no empty sections)
+      - AI-citation hardening checklist §4.5 items all addressed (PASS or gap-flagged)
+      - sources-cited roll-up at §14 present with 10+ inline citations
+      - pricing-visibility matches client policy
+    check_2_calibration_metrics: []
+    check_3_domain_probe_classes:
+      - brand-currency-specific (tool pricing, service pricing)
+      - time-specific (legislation, code references)
+    check_4_cross_wave_artifact_type: research-brief
+    check_4_within_wave_prior_gate: null
+  registered_by: quality-tool-integration-audit-202606060000
+  registered_at: 2026-06-06
+
+# P2: intersection-research
+- orchestrator: intersection-research
+  mode: research
+  gate_id: G-intersection-brief
+  fires_at: after brief authoring, before closing
+  emits: Tier-3 intersection brief at research-briefs/intersections/<service>--<city>.md
+  contract_source: skills/intersection-research/SKILL.md
+  is_closing_gate: true
+  expects:
+    check_1_satisfaction_targets:
+      - parent briefs exist (Tier-1 service + Tier-2 city)
+      - live SERP data present with top-3 competitors
+      - keyword volume + KD populated
+      - localized FAQ themes present
+    check_2_calibration_metrics: []
+    check_3_domain_probe_classes:
+      - jurisdiction-specific (permits, utility companies per city)
+    check_4_cross_wave_artifact_type: research-brief
+    check_4_within_wave_prior_gate: null
+  registered_by: quality-tool-integration-audit-202606060000
+  registered_at: 2026-06-06
+
+# P3: city-base-research
+- orchestrator: city-base-research
+  mode: research
+  gate_id: G-city-brief
+  fires_at: after jurisdiction anomaly check + brief authoring, before closing
+  emits: Tier-2 city base brief at research-briefs/cities/<city-slug>.md
+  contract_source: skills/city-base-research/SKILL.md
+  is_closing_gate: true
+  expects:
+    check_1_satisfaction_targets:
+      - jurisdiction anomaly check passed (city ↔ county ↔ state alignment)
+      - demographics + neighborhoods + housing patterns populated
+      - utility companies named (not generic "your utility")
+      - permit offices named with jurisdiction
+    check_2_calibration_metrics: []
+    check_3_domain_probe_classes:
+      - jurisdiction-specific (administrative boundaries, utility territory)
+    check_4_cross_wave_artifact_type: research-brief
+    check_4_within_wave_prior_gate: null
+  registered_by: quality-tool-integration-audit-202606060000
+  registered_at: 2026-06-06
+
+# P4: client-fact-research
+- orchestrator: client-fact-research
+  mode: research
+  gate_id: G-client-brief
+  fires_at: after accounts-ownership verification, before closing
+  emits: Tier-3 client-fact brief at research-briefs/clients/<slug>/brief.md + credentials checklist
+  contract_source: skills/client-fact-research/SKILL.md
+  is_closing_gate: true
+  expects:
+    check_1_satisfaction_targets:
+      - accounts-ownership verification complete (each account classified owned/contested/unknown)
+      - NAP data complete and consistent
+      - service catalog matches confirmed services list
+      - review count + rating populated from live source
+    check_2_calibration_metrics: []
+    check_3_domain_probe_classes:
+      - brand-currency-specific (recent rebrands, acquisitions)
+    check_4_cross_wave_artifact_type: client-brief
+    check_4_within_wave_prior_gate: null
+  registered_by: quality-tool-integration-audit-202606060000
+  registered_at: 2026-06-06
+
+# P5: competitor-deep-research
+- orchestrator: competitor-deep-research
+  mode: research
+  gate_id: G-competitor-brief
+  fires_at: after per-competitor deep dives + cross-competitor synthesis, before closing
+  emits: per-competitor briefs + cross-competitor synthesis
+  contract_source: skills/competitor-deep-research/SKILL.md
+  is_closing_gate: true
+  expects:
+    check_1_satisfaction_targets:
+      - per-competitor deep dive covers top-5-trafficked-pages analysis
+      - cross-competitor synthesis present with structural patterns
+      - methodology (DataForSEO vs free-toolkit) documented
+    check_2_calibration_metrics: []
+    check_3_domain_probe_classes: []
+    check_4_cross_wave_artifact_type: competitor-research
+    check_4_within_wave_prior_gate: null
+  registered_by: quality-tool-integration-audit-202606060000
+  registered_at: 2026-06-06
+
+# P6: vis-extraction
+- orchestrator: vis-extraction
+  mode: extraction
+  gate_id: G-extraction
+  fires_at: Phase 6 review gate (executor surfaces structured summary before writes)
+  emits: source note + supporting artifacts (tactics, patterns, tools)
+  contract_source: skills/vis-extraction/SKILL.md § Phase 6
+  is_closing_gate: false
+  expects:
+    check_1_satisfaction_targets:
+      - source note follows 7-section structure (Take-away through Pattern candidates)
+      - plain-English layer present (top-level + callouts)
+      - no fabricated citations (every claim traceable to source)
+      - project-applicability frontmatter fields present
+    check_2_calibration_metrics: []
+    check_3_domain_probe_classes: []
+    check_4_cross_wave_artifact_type: source-note
+    check_4_within_wave_prior_gate: null
+  registered_by: quality-tool-integration-audit-202606060000
+  registered_at: 2026-06-06
+
+# P7: intel-routing
+- orchestrator: intel-routing
+  mode: routing (PUSH/PULL/BOOTSTRAP)
+  gate_id: G-routing
+  fires_at: Gate 1 (routing decision) + Gate 2 (bridge-note approval), per mode
+  emits: frontmatter updates + bridge notes + punchlist entries
+  contract_source: skills/intel-routing/SKILL.md
+  is_closing_gate: false
+  expects:
+    check_1_satisfaction_targets:
+      - routing decision justified per applicability-confidence threshold
+      - bridge note links to parent artifact + target project
+      - single-bridge-per-cluster discipline honored
+    check_2_calibration_metrics: []
+    check_3_domain_probe_classes: []
+    check_4_cross_wave_artifact_type: routing-decision
+    check_4_within_wave_prior_gate: null
+  registered_by: quality-tool-integration-audit-202606060000
+  registered_at: 2026-06-06
+
+# P8: multi-chat-coordination
+- orchestrator: multi-chat-coordination
+  mode: DECOMPOSE
+  gate_id: G-decompose
+  fires_at: single comprehensive review gate (proposal before writes)
+  emits: project subfolder + handoff files + _README.md + tracker rows
+  contract_source: skills/multi-chat-coordination/SKILL.md § Mode 1
+  is_closing_gate: false
+  expects:
+    check_1_satisfaction_targets:
+      - handoff files have valid frontmatter (status, depends-on, tags)
+      - dependency chain is acyclic
+      - tracker rows match handoff files 1:1
+    check_2_calibration_metrics: []
+    check_3_domain_probe_classes: []
+    check_4_cross_wave_artifact_type: decomposition-plan
+    check_4_within_wave_prior_gate: null
+  registered_by: quality-tool-integration-audit-202606060000
+  registered_at: 2026-06-06
+
+# P9: multi-source-synthesis
+- orchestrator: multi-source-synthesis
+  mode: synthesis
+  gate_id: G-synthesis
+  fires_at: shape-and-destination confirmation gate (before drafting)
+  emits: synthesis shape decision + destination path
+  contract_source: skills/multi-source-synthesis/SKILL.md
+  is_closing_gate: false
+  expects:
+    check_1_satisfaction_targets:
+      - shape matches source topology (cluster/pattern/cross-cluster/client-driven)
+      - destination path follows conventions.md folder placement
+      - source count meets minimum for chosen shape
+    check_2_calibration_metrics: []
+    check_3_domain_probe_classes: []
+    check_4_cross_wave_artifact_type: synthesis-decision
+    check_4_within_wave_prior_gate: null
+  registered_by: quality-tool-integration-audit-202606060000
+  registered_at: 2026-06-06
+```
+
 ## How future orchestrators register
 
 When a new orchestrator skill is built (Phase 5 project-surveyor / project-analyst / project-decider; mission-control-dashboard backend operations; Hermes-daemon spawned waves; any future client- or project-specific orchestrator), the orchestrator's build chat appends entries to this registry covering each of its gate types.

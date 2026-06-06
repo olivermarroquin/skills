@@ -219,6 +219,14 @@ Dependency constraints displaced <M> items.
 Output: <path-to-md>, <path-to-json>.
 ```
 
+## Auto-invoke output-quality-loop
+
+This skill produced the following artifact(s):
+- `<output_path>/_build-order.md`
+- `<output_path>/_build-order-ranking.json`
+
+[output-quality-loop:eval] — for each artifact, run output-quality-loop in EVALUATE mode. If PASS, declare the chat done. If NEEDS REVISION or FAIL, ingest the revision prompt as if it were operator input and regenerate the artifact, then re-invoke output-quality-loop. Cap at 3 iterations; on the 3rd FAIL, escalate to the operator with the evaluation report.
+
 ## No-regression contract
 
 When an orchestrator delegates build-order generation to this skill (e.g., `client-seo-onboarding` v1.5 Step 1), the acceptance test is: **same ranking from same inputs.** Given the same candidate set and the same profile, the skill must produce the same item ordering as the orchestrator's prior inline logic. Byte-identical output is not required — equivalent ranking is.

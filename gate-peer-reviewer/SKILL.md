@@ -1,19 +1,23 @@
 ---
 name: gate-peer-reviewer
-version: 2.1
+version: 3.0
 status: active
 created: 2026-06-03
 updated: 2026-06-06
-description: Automated peer-review layer that sits between any orchestrator skill's gate emission and operator review. Fires 6 structured checks (contract satisfaction / calibration consistency / domain plausibility / cross-gate + cross-wave coherence / carry-forward management / Knowledge Capture Audit verification). v2 adds client-seo-onboarding page-build gates (G-data / G-scaffold / G-imagery / G-publish / G-wave-close) as a second registered instance alongside vault-orchestrator Mode 6 gates + autonomous dispatch (orchestrator spawns peer-reviewer as a Task sub-agent after each gate — no operator transport). Substrate-agnostic. Project-agnostic. Output-agnostic.
+description: Automated peer-review layer that sits between any orchestrator skill's gate emission and operator review. Fires 6 structured checks (contract satisfaction / calibration consistency / domain plausibility / cross-gate + cross-wave coherence / carry-forward management / Knowledge Capture Audit verification). v2 added client-seo-onboarding page-build gates as a second registered instance. v3 adds 9 research-brief + knowledge-artifact gate types from the toolkit-wide quality-tool integration audit (service-seo-research, intersection-research, city-base-research, client-fact-research, competitor-deep-research, vis-extraction, intel-routing, multi-chat-coordination, multi-source-synthesis). 19 total registered gate types across 12 orchestrators. Substrate-agnostic. Project-agnostic. Output-agnostic.
 triggers:
   - any orchestrator emits a gate decision for operator review
   - vault-orchestrator Mode 6 EXECUTE Gates 1-5
   - client-seo-onboarding page-build gates G-data / G-scaffold / G-imagery / G-publish / G-wave-close (v2.0)
+  - research-brief gates G-service-brief / G-intersection-brief / G-city-brief / G-client-brief / G-competitor-brief (v3.0)
+  - knowledge-artifact gates G-extraction / G-routing / G-decompose / G-synthesis (v3.0)
   - any closing gate emitting a Knowledge Capture Audit self-report
   - any future orchestrator that registers a gate type in references/gate-type-registry.md
 composes-with:
   - vault-orchestrator (Mode 6 EXECUTE dispatch slot per gate; v1.3+ integration block)
   - client-seo-onboarding (page-build gates; v1.4+ integration block; autonomous dispatch via Task sub-agent)
+  - service-seo-research, intersection-research, city-base-research, client-fact-research, competitor-deep-research (research-brief gates; v3.0)
+  - vis-extraction, intel-routing, multi-chat-coordination, multi-source-synthesis (knowledge-artifact gates; v3.0)
   - output-quality-loop (artifact-level downstream; disjoint scope)
   - any future orchestrator registering gate types
 tags: [skill, peer-review, gate-review, process-quality, orchestrator-coaching, substrate-agnostic, v2, page-build, autonomous-dispatch, deliberate-evolution-vs-silent-drift]

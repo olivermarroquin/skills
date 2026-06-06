@@ -292,7 +292,13 @@ Every output of this skill is gated before it's considered done. Optimization to
    at its produce-step: disk-verify claims against the retained raw, check no placeholder/assumption text,
    confirm every "tell" was checked (present/absent), confirm the DataForSEO + conversion + visual layers
    are covered. Address findings before proceeding.
-2. **`output-quality-loop` (EVALUATE mode)** — closing: run on the teardown + blueprint (+ blog spec). On
+2. **`house-voice-rewrite` Mode 2 (conditional — client-facing artifacts)** — when the operator indicates
+   the teardown dossier or blueprint will be shared with a client, invoke `house-voice-rewrite` Mode 2 on
+   those artifacts before the `output-quality-loop` step. Use the client personality file at
+   `second-brain/04_projects/clients/_active/<client-slug>/_state/personality-<client-slug>.md`. If no
+   personality file exists for the client, skip the rewrite and note in the closing report:
+   "House-voice rewrite skipped — no personality file found at `…/<client-slug>/…`."
+3. **`output-quality-loop` (EVALUATE mode)** — closing: run on the teardown + blueprint (+ blog spec). On
    PASS, done. On NEEDS REVISION/FAIL, ingest the revision prompt, regenerate, re-run. Cap 3 iterations;
    escalate on the 3rd FAIL.
 Emit the standard auto-invoke block at closing (see `output-quality-loop` convention).
@@ -313,8 +319,8 @@ Emit the standard auto-invoke block at closing (see `output-quality-loop` conven
    redirect playbook, and a phased program decomposition mapping to existing tools.
 4. **Non-destructive dossier/synthesis updates** if a prior competitor brief exists.
 5. **Folder `_README.md`** + parent update.
-6. **Closing:** auto-invoke `output-quality-loop` on the teardown + blueprint; event-log row; git staged by
-   name (no push).
+6. **Closing:** if client-facing, `house-voice-rewrite` Mode 2 on the dossier + blueprint; then auto-invoke
+   `output-quality-loop` on the teardown + blueprint; event-log row; git staged by name (no push).
 
 ## The "tells" catalog — concrete things to look for (from the canonical run)
 

@@ -258,9 +258,19 @@ Before declaring done, run a verification pass:
 4. **Currency check** — confirm no obviously stale dates or pricing slipped in (e.g., "$15/mo Frase Starter" would be wrong because Frase repriced to $45/mo in 2024–2025).
 5. **Plain-language check** — scan for unglossed jargon. AEO, GEO, NAP, LCP, CTR, CWV, GBP, SERP, etc. should be defined inline on first use.
 
-## Phase 6 — Closing step — Auto-invoke output-quality-loop
+## Phase 6 — Closing step
 
-After Phase 5 verification passes, emit the standard auto-invoke block per `~/workspace/skills/output-quality-loop/references/auto-invoke-convention.md` and `~/workspace/second-brain/_meta/conventions.md` § "Output quality". This is the closing step every artifact-producing skill emits before declaring the chat done. Convention shipped Phase 5 of the output-quality-loop project (2026-05-28).
+### 6a — House-voice rewrite (client-scoped outputs only)
+
+When the output folder is client-scoped (path contains `clients/_active/`), invoke house-voice-rewrite Mode 2 on the stack proposal file before the auto-invoke output-quality-loop block.
+
+- **Target file:** the `<agency>-standard-seo-stack.md` file in the output folder.
+- **Personality file:** `~/workspace/second-brain/04_projects/clients/_active/<client-slug>/_state/personality-<client-slug>.md` — derive `<client-slug>` from the output path.
+- **Graceful degradation:** If the personality file does not exist at the expected path, skip the house-voice rewrite silently and proceed to 6b. Do not error, do not prompt the operator.
+
+### 6b — Auto-invoke output-quality-loop
+
+After Phase 5 verification passes (and 6a if applicable), emit the standard auto-invoke block per `~/workspace/skills/output-quality-loop/references/auto-invoke-convention.md` and `~/workspace/second-brain/_meta/conventions.md` § "Output quality". This is the closing step every artifact-producing skill emits before declaring the chat done. Convention shipped Phase 5 of the output-quality-loop project (2026-05-28).
 
 **Artifact list for this skill.** The full five-file output set: free-tools inventory, paid-tools inventory, AEO/GEO survey, per-task recommendations, tiered stack proposal. Plus the destination folder's `_README.md` if newly created (otherwise it's a hygiene update, not a content artifact).
 

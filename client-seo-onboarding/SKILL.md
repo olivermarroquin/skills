@@ -1,10 +1,12 @@
 ---
 name: client-seo-onboarding
-version: 1.5
+version: 1.6
 description: One-Cowork-message entry point for onboarding a brand-new SEO client end-to-end. v1.1 wraps the v1.0 11-step pipeline (research → author data → verify WP → scaffold → imagery → publish → index → internal links → report) with three load-bearing additions — per-step `output-quality-loop` integration (Mode 1 EVALUATE + Mode 4 AUTO-RESEARCH + Mode 5 AUTO-APPROVE per artifact), multi-chat wave decomposition baked into the plan-bullet opening (scope-estimation gate computes hours + chat count + wave shape before any work fires), and the AI-surface reachability matrix that replaces "Cowork can't reach X" framing with concrete per-surface paths (Perplexity Sonar + OpenAI + Gemini + Anthropic Claude all working today via tier-3 carve-out; AI Overviews via Claude in Chrome). Triggers on phrases like "process this new client," "onboard this client for SEO," "run client-seo-onboarding on <slug>," "kick off the Core 30 build for <client>," "set up <client> end to end," "ingest these meeting notes and start the onboarding," or any time the operator hands over meeting notes + an intake form + a client slug and wants the full Core 30 pipeline run. Also use to resume a partially-completed onboarding when the operator says "pick up <slug>'s onboarding where we left off" — the skill detects the state file at 04_projects/clients/_active/<slug>/_state/onboarding.json and continues from the last completed step (or last in-progress wave for multi-chat runs).
 ---
 
 # Client SEO Onboarding (orchestrator skill, v1.5)
+
+> **v1.6 changelog (2026-06-06, quality-tool-integration-audit)** — Three D-row fixes from S&H wave-2 calibration. (1) **D-07 fix:** quality-loop-fired checkpoint — orchestrator must verify `quality_log` has a verdict for every artifact before declaring any step done; not optional under time pressure. (2) **D-08 fix:** house-voice-rewrite Mode 2 wired as a mandatory compose step between Produce and Auto-evaluate on Steps 5 and 8 (client-facing copy steps); personality file referenced from client state. (3) **D-09 fix:** meta-vs-body consistency dimension added to `evaluation-heuristics-by-type.md` for Core 30 page drafts — response-time, pricing, and credential claims cross-checked between body HTML and `aioseo_description:` frontmatter.
 
 > **v1.5 changelog (2026-06-06, prioritization-skill-extraction)** — Step 1 build-order generation now delegates to the standalone `prioritization` skill (`skills/prioritization/`) with the `core-30-service-city-seo` profile instead of owning the ranking logic inline. When no `_build-order.md` exists and the prioritization skill is available, Step 1 invokes it with the extracted services + cities as the candidate set and the `core-30-service-city-seo` profile. Output is a two-file pair (`_build-order.md` + `_build-order-ranking.json`) written to the client's `core-30/` directory. When the prioritization skill is absent (directory missing or profile not found), Step 1 falls back to inline build-order proposal (v1.4 behavior) and logs a warning. Same SEO output, no regression. Existing `_build-order.md` cross-check logic (build-order wins on disagreement, per DF-02 + DF-03) is unchanged — it fires before the skill delegation path.
 
@@ -160,9 +162,31 @@ The orchestrator does not just emit `output-quality-loop` auto-invoke blocks and
 
 See [[../../second-brain/05_shared-intelligence/patterns/pattern-orchestrator-multi-chat-decomposition|the orchestrator multi-chat pattern]] component #2 for the architectural rationale.
 
+### Quality-loop-fired checkpoint (v1.6 — D-07 fix)
+
+Before the orchestrator declares ANY artifact-producing step done (Steps 1, 2, 3, 5, 6, 8, 10, 11), it MUST verify that the four-substep quality loop actually fired for every artifact that step produced. Concretely: check that `quality_log` in the state file has an entry for each artifact path with a verdict value. If any artifact is missing a verdict entry, the quality loop was skipped — do NOT proceed to the next step. Instead, run the quality loop on the unverified artifact(s) now.
+
+**This is not optional under time pressure.** D-07 (S&H wave-2 calibration, 2026-06-06): the orchestrator skipped the quality loop at Step 5 under throughput pressure. The publish gate caught it — but the fix belongs earlier. The state-file check is the enforcement mechanism: no verdict in `quality_log` = step not done, regardless of what the orchestrator thinks it accomplished.
+
+### House-voice composition (v1.6 — D-08 fix)
+
+Every artifact-producing step that generates **client-facing copy** (currently Steps 5 and 8) runs `house-voice-rewrite` Mode 2 as a mandatory compose step between Produce and Auto-evaluate. The house-voice pass rewrites the scaffolded/authored content against the client's personality file before the quality-loop evaluates it — ensuring the quality loop scores the voiced draft, not the generic one.
+
+**Composition shape:**
+
+1. **Produce** — scaffold or author the artifact.
+2. **House-voice-rewrite** — invoke Mode 2 with: `draft_path` = the just-produced artifact, `personality_file` = `04_projects/clients/_active/<slug>/_state/personality-<slug>.md` (produced by house-voice-rewrite Mode 1 during client onboarding). If the personality file doesn't exist, surface: "No personality file found for <slug>. Run house-voice-rewrite Mode 1 first, or skip voice-rewrite with `--bypass-house-voice`." The voice-rewritten draft overwrites the original draft file (non-destructive: the original is versioned via `draft-v1` → `draft-v2` naming).
+3. **Auto-evaluate** — quality-loop evaluates the voice-rewritten draft.
+4. (rest of four-substep contract continues)
+
+**Which steps compose house-voice:** Steps 5 (bulk scaffold) and 8 (resume per page). Steps 1/2/3/6/10/11 do not produce client-facing editorial copy. Step 2 (research briefs) and Step 3 (data files) are internal artifacts.
+
+**Graceful degradation:** If `~/workspace/skills/house-voice-rewrite/SKILL.md` doesn't exist, log `house-voice-skipped` to execution log and proceed without voice-rewriting. The quality-loop's plain-language dimension still fires — the page won't read as well but will still publish.
+
 ### The four sub-steps (every artifact-producing step runs these in order)
 
 1. **Produce** — invoke the sub-skill or sub-script that authors the artifact.
+1b. **House-voice compose** (Steps 5 and 8 only) — invoke `house-voice-rewrite` Mode 2 per the composition shape above.
 2. **Auto-evaluate** — invoke `output-quality-loop` Mode 1 (EVALUATE) on the produced artifact. The orchestrator passes the artifact path; `output-quality-loop` walks its spec-routing table to load the right specs and produces a verdict (PASS / NEEDS REVISION minor / NEEDS REVISION substantive / FAIL) plus a per-checklist-item evaluation report. Verdict and folder-log update happen on every call — no skips.
 3. **Auto-elevate** — if verdict ≠ PASS, invoke Mode 4 (AUTO-RESEARCH) via `perplexity-refinement` → Sonar. Mode 4 surfaces top-N gaps, runs cited research, produces elevation suggestions feeding Mode 2's revision prompt. Regenerate the artifact using the revision prompt, loop back to sub-step 2. Cap at 3 iterations per artifact. On 3rd FAIL, stop and escalate.
 4. **Auto-decide** — invoke Mode 5 (AUTO-APPROVE-AND-ESCALATE). Mode 5 computes per-type confidence + applies per-type auto-approve threshold from `references/confidence-calibration.md`. Three outcomes: PASS at or above threshold → mark step done + proceed; light escalation → `_escalation-queue.md` row + pause; hard escalation → `_meta/escalations/` file + master tracker row + pause.
