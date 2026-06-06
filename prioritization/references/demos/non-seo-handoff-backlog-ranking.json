@@ -1,0 +1,61 @@
+{
+  "metadata": {
+    "profile": "ad-hoc",
+    "scoring_mode": "weighted-sum",
+    "criteria": [
+      { "name": "strategic_leverage", "weight": 0.40, "direction": "higher-is-better" },
+      { "name": "effort_hours", "weight": 0.20, "direction": "lower-is-better" },
+      { "name": "dependency_risk", "weight": 0.15, "direction": "lower-is-better" },
+      { "name": "reuse_multiplier", "weight": 0.25, "direction": "higher-is-better" }
+    ],
+    "generated_at": "2026-06-06T00:00:00Z",
+    "candidate_count": 6,
+    "dependency_displacements": 0,
+    "demo": true,
+    "cross_project_type_proof": true
+  },
+  "ranking": [
+    {
+      "rank": 1,
+      "item_id": "prioritization-skill",
+      "scores": { "strategic_leverage": 4, "effort_hours": 3, "dependency_risk": 0, "reuse_multiplier": 5 },
+      "total_score": 0.92,
+      "rationale": "Highest reuse multiplier. Low effort, zero dependencies. Unlocks build-order generation for all project types."
+    },
+    {
+      "rank": 2,
+      "item_id": "page-factory-hardening",
+      "scores": { "strategic_leverage": 4, "effort_hours": 4, "dependency_risk": 0, "reuse_multiplier": 4 },
+      "total_score": 0.82,
+      "rationale": "Eliminates client-identity leaks. High reuse. Slightly more effort than prioritization-skill."
+    },
+    {
+      "rank": 3,
+      "item_id": "website-factory-program",
+      "scores": { "strategic_leverage": 5, "effort_hours": 4, "dependency_risk": 2, "reuse_multiplier": 4 },
+      "total_score": 0.73,
+      "rationale": "Highest strategic leverage. Penalized by dependency on Core 30 completion for both clients."
+    },
+    {
+      "rank": 4,
+      "item_id": "website-factory-phase-0",
+      "scores": { "strategic_leverage": 3, "effort_hours": 3, "dependency_risk": 0, "reuse_multiplier": 2 },
+      "total_score": 0.72,
+      "rationale": "Low effort + zero dependencies. Lower reuse (benefits website-factory specifically). Feeds into website-factory-program."
+    },
+    {
+      "rank": 5,
+      "item_id": "seo-site-teardown",
+      "scores": { "strategic_leverage": 3, "effort_hours": 5, "dependency_risk": 0, "reuse_multiplier": 3 },
+      "total_score": 0.63,
+      "rationale": "Moderate leverage and reuse. Higher effort pulls it down."
+    },
+    {
+      "rank": 6,
+      "item_id": "imagery-automation-pivot",
+      "scores": { "strategic_leverage": 3, "effort_hours": 6, "dependency_risk": 0, "reuse_multiplier": 3 },
+      "total_score": 0.58,
+      "rationale": "Highest effort item. Moderate leverage. Benefits page-build workflows specifically."
+    }
+  ]
+}

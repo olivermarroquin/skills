@@ -1,10 +1,12 @@
 ---
 name: client-seo-onboarding
-version: 1.4
+version: 1.5
 description: One-Cowork-message entry point for onboarding a brand-new SEO client end-to-end. v1.1 wraps the v1.0 11-step pipeline (research → author data → verify WP → scaffold → imagery → publish → index → internal links → report) with three load-bearing additions — per-step `output-quality-loop` integration (Mode 1 EVALUATE + Mode 4 AUTO-RESEARCH + Mode 5 AUTO-APPROVE per artifact), multi-chat wave decomposition baked into the plan-bullet opening (scope-estimation gate computes hours + chat count + wave shape before any work fires), and the AI-surface reachability matrix that replaces "Cowork can't reach X" framing with concrete per-surface paths (Perplexity Sonar + OpenAI + Gemini + Anthropic Claude all working today via tier-3 carve-out; AI Overviews via Claude in Chrome). Triggers on phrases like "process this new client," "onboard this client for SEO," "run client-seo-onboarding on <slug>," "kick off the Core 30 build for <client>," "set up <client> end to end," "ingest these meeting notes and start the onboarding," or any time the operator hands over meeting notes + an intake form + a client slug and wants the full Core 30 pipeline run. Also use to resume a partially-completed onboarding when the operator says "pick up <slug>'s onboarding where we left off" — the skill detects the state file at 04_projects/clients/_active/<slug>/_state/onboarding.json and continues from the last completed step (or last in-progress wave for multi-chat runs).
 ---
 
-# Client SEO Onboarding (orchestrator skill, v1.4)
+# Client SEO Onboarding (orchestrator skill, v1.5)
+
+> **v1.5 changelog (2026-06-06, prioritization-skill-extraction)** — Step 1 build-order generation now delegates to the standalone `prioritization` skill (`skills/prioritization/`) with the `core-30-service-city-seo` profile instead of owning the ranking logic inline. When no `_build-order.md` exists and the prioritization skill is available, Step 1 invokes it with the extracted services + cities as the candidate set and the `core-30-service-city-seo` profile. Output is a two-file pair (`_build-order.md` + `_build-order-ranking.json`) written to the client's `core-30/` directory. When the prioritization skill is absent (directory missing or profile not found), Step 1 falls back to inline build-order proposal (v1.4 behavior) and logs a warning. Same SEO output, no regression. Existing `_build-order.md` cross-check logic (build-order wins on disagreement, per DF-02 + DF-03) is unchanged — it fires before the skill delegation path.
 
 > **v1.4 changelog (2026-06-05, Build wave 4)** — gate-peer-reviewer v2 autonomous dispatch integration. After each artifact-producing step's quality-loop exit (Steps 3/5/6/8/11), the orchestrator spawns the peer-reviewer as a Claude Code Task sub-agent that runs registered Check 1 satisfaction targets (full-placeholder-family-sweep, source-client-leak-audit, live-rendered-cache-busted-verification per gate type) + Checks 2-6. Returns structured JSON verdict inlined alongside gate output for operator — single approve surface, no manual paste-transport. REJECT-AND-REDO auto-fixes before surfacing (capped at 2 iterations). Graceful degradation logs `peer-reviewer-skipped` to event log if Task fails. Steps 1/2/4/7/9/10 excluded (no template-derived artifacts or covered by other orchestrators). See § "Peer-reviewer dispatch (v1.4)" for the full integration block.
 
@@ -233,7 +235,16 @@ If `output-quality-loop` returns an error (spec source moved, routing table has 
 - Read intake form. Extract the same plus pricing tier, review count, brand colors, target audience.
 - Cross-reference. Surface anything inconsistent between the two.
 - **Build-order cross-check.** If `04_projects/clients/_active/<slug>/website-archive/new/core-30/_build-order.md` exists, glob its services + cities columns. Compare against the extracted lists. **Build-order wins on disagreement** (per DF-02 + DF-03 lessons). Surface: "Notes mention 5 services, build-order names 4. Proceeding with build-order's list. Confirm?"
-- If no build-order exists, propose one based on the extracted lists.
+- **Build-order generation (v1.5 — delegated to `prioritization` skill).** If no build-order exists, generate one:
+  1. Check if `skills/prioritization/SKILL.md` exists AND `skills/prioritization/references/profiles/core-30-service-city-seo.md` exists.
+  2. **If both exist:** invoke the `prioritization` skill with:
+     - `candidate_set`: the service × city matrix derived from the extracted lists (each cell = one candidate item with `service` + `city` attributes)
+     - `profile`: `core-30-service-city-seo`
+     - `output_path`: `04_projects/clients/_active/<slug>/website-archive/new/core-30/`
+     - Any operator-stated service priority or city priority from meeting notes / intake form passed as `criteria_override` for the `service_priority` and `city_anchor` value orderings
+  3. The skill produces `_build-order.md` + `_build-order-ranking.json` in the output directory.
+  4. Surface the generated build-order to the operator for confirmation at the bundled Step-1 gate (same 4-outcome prompt as the cross-check path).
+  5. **If skill is absent (graceful fallback):** propose a build-order inline based on the extracted lists (v1.4 behavior). Log: "prioritization skill not found at skills/prioritization/ — falling back to inline build-order proposal."
 - Confirm the kebab-case `client_slug` exists or needs to be created.
 
 **Operator gate (bundles 4 outcomes):** The Step-1 operator prompt bundles the extraction-confirmation surface AND the quality-loop verdict so the operator makes both decisions at the same prompt. Four possible outcomes: (a) confirm services+cities + accept verdict, (b) adjust services+cities + accept verdict, (c) confirm services+cities + override verdict, (d) adjust + override. Concrete prompt:
