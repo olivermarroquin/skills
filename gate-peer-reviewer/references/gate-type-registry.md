@@ -1,9 +1,9 @@
 ---
 type: reference
 skill: gate-peer-reviewer
-skill-version: 2.0
+skill-version: 2.1
 created: 2026-06-03
-updated: 2026-06-05
+updated: 2026-06-06
 tags: [reference, gate-type-registry, substrate-agnostic, future-orchestrator-friendly, page-build, client-seo-onboarding]
 ---
 
@@ -195,7 +195,16 @@ FILL:
 
 **Calibration source.** S&H Core 30 peer-review PR-15 (reviewer missed `<TBD>` Q&A bodies because token list only had `FILL:` + `<!-- MISSING -->`) + PR-16 (`{phone_display}` leaked because publish hard-block had the same incomplete family). The full family was codified in `publish-core-30-page.py` `check_placeholder_gate()` during the run.
 
-**How to run.** Grep the artifact for each regex. Report per-regex hit count. Expected exceptions (e.g., 2 image-URL FILL entries before Step 8 imagery wiring) must be named in the gate-type entry's `expected_exceptions` field — any FILL not in the exception list is a catch.
+**How to run.**
+
+1. **Grep the actual artifact files** for each regex. Do not declare counts from memory or by naming the procedure without executing it.
+2. **Report real counts per token type.** Output a table: token family | count | locations (file:line). Zero is a valid count — but it must come from an actual grep, not an assumption.
+3. **Stage-classify each hit.** For every non-zero count, classify each token as:
+   - **expected-at-this-stage** — the token is a known pre-wiring placeholder that a later pipeline step fills (e.g., `hero_image_url FILL` before Step 8 imagery wiring). Must match a named entry in the gate-type's `check_1_expected_exceptions` list.
+   - **unexpected** — the token should not be present at this stage. Any unexpected token is a catch.
+4. **Clean-gate is G-publish only.** The sweep may report "0 unexpected tokens" at earlier gates (G-data, G-scaffold, G-imagery), but the procedure must NOT declare the artifact "clean" at those gates — only "0 unexpected tokens at this stage; N expected tokens deferred to G-publish." The **clean declaration** (zero tokens of any kind, expected or not) is reserved for G-publish, the final artifact gate. (Calibration: D-02 from wave-2 calibration — reviewer declared "zero blocking tokens in rendered HTML" at G-data when each draft actually had 10-12 FILL/TBD tokens that were expected but uncounted.)
+
+Expected exceptions (e.g., 2 image-URL FILL entries before Step 8 imagery wiring) must be named in the gate-type entry's `check_1_expected_exceptions` field — any token not in the exception list is a catch regardless of stage.
 
 **Applies at gate types.** Any gate reviewing a text artifact that may contain templates, drafts, or data files. Currently: G-data, G-scaffold, G-imagery, G-publish.
 
@@ -214,7 +223,15 @@ FILL:
 | 5. Brand-mark in imagery prompts | Wardrobe/uniform clause names THIS client's mark, not the source's | PR-19a (EV Electric logo hardcoded in S&H imagery prompts — costliest catch) |
 | 6. Face reference in imagery | Face-reference path points to THIS client's owner face crop in `reference-photos/`, not `brand_image_url` or other non-face file | PR-19b (`brand_image_url` used instead of owner face crop) |
 
-**How to run.** Read the source client's identity fields from their JSON (`name`, `alternate_name`, `owner_name`) OR from the `check_brand_leak_gate()` deterministic guard's `foreign_brands` list. Grep the artifact under review for each identity string. Also verify surfaces 1-3 structurally (prefix match, related_cards membership, domain match). Any hit = catch.
+**How to run.**
+
+1. **Load foreign-client identity strings at runtime.** Glob `data/client-*.json` in the project's data directory. Exclude the current client's JSON (match on `client_slug`). For each foreign-client JSON, extract:
+   - `name` (business name)
+   - `alternate_name` (if present)
+   - `owner_name`
+   These are the grep targets. **Never reconstruct owner/business names from memory** — always read from the authoritative JSON files on disk. (Calibration: D-01 from wave-2 calibration — reviewer grepped for "Ahmad Suliman" from memory when the actual owner name in `client-ev-electric-services.json` was "Ahmad Shaban".)
+2. Grep the artifact under review for each identity string (case-insensitive). Any hit on any foreign-client identity string = catch.
+3. Also verify surfaces 1-3 structurally (prefix match, related_cards membership, domain match). Any hit = catch.
 
 **Applies at gate types.** Any gate reviewing artifacts derived from a prior client template. Currently: G-data (surfaces 1-4), G-imagery (surfaces 4-6), G-scaffold (surfaces 1-4), G-publish (surface 4 via rendered text).
 

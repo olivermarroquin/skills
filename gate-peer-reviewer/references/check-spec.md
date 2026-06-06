@@ -1,9 +1,9 @@
 ---
 type: reference
 skill: gate-peer-reviewer
-skill-version: 1.0
+skill-version: 2.1
 created: 2026-06-03
-updated: 2026-06-03
+updated: 2026-06-06
 tags: [reference, check-spec, peer-review, six-checks, load-bearing]
 ---
 
@@ -29,6 +29,8 @@ This is the operative spec content. Each check has: **Purpose / Inputs / Procedu
 Step 1.1 — Parse the kickoff prompt for explicit requirements: numbered asks, "must include" lists, "verify" instructions, deliverable shape, success criteria. List them.
 
 Step 1.2 — For each requirement, scan the gate output for satisfaction. Mark each ✅ / ❌ / ⚠️ (partial).
+
+Step 1.2a — **Named-procedure execution evidence (v2.1).** When a gate-type entry references a named verification procedure (e.g., `full-placeholder-family-sweep`, `source-client-leak-audit`), the reviewer must produce evidence of actual execution — real grep output, real counts, real file reads — not merely state that the procedure was run or name it as satisfied. A procedure that reports "zero tokens" without showing grep output has not been executed. Stage-aware procedures (e.g., placeholder sweep) must classify hits as expected-at-this-stage vs unexpected and defer the clean declaration to the final artifact gate (G-publish). (Calibration: D-02 — reviewer declared "zero blocking tokens" without counting; D-03 — reviewer skipped a gate's dispatch entirely.)
 
 Step 1.3 — If the gate being reviewed is a **Mode 6 EXECUTE Gate 4 dispatch prompt emission**, run the Gate-4-specific structural compliance sub-check (below). Load-bearing because carry-forward drift fired at S&H wave A4 → A5 twice in a row.
 

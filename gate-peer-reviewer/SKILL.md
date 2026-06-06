@@ -1,9 +1,9 @@
 ---
 name: gate-peer-reviewer
-version: 2.0
+version: 2.1
 status: active
 created: 2026-06-03
-updated: 2026-06-05
+updated: 2026-06-06
 description: Automated peer-review layer that sits between any orchestrator skill's gate emission and operator review. Fires 6 structured checks (contract satisfaction / calibration consistency / domain plausibility / cross-gate + cross-wave coherence / carry-forward management / Knowledge Capture Audit verification). v2 adds client-seo-onboarding page-build gates (G-data / G-scaffold / G-imagery / G-publish / G-wave-close) as a second registered instance alongside vault-orchestrator Mode 6 gates + autonomous dispatch (orchestrator spawns peer-reviewer as a Task sub-agent after each gate — no operator transport). Substrate-agnostic. Project-agnostic. Output-agnostic.
 triggers:
   - any orchestrator emits a gate decision for operator review
@@ -19,7 +19,7 @@ composes-with:
 tags: [skill, peer-review, gate-review, process-quality, orchestrator-coaching, substrate-agnostic, v2, page-build, autonomous-dispatch, deliberate-evolution-vs-silent-drift]
 ---
 
-# `gate-peer-reviewer` skill v2
+# `gate-peer-reviewer` skill v2.1
 
 Automated peer-review layer that fires on every orchestrated output across every project across every skill. v1 replaced the parallel-Cowork coaching layer Oliver ran by hand through waves A2-A6 of S&H Core 30 research. v2 extends to page-build gates (replacing the manual peer-review transport from the S&H Core 30 page-build run, PR-01..PR-40) and adds autonomous dispatch so the operator stops being the paste-transport layer.
 
@@ -204,6 +204,15 @@ The 3-probe substrate detection sequence (unchanged from v1) determines which di
 
 **Write-authority constraint (unchanged).** The peer-reviewer surfaces proposed changes; the orchestrator (or operator) does the actual writes. Autonomous dispatch does not change who writes — it changes who transports.
 
+**Pre-gate dispatch checklist (v2.1).** Before surfacing ANY gate output to the operator, the orchestrator must confirm:
+
+1. Look up the current gate_id in `references/gate-type-registry.md`.
+2. If the gate_id is registered → the peer-reviewer MUST have been dispatched. A miss is a skip, not a judgment call.
+3. If peer-reviewer dispatch was not attempted → dispatch NOW, before surfacing the gate to the operator.
+4. If dispatch was attempted and failed (skill unavailable on substrate) → log the `peer-reviewer-skipped` event per the graceful-degradation format below, then surface the gate to the operator with the skip noted.
+
+This checklist exists because the orchestrator skipped peer-reviewer dispatch at G-imagery during the Alexandria run (D-03) — it handed the operator a manual checklist instead of spawning the peer-reviewer Task sub-agent. The v1.4 dispatch table (above) lists G-imagery as a registered gate; skipping it silently is a defect, not a design decision. Every registered gate gets peer-reviewed. No exceptions.
+
 ## Gate-type registry (substrate-agnostic + future-orchestrator-friendly)
 
 The peer-reviewer reads `references/gate-type-registry.md` to know what to expect at any gate type. v1 seeds the registry with vault-orchestrator Mode 6's 5 gates as the canonical instance. Future orchestrators (Phase 5 project-surveyor / project-analyst / project-decider sub-skills, mission-control-dashboard backend operations, Hermes-daemon spawned waves) self-register at their build time by appending entries to the registry.
@@ -258,5 +267,6 @@ The peer-reviewer is normally dispatched by a parent orchestrator. Operator-driv
 
 ## Version history
 
+- **v2.1 (2026-06-06)** — Build wave 2 calibration. Applied D-01–D-06 from the Alexandria production run calibration corpus (`lesson-gate-peer-reviewer-build-wave-2-calibration-2026-06-06`). Fixes: (D-01) source-client-leak-audit reads ALL foreign-client identity strings from `data/client-*.json` at runtime, never from memory; (D-02) full-placeholder-family-sweep reports real counts per token type, stage-classifies expected-vs-unexpected, clean-gate reserved for G-publish only; (D-03) pre-gate dispatch checklist — orchestrator must confirm peer-reviewer dispatched at every registered gate incl. G-imagery; Check 1 Step 1.2a requires execution evidence for named procedures. choose-image-variant.py updated: (D-04) variant filename bound in system prompt + post-score cross-variant contamination check; (D-05) 3-tier parse retry (same prompt → simplified prompt → JSON-only instruction), escalates with context instead of silent punt; (D-06) `--display-context hero|thumbnail|full-page` flag down-weights text_legibility for hero-size display. Engine remains project-agnostic (registered-instance pattern, no fork). D-07/D-08 (quality-loop/house-voice) + D-09 (meta-vs-body consistency) deferred to F5 skill-quality-integration-audit — cross-linked.
 - **v2.0 (2026-06-05)** — Build wave 4. Cross-orchestrator generalization: registered client-seo-onboarding's 5 page-build gates (G-data / G-scaffold / G-imagery / G-publish / G-wave-close) as the second instance in the gate-type registry alongside vault-orchestrator Mode 6's 5 research-brief gates. 3 reusable named verification procedures added to the registry (full-placeholder-family-sweep, source-client-leak-audit, live-rendered-cache-busted-verification) — project-agnostic, referenced by gate type entries. Autonomous dispatch: orchestrator spawns peer-reviewer as a Task sub-agent after each gate — operator stops being the manual paste-transport. 6-check engine unchanged — page-build gates are a registered instance, not a fork. Calibrated against S&H Core 30 page-build peer-review corpus (PR-01..PR-40). Acceptance test: independently reproduces catches PR-01/07/15/16/17/19a/19b from Check 1 satisfaction targets without operator prompting.
 - **v1.0 (2026-06-03)** — Initial ship. 6-check spec + 3-probe substrate detection + structured JSON return contract + write-authority constraint + vault-orchestrator Mode 6 integration (v1.3 bump in vault-orchestrator) + Mode 6 as seed gate-type registry instance + graceful degradation event log format. Build wave 1 — Cowork sequential substrate, operator-attended through 5 gates. Build wave 2 (production calibration) and Build wave 4 (cross-orchestrator generalization) deferred by design. See `lesson-gate-peer-reviewer-v1-build-2026-06-03.md` for build-time D-rows.
