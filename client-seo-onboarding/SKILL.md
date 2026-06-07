@@ -397,7 +397,7 @@ This step produced:
 - A scaffolder refuses to overwrite an existing data file → respect non-destructive default. Surface `.scaffolded.json` sibling, ask operator to diff manually.
 - A brief is malformed → stop, surface missing fields, let operator fix the brief.
 
-### Step 4 — Verify WP REST API access
+### Step 4 — Verify WP REST API access + GSC credential pre-flight
 
 **No quality loop** — verification step. The script's PASS / FAIL output IS the gate. See "Per-step quality loop contract" § "Protocol / verification steps" for the rationale.
 
@@ -407,13 +407,19 @@ This step produced:
 - Confirm `WP_APP_PASSWORD` is set in the operator's shell environment. If not, surface the export command + tier-3 vault location.
 - Run `scaffold-client-data.py --client-slug <slug> --test-wp-auth --config <slug>.config.example.json`.
 - Verify the script reports `✓ User has full Core-30 publishing capability.`
+- **(ORCH-1) GSC credential pre-flight.** If the client config has `gsc_indexing: true`, run the credential pre-flight NOW — at Step 4, not at Step 8 when each page's indexing silently fails. Two paths:
+  - **Standalone check:** `python publish-core-30-page.py --check-credentials`. Returns PASS/FAIL + actionable fix command. No page folder needed.
+  - **Inline with first publish:** pass `--preflight-credentials` to the first `publish-core-30-page.py` invocation at Step 8. The script checks credentials before any page work and exits early on failure.
+  - If the pre-flight fails, surface: "GSC credentials not configured. Run `gcloud auth application-default login --scopes=https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/indexing` before proceeding to Step 8. Publishing will work without indexing, but you'll need to submit URLs manually."
+  - This check is generic — it verifies ADC for the Indexing API, not any client-specific credential.
 
-**Operator gate:** none if auth succeeds. If auth fails, surface the exact error + canonical fixes (user role, regenerate app password, wp_base_url trailing slash, security plugin).
+**Operator gate:** none if both WP auth and GSC pre-flight succeed. If either fails, surface the exact error + canonical fix. GSC failure is a warning, not a hard block — publishing works without indexing.
 
 **Output:** Step 4 marked done in state.
 
 **Failure modes:**
-- Auth fails → stop. Refuses to proceed to Step 5. Bulk scaffolding 30 pages then discovering auth doesn't work is a footgun.
+- WP auth fails → stop. Refuses to proceed to Step 5. Bulk scaffolding 30 pages then discovering auth doesn't work is a footgun.
+- GSC pre-flight fails → warn but allow proceeding. Mark `gsc_preflight: "failed"` in state so Step 8 knows indexing will fail. The operator can fix credentials between Step 4 and Step 8.
 
 ### Step 5 — Bulk scaffold
 
