@@ -1,10 +1,10 @@
 ---
 type: reference
 skill: gate-peer-reviewer
-skill-version: 2.1
+skill-version: 3.1
 created: 2026-06-03
-updated: 2026-06-06
-tags: [reference, gate-type-registry, substrate-agnostic, future-orchestrator-friendly, page-build, client-seo-onboarding]
+updated: 2026-06-07
+tags: [reference, gate-type-registry, substrate-agnostic, future-orchestrator-friendly, page-build, client-seo-onboarding, value-correctness, ground-truth]
 ---
 
 # Gate-type registry
@@ -282,6 +282,8 @@ Registered by Build wave 4. Calibrated against the S&H Core 30 page-build peer-r
       - full-placeholder-family-sweep = 0 (minus expected pre-imagery image-URL FILLs)
       - named procedure: source-client-leak-audit (surfaces 1-4)
       - named procedure: full-placeholder-family-sweep
+      - named procedure: ground-truth-value-cross-check (profile: core-30-page-build)
+    facts_profile_id: core-30-page-build
     check_1_expected_exceptions:
       - hero_image_url FILL (deferred to Step 8 imagery wiring)
       - about_image_url FILL (deferred to Step 8 imagery wiring)
@@ -310,6 +312,8 @@ Registered by Build wave 4. Calibrated against the S&H Core 30 page-build peer-r
       - full-placeholder-family-sweep = 0 (minus expected pre-imagery image-URL FILLs)
       - named procedure: source-client-leak-audit (surfaces 1-4)
       - named procedure: full-placeholder-family-sweep
+      - named procedure: ground-truth-value-cross-check (profile: core-30-page-build)
+    facts_profile_id: core-30-page-build
     check_1_expected_exceptions:
       - hero_image_url FILL (deferred to Step 8 imagery wiring)
       - about_image_url FILL (deferred to Step 8 imagery wiring)
@@ -360,10 +364,12 @@ Registered by Build wave 4. Calibrated against the S&H Core 30 page-build peer-r
       - named procedure: live-rendered-cache-busted-verification (all 11 steps)
       - named procedure: full-placeholder-family-sweep (on live-fetched content)
       - named procedure: source-client-leak-audit (surface 4 — brand names in rendered text)
+      - named procedure: ground-truth-value-cross-check (profile: core-30-page-build)
       - Yoast (or AIOSEO) title + meta description + focus keyword populated in page source (PR-11 class)
       - page-options theme meta persists after REST re-publish (PR-17 class — per-client theme config)
       - JSON-LD schema image = page hero, not brand_image_url (PR-25)
       - modified_time advanced (confirms WP actually updated)
+    facts_profile_id: core-30-page-build
     check_1_expected_exceptions: []
     check_2_calibration_metrics:
       - none
@@ -463,6 +469,8 @@ Registered by the toolkit-wide quality-tool integration audit (2026-06-06). Thes
       - demographics + neighborhoods + housing patterns populated
       - utility companies named (not generic "your utility")
       - permit offices named with jurisdiction
+      - named procedure: ground-truth-value-cross-check (profile: research-brief)
+    facts_profile_id: research-brief
     check_2_calibration_metrics: []
     check_3_domain_probe_classes:
       - jurisdiction-specific (administrative boundaries, utility territory)
@@ -485,6 +493,8 @@ Registered by the toolkit-wide quality-tool integration audit (2026-06-06). Thes
       - NAP data complete and consistent
       - service catalog matches confirmed services list
       - review count + rating populated from live source
+      - named procedure: ground-truth-value-cross-check (profile: research-brief)
+    facts_profile_id: research-brief
     check_2_calibration_metrics: []
     check_3_domain_probe_classes:
       - brand-currency-specific (recent rebrands, acquisitions)
@@ -594,6 +604,46 @@ Registered by the toolkit-wide quality-tool integration audit (2026-06-06). Thes
   registered_by: quality-tool-integration-audit-202606060000
   registered_at: 2026-06-06
 ```
+
+### Procedure: `ground-truth-value-cross-check`
+
+**Purpose.** Cross-check EVERY claimed value in an artifact (body + meta + og + JSON-LD/schema + frontmatter) against a ground-truth facts registry. Catches the D-10/D-11/D-12/D-13 class: values that are internally consistent and clean but WRONG for this subject.
+
+**Full spec.** `references/facts-registry-spec.md`. Architecture: generic engine reads a declarative facts profile (YAML); profiles are registered instances at `references/facts-profiles/`. The engine never mentions any domain — domain knowledge lives in the profile.
+
+**Registered profiles:**
+
+| Profile | Artifact class | Gate types | Source |
+|---|---|---|---|
+| `core-30-page-build` | Core 30 HTML pages | G-data, G-scaffold, G-publish | `data/cities/*.json` + `data/client-*.json` + `data/services/*.json` |
+| `research-brief` | Research briefs (city, service, client, intersection) | G-city-brief, G-service-brief, G-client-brief, G-intersection-brief | Same data JSONs (cross-checks brief claims against authoritative data) |
+
+**How to run.**
+
+1. **Identify the facts profile.** Read the gate-type entry's `facts_profile_id` field. Load the corresponding YAML from `references/facts-profiles/`.
+2. **Resolve subject identity.** From the gate context (project slug, city slug, client slug, service slug), resolve the ground-truth source paths using the profile's pattern templates.
+3. **Load ground truth.** Read each source file. For each `checkable_fact` in the profile, extract the `ground_truth_field` value. If the field is missing AND `required_in_sources: true`, flag as a **facts-completeness failure** (SC-2 class) — do NOT default.
+4. **Extract claimed values.** For each `extraction_surface` configured for this fact, scan the artifact using the `extraction_patterns`. Record every match with its surface + location.
+5. **Compare each claimed value against ground truth.**
+   - `exact`: case-insensitive trimmed equality
+   - `contains`: ground truth appears within claimed value (or vice versa)
+   - `regex`: claimed value matches ground truth as pattern
+6. **Report.** For each fact:
+   - **MATCH** — claimed value equals ground truth. Log: `fact_key: PASS (expected: X, found: X at surface:location)`.
+   - **MISMATCH** — claimed value differs from ground truth. Log: `fact_key: MISMATCH (expected: X from source, found: Y at surface:location)`. If `severity: blocking` → this is a catch.
+   - **MISSING** — no claimed value found in any required surface. Log: `fact_key: MISSING (expected: X, not found in surfaces: [list])`.
+7. **Aggregate.**
+   - Any blocking MISMATCH → catch (flows to Check 5 carry-forward as REJECT-AND-REDO candidate).
+   - MISSING on required surface → catch (APPROVE-WITH-NOTES if no MISMATCHes).
+   - All PASS → procedure passes.
+
+**Execution evidence (per v2.1 D-02/D-03).** The reviewer must produce a table showing every fact checked: fact key, expected value + source, found value(s) + surface(s), verdict. "Ground-truth cross-check passed" without this table is not execution evidence.
+
+**Applies at gate types.** Any gate reviewing an artifact that contains values parameterized from a data source. Currently: G-data, G-scaffold, G-publish (Core 30 profile); G-city-brief, G-service-brief, G-client-brief, G-intersection-brief (research-brief profile). Future profiles self-register.
+
+**Calibration source.** D-10 (Fairfax areaServed on Stafford page), D-11 (Dominion-only on 3-utility city), D-12 (45-min dispatch on 15-mi city), D-13 (dispatch time carry-forward from wrong template). All from S&H Core 30 wave-2 production run (2026-06-06).
+
+---
 
 ## How future orchestrators register
 

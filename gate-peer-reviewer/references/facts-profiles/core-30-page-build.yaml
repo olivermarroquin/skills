@@ -1,0 +1,140 @@
+# Facts profile: Core 30 page-build (service x city)
+#
+# Ground-truth source: the same data JSONs the scaffolder reads.
+# If the scaffolder used these values to PRODUCE the page, the reviewer
+# uses the same values to VERIFY the page. Single source of truth.
+#
+# Registered instance of the generic facts-registry-spec.md mechanism.
+
+facts_profile:
+  profile_id: core-30-page-build
+  description: "Cross-check Core 30 page values against client/city/service data JSONs"
+
+  ground_truth_source:
+    type: json-files
+    base_path: "repos/ai-agency-core/scripts/data"
+    paths:
+      - pattern: "cities/{city_slug}.json"
+        provides:
+          - dispatch_time_short
+          - dispatch_time_phrase
+          - county
+          - county_full
+          - name
+          - name_with_state
+          - distance_from_hq_phrase
+          - ev_charger_homes_phrase
+          - no_trip_charge_cities
+          # D-11 class: utility data
+          - utility_coordination_phrase
+      - pattern: "client-{client_slug}.json"
+        provides:
+          - name
+          - alternate_name
+          - owner_name
+          - owner_first_name
+          - phone_display
+          - phone_tel
+          - email
+          - website_url
+          - review_count
+          - review_rating
+          - brand_image_url
+          - brand_logo_url
+          - primary_color
+      - pattern: "services/{service_slug}.json"
+        # Falls back to services/{client_slug}/{service_slug}.json per load_service()
+        provides:
+          - name
+          - slug
+          - page_slug_template
+          - aioseo_page_title_template
+          - aioseo_meta_description_template
+
+  checkable_facts:
+    # D-12/D-13 class: dispatch time
+    - fact_key: dispatch_time
+      ground_truth_source_path: "cities/{city_slug}.json"
+      ground_truth_field: dispatch_time_short
+      default_if_missing: "45-min"       # This is the dangerous silent default
+      required_in_sources: true           # SC-2 should catch this pre-scaffold
+      extraction_surfaces:
+        - body_text
+        - meta_description
+        - jsonld_schema
+      extraction_patterns:
+        - '(\d+)[–\-]\s*min(ute)?'
+      match_mode: exact
+      severity: blocking                  # MISMATCH = REJECT-AND-REDO
+
+    # D-10 class: areaServed
+    - fact_key: area_served_county
+      ground_truth_source_path: "cities/{city_slug}.json"
+      ground_truth_field: county_full
+      required_in_sources: true
+      extraction_surfaces:
+        - jsonld_schema                   # schema.org areaServed.name
+        - body_text                       # "serving {county_full}" phrases
+      extraction_patterns:
+        - '"areaServed"[^}]*"name"\s*:\s*"([^"]+)"'
+        - 'serving\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+County)'
+      match_mode: contains
+      severity: blocking
+
+    # D-11 class: electric utility
+    - fact_key: utility_coordination
+      ground_truth_source_path: "cities/{city_slug}.json"
+      ground_truth_field: utility_coordination_phrase
+      default_if_missing: "Dominion Energy coordination"  # dangerous generic default
+      required_in_sources: true
+      extraction_surfaces:
+        - body_text
+      extraction_patterns:
+        - '((?:Dominion|NOVEC|REC|Manassas\s+Electric|municipal)[^.]*(?:coordination|utility|power))'
+      match_mode: contains
+      severity: blocking
+
+    # Owner name (source-client-leak-audit covers foreign names; this covers correctness)
+    - fact_key: owner_name
+      ground_truth_source_path: "client-{client_slug}.json"
+      ground_truth_field: owner_name
+      required_in_sources: true
+      extraction_surfaces:
+        - body_text
+        - jsonld_schema
+      extraction_patterns:
+        - 'owner["\s:]+([A-Z][a-z]+\s+[A-Z][a-z]+)'
+        - '"name"\s*:\s*"([^"]+)"'        # in Person schema
+      match_mode: exact
+      severity: blocking
+
+    # Phone number
+    - fact_key: phone
+      ground_truth_source_path: "client-{client_slug}.json"
+      ground_truth_field: phone_display
+      required_in_sources: true
+      extraction_surfaces:
+        - body_text
+        - jsonld_schema
+      extraction_patterns:
+        - '\(?\d{3}\)?[\s\-.]?\d{3}[\s\-.]?\d{4}'
+      match_mode: exact
+      severity: blocking
+
+    # City name consistency
+    - fact_key: city_name
+      ground_truth_source_path: "cities/{city_slug}.json"
+      ground_truth_field: name_with_state
+      required_in_sources: true
+      extraction_surfaces:
+        - meta_description
+        - jsonld_schema
+        - body_text
+      extraction_patterns:
+        - '([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*,\s*[A-Z]{2})'
+      match_mode: contains
+      severity: blocking
+
+  # Non-SEO-specific: this profile CAN be consumed by any gate type that
+  # reviews artifacts parameterized from the same data JSONs. The profile
+  # shape is generic; only the paths + fields are Core-30-specific.

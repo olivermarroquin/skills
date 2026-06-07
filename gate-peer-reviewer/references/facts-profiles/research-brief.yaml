@@ -1,0 +1,89 @@
+# Facts profile: Research briefs (city / service / client)
+#
+# NON-SEO PROOF — demonstrates the facts registry mechanism works for
+# research-brief artifacts, not just Core 30 pages. Same engine, different
+# profile, different domain.
+#
+# Ground-truth source: the same data JSONs used downstream, plus any
+# authoritative external references the brief should match.
+
+facts_profile:
+  profile_id: research-brief
+  description: "Cross-check research brief claims against authoritative data sources"
+
+  ground_truth_source:
+    type: json-files
+    base_path: "repos/ai-agency-core/scripts/data"
+    paths:
+      - pattern: "cities/{city_slug}.json"
+        provides:
+          - county
+          - county_full
+          - name_with_state
+          - utility_coordination_phrase
+      - pattern: "client-{client_slug}.json"
+        provides:
+          - name
+          - owner_name
+          - website_url
+
+  checkable_facts:
+    # City-base-research: county alignment
+    # (D-10 analog — the city brief says "Fairfax County" but the city is in Stafford)
+    - fact_key: city_county_alignment
+      ground_truth_source_path: "cities/{city_slug}.json"
+      ground_truth_field: county_full
+      required_in_sources: true
+      extraction_surfaces:
+        - body_text                       # brief prose mentioning county
+        - frontmatter                     # brief YAML frontmatter
+      extraction_patterns:
+        - '(?:county|jurisdiction|located\s+in)\s*:?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+County)'
+      match_mode: contains
+      severity: blocking
+
+    # City-base-research: utility companies
+    # (D-11 analog — brief says "served by Dominion" but city has municipal electric)
+    - fact_key: utility_companies
+      ground_truth_source_path: "cities/{city_slug}.json"
+      ground_truth_field: utility_coordination_phrase
+      required_in_sources: false          # not all city JSONs have this yet
+      extraction_surfaces:
+        - body_text
+      extraction_patterns:
+        - '(?:served\s+by|utility|electric\s+provider|power\s+company)\s*:?\s*([^.;]+)'
+      match_mode: contains
+      severity: blocking
+
+    # Client-fact-research: business name
+    - fact_key: client_business_name
+      ground_truth_source_path: "client-{client_slug}.json"
+      ground_truth_field: name
+      required_in_sources: true
+      extraction_surfaces:
+        - body_text
+        - frontmatter
+      extraction_patterns:
+        - '(?:business|company|client)\s*(?:name)?\s*:?\s*"?([^"\n,]+)'
+      match_mode: contains
+      severity: blocking
+
+    # Client-fact-research: owner name
+    - fact_key: client_owner_name
+      ground_truth_source_path: "client-{client_slug}.json"
+      ground_truth_field: owner_name
+      required_in_sources: true
+      extraction_surfaces:
+        - body_text
+        - frontmatter
+      extraction_patterns:
+        - '(?:owner|founder|principal)\s*:?\s*"?([A-Z][a-z]+\s+[A-Z][a-z]+)'
+      match_mode: exact
+      severity: blocking
+
+  # This profile proves the mechanism is not SEO-specific:
+  # - Same engine (ground-truth-value-cross-check procedure)
+  # - Different artifact type (research brief, not HTML page)
+  # - Different extraction surfaces (prose + frontmatter, not meta/JSON-LD)
+  # - Different domain (research quality, not page correctness)
+  # - Same defect class (wrong value for context)
