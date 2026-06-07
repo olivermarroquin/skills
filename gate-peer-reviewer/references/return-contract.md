@@ -1,21 +1,21 @@
 ---
 type: reference
 skill: gate-peer-reviewer
-skill-version: 1.0
+skill-version: 3.3
 created: 2026-06-03
-updated: 2026-06-03
-tags: [reference, return-contract, json-schema, write-authority]
+updated: 2026-06-07
+tags: [reference, return-contract, json-schema, write-authority, severity-tiers]
 ---
 
 # Return contract — full field-by-field spec
 
-The peer-reviewer returns exactly this structured JSON shape per gate review. v1.0 schema.
+The peer-reviewer returns exactly this structured JSON shape per gate review. v1.1 schema (GPR-13 severity tiers added v3.2).
 
 ## Full shape
 
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "gate_reviewed": {
     "orchestrator": "<vault-orchestrator | client-seo-onboarding | ...>",
     "mode": "<Mode 6 EXECUTE | Mode 5 RESUME | ...>",
@@ -25,6 +25,7 @@ The peer-reviewer returns exactly this structured JSON shape per gate review. v1
     "project_slug": "<s-and-h-contracting | ev-electric-services | ...>"
   },
   "verdict": "<APPROVE | APPROVE-WITH-NOTES | REJECT-AND-REDO | ESCALATE-AMBIGUOUS>",
+  "verdict_severity": "<blocking | advisory>",
   "verdict_rationale": "<one-paragraph summary; load-bearing for operator scan>",
   "checks_skipped": [
     {"check": "check_3", "reason": "no domain-specific claims to probe"},
@@ -88,10 +89,11 @@ The peer-reviewer returns exactly this structured JSON shape per gate review. v1
 
 | Field | Notes |
 |---|---|
-| `schema_version` | Locks the contract. Bump to 1.1 if future fields land. |
+| `schema_version` | Locks the contract. Bumped to 1.1 at GPR-13. |
 | `gate_reviewed.wave_id` | JSON `null` when orchestrator has no wave concept. Optional-presence — do not use sentinel strings (they break grep/regex at the parsing layer). |
 | `gate_reviewed.chat_id` | Chat-id of the PARENT orchestrator emitting the gate, not the peer-reviewer's own chat-id. |
 | `gate_reviewed.project_slug` | Used to locate the state file at `04_projects/<area>/<project_slug>/_state/onboarding.json`. |
+| `verdict_severity` | Top-level severity: `blocking` if ANY catch is blocking; `advisory` otherwise. Determines whether operator must review or can auto-approve. See § Severity tiers. |
 | `verdict_rationale` | Operator skims THIS first, not the catches array. Must stand alone. One paragraph max. |
 | `checks_skipped[]` | Explicit list with reasons. Prevents silent skip-bugs. Default empty array `[]` if all 6 checks ran. |
 | `catches[].deliberate_evolution_check` | Only populated when the catch is a cross-wave drift (Check 4). Forces explicit disambiguation. Values: `acknowledged` (deliberate evolution with D-row + contract update) / `unacknowledged` (silent drift) / `n/a` (not a cross-wave drift catch). |
@@ -101,6 +103,42 @@ The peer-reviewer returns exactly this structured JSON shape per gate review. v1
 | `sonar_queries_run` | Count of Sonar queries fired. Bounded by Check 3's 1-query-per-gate ceiling. |
 | `sonar_query_receipts[]` | Per-query receipts. `anchoring_suffix_used: true` if English-anchoring suffix appended (recommended for all queries; non-English drift is a known failure mode). |
 | `wall_clock_seconds` | Time from invocation to JSON return. Used for calibration data accumulation. |
+
+## Severity tiers (GPR-13, v3.2)
+
+Each catch carries a `severity` field. The top-level `verdict_severity` is the MAX severity across all catches (blocking > advisory). This tells the operator what truly needs eyes vs what's auto-approvable.
+
+### Tier definitions
+
+| Tier | Meaning | Operator action | Examples |
+|---|---|---|---|
+| `blocking` | Defect visible to end-users, search engines, or downstream consumers. Cannot ship. | Must review + fix before proceeding. | Source-client leak in any surface; wrong factual value (D-10/D-11/D-12/D-13); placeholder token at G-publish; live page rendering wrong content; JSON-LD claiming wrong entity |
+| `nit` | Cosmetic imperfection. Not wrong, not harmful, but sub-optimal. | Auto-approvable. Operator may choose to fix or defer. | Slightly inconsistent capitalization in meta-description; non-ideal word choice in og:description; minor whitespace formatting |
+| `calibration` | Prediction drift without downstream harm. Informational for future tuning. | Auto-approvable. Logged as D-row candidate. | Cost over-forecast (predicted $0.12, actual $0.07); wall-clock under-forecast |
+| `follow-up` | Not a defect now, but will become one if not addressed in a named future step. | Auto-approvable now. Must be tracked for the named step. | Image FILL token at G-data (expected; must resolve at G-publish); pattern candidate needing second instance |
+
+### Aggregation rules
+
+```
+verdict_severity = "blocking" if ANY catch has severity "blocking"
+verdict_severity = "advisory" otherwise (all catches are nit/calibration/follow-up, or no catches)
+```
+
+### Operator decision matrix
+
+| `verdict` | `verdict_severity` | Operator action |
+|---|---|---|
+| APPROVE | advisory | Proceed. No operator review needed. |
+| APPROVE-WITH-NOTES | advisory | Auto-approvable. Notes logged for awareness. |
+| APPROVE-WITH-NOTES | blocking | **Operator must review.** At least one catch is blocking but the gate is still approvable if the operator accepts the risk. |
+| REJECT-AND-REDO | blocking | **Operator must review.** Orchestrator should auto-fix if possible (cap 2 iterations), else escalate. |
+| ESCALATE-AMBIGUOUS | — | **Operator must review.** Reviewer cannot determine severity. |
+
+### Engine-level applicability
+
+Severity tiers are content-type-agnostic. "Blocking" means "cannot ship this artifact in this state" regardless of whether the artifact is a published page, a research brief, a routing decision, or a synthesis document. The definition is: "Would an end-user, search engine, or downstream consumer see incorrect/harmful content if this ships?" If yes → blocking. If no → advisory.
+
+---
 
 ## Write-authority constraint
 

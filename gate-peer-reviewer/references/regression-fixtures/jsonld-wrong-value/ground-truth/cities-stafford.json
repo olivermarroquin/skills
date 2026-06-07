@@ -1,0 +1,8 @@
+{
+  "city_slug": "stafford",
+  "city_name": "Stafford",
+  "county": "Stafford County",
+  "state": "Virginia",
+  "utility_companies": ["Dominion Energy"],
+  "dispatch_time": "15-minute"
+}

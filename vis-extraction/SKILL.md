@@ -1106,3 +1106,53 @@ The actual content this skill operates on lives outside the skill folder:
 - **Vault root:** `/Users/olivermarroquin/workspace/second-brain/`
 
 Read these as needed. The extraction prompt is the authoritative spec; this SKILL.md is the orchestration layer.
+
+---
+
+## Peer-reviewer dispatch (GPR-9, gate-peer-reviewer v3.3)
+
+**Gate type:** G-extraction (NOT a closing gate — Check 6 skipped).
+**Fires after:** Phase 6 review gate (executor surfaces structured summary before writes).
+**Dispatch shape:** Orchestrator spawns the peer-reviewer as a Task sub-agent after the structured summary is ready and before the write-to-vault phase.
+
+**Per-gate dispatch block (Claude Code substrate):**
+
+```
+## Peer-reviewer dispatch
+
+Gate type: G-extraction
+Orchestrator: vis-extraction
+Project: <source-slug>
+Wave: null
+
+Context paths for the Task sub-agent:
+- Gate output: <structured summary — source note + supporting artifacts>
+- Gate-type registry: ~/workspace/skills/gate-peer-reviewer/references/gate-type-registry.md
+- Check spec: ~/workspace/skills/gate-peer-reviewer/references/check-spec.md
+- Lesson files: ~/workspace/second-brain/05_shared-intelligence/lessons/ (most recent for this skill)
+
+Task instruction: Read the gate-type registry entry for G-extraction. Run Check 1 satisfaction targets.
+Run Checks 2-5 per check-spec.md skip logic. This is NOT a closing gate — skip Check 6.
+Classify each catch severity per return-contract.md § Severity tiers.
+Return the structured JSON verdict per references/return-contract.md.
+```
+
+**What the orchestrator does with the verdict:**
+
+- `APPROVE` + `verdict_severity: advisory` → proceed to write phase. No operator review needed.
+- `APPROVE-WITH-NOTES` + `verdict_severity: advisory` → proceed to write; notes logged for awareness.
+- `APPROVE-WITH-NOTES` + `verdict_severity: blocking` → surface to operator. Operator decides.
+- `REJECT-AND-REDO` → fix the catch, re-surface structured summary, re-dispatch peer-reviewer. Cap at 2 iterations; on 3rd REJECT, escalate to operator.
+- `ESCALATE-AMBIGUOUS` → surface to operator with the peer-reviewer's ambiguity framing.
+
+**Graceful degradation.** If peer-reviewer dispatch fails (skill unavailable on substrate), log:
+
+```
+event-type: peer-reviewer-skipped
+reason: skill not available on <substrate>
+chat-id: <id>
+gate-id: G-extraction
+orchestrator: vis-extraction
+```
+
+Then proceed to write phase with the skip noted.

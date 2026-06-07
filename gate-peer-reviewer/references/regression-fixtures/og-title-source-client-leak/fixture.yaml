@@ -1,0 +1,15 @@
+fixture_id: og-title-source-client-leak
+description: "Body uses correct client name, og:title contains source client name — tests GPR-12 leak audit metadata layer coverage"
+gate_type: G-scaffold
+defect_class: PR-04-extended
+planted_defects:
+  - surface: og:title
+    defect_type: source-client-leak
+    description: "og:title contains 'EV Electric Services' (source client) instead of 'Test Client Electrical' (current client)"
+    expected_catch_severity: blocking
+expected_verdict: REJECT-AND-REDO
+expected_verdict_severity: blocking
+procedures_that_must_fire:
+  - source-client-leak-audit
+introduced_at_version: "3.2"
+regression_for: "PR-04 class (source-client name leak) extended to metadata layers per GPR-12"

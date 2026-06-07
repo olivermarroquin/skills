@@ -1,10 +1,10 @@
 ---
 name: gate-peer-reviewer
-version: 3.1
+version: 3.3
 status: active
 created: 2026-06-03
-updated: 2026-06-06
-description: Automated peer-review layer that sits between any orchestrator skill's gate emission and operator review. Fires 6 structured checks (contract satisfaction / calibration consistency / domain plausibility / cross-gate + cross-wave coherence / carry-forward management / Knowledge Capture Audit verification). v2 added client-seo-onboarding page-build gates as a second registered instance. v3 adds 9 research-brief + knowledge-artifact gate types from the toolkit-wide quality-tool integration audit (service-seo-research, intersection-research, city-base-research, client-fact-research, competitor-deep-research, vis-extraction, intel-routing, multi-chat-coordination, multi-source-synthesis). 19 total registered gate types across 12 orchestrators. Substrate-agnostic. Project-agnostic. Output-agnostic.
+updated: 2026-06-07
+description: Automated peer-review layer that sits between any orchestrator skill's gate emission and operator review. Fires 6 structured checks + severity tiers + standing regression harness. 19 registered gate types across 12 orchestrators — all 9 non-Core-30 skills now dispatch the reviewer at their gates (GPR-9). Reviewer performs its own live cache-busted fetch (GPR-11). All sweeps enumerate meta/og/schema surfaces (GPR-12). Verdicts carry blocking/advisory severity (GPR-13). Planted-defect regression suite prevents silent regression (GPR-14). Substrate-agnostic. Project-agnostic. Output-agnostic.
 triggers:
   - any orchestrator emits a gate decision for operator review
   - vault-orchestrator Mode 6 EXECUTE Gates 1-5
@@ -16,14 +16,14 @@ triggers:
 composes-with:
   - vault-orchestrator (Mode 6 EXECUTE dispatch slot per gate; v1.3+ integration block)
   - client-seo-onboarding (page-build gates; v1.4+ integration block; autonomous dispatch via Task sub-agent)
-  - service-seo-research, intersection-research, city-base-research, client-fact-research, competitor-deep-research (research-brief gates; v3.0)
-  - vis-extraction, intel-routing, multi-chat-coordination, multi-source-synthesis (knowledge-artifact gates; v3.0)
+  - service-seo-research, intersection-research, city-base-research, client-fact-research, competitor-deep-research (research-brief gates; v3.0 registered, v3.2 dispatching)
+  - vis-extraction, intel-routing, multi-chat-coordination, multi-source-synthesis (knowledge-artifact gates; v3.0 registered, v3.2 dispatching)
   - output-quality-loop (artifact-level downstream; disjoint scope)
   - any future orchestrator registering gate types
 tags: [skill, peer-review, gate-review, process-quality, orchestrator-coaching, substrate-agnostic, v2, page-build, autonomous-dispatch, deliberate-evolution-vs-silent-drift]
 ---
 
-# `gate-peer-reviewer` skill v3.1
+# `gate-peer-reviewer` skill v3.3
 
 Automated peer-review layer that fires on every orchestrated output across every project across every skill. v1 replaced the parallel-Cowork coaching layer Oliver ran by hand through waves A2-A6 of S&H Core 30 research. v2 extends to page-build gates (replacing the manual peer-review transport from the S&H Core 30 page-build run, PR-01..PR-40) and adds autonomous dispatch so the operator stops being the paste-transport layer.
 
@@ -61,15 +61,17 @@ Full verbatim spec at `references/check-spec.md`. Summary:
 | No domain-specific claims surface in Check 3 triage | Skip Sonar fire; Check 3 returns PASS without cost |
 | First wave of an orchestrator run (no prior wave to compare) | Skip Sub-check 4b |
 
-## Live-verification discipline (folded in from T2-7, Issue #28)
+## Live-verification discipline (folded in from T2-7, Issue #28; updated GPR-11 v3.2)
 
-Three rules for any peer-reviewer pass that touches live page state (publish gates, backfill gates, any gate where the reviewer assesses whether a page is "done" or "clean"). Source: `[[lesson-core-30-publishing-verification-template-parity-2026-06-04]]` Issues #26/#27/#28.
+Four rules for any peer-reviewer pass that touches live page state (publish gates, backfill gates, any gate where the reviewer assesses whether a page is "done" or "clean"). Source: `[[lesson-core-30-publishing-verification-template-parity-2026-06-04]]` Issues #26/#27/#28; GPR-11 precipitating event (D-12 caught twice by operator, not reviewer).
 
-1. **Verify live-rendered + cache-busted, never grep-only.** When assessing whether a live page is correct, fetch the LIVE published URL with a cache-buster (`?v=<timestamp>`) and compare the RENDERED structure against a named known-good sibling page — H1 form, title visibility, font-family (serif = fail), image fill, map fill, zero placeholder text. A grep of `post_content` HTML for class names ("`evp-corepage` present", "serif title: 0") is NOT acceptance — it cannot detect serif fallback, a duplicate theme title, or old-vs-new content structure. Class presence ≠ rendered styling.
+1. **The REVIEWER performs its own independent live fetch (GPR-11).** The reviewer fetches the live URL itself with a cache-buster (`?v=<timestamp>`), parses the HTML, and runs all checks against the PARSED output. It does NOT rely on the orchestrator's self-reported fetch, the operator's confirmation, or any upstream agent's claim about page state. The reviewer is the primary catch layer; operator confirmation is an optional spot-check. Full procedure: `references/gate-type-registry.md` § `live-rendered-cache-busted-verification` Phase A.
 
-2. **A fetch-vs-operator-screenshot conflict is a cache question first.** When a `web_fetch` or tool fetch returns different content than an operator's screenshot, treat the discrepancy as a **page-cache staleness issue**, not a "the other agent lied" conclusion. Never override direct operator visual evidence (a screenshot of the logged-in render) with a single anonymous tool fetch. The correct sequence: cache-bust the fetch (`?v=ts`), compare, and if still conflicting, recommend cache purge + incognito re-check. A stale cached snapshot at the canonical URL is itself a real finding — anonymous visitors + Googlebot may see the old page.
+2. **Verify live-rendered + cache-busted, never grep-only.** Compare the RENDERED structure against a named known-good sibling page — H1 form, title visibility, font-family (serif = fail), image fill, map fill, zero placeholder text. A grep of `post_content` HTML for class names ("`evp-corepage` present", "serif title: 0") is NOT acceptance — it cannot detect serif fallback, a duplicate theme title, or old-vs-new content structure. Class presence ≠ rendered styling.
 
-3. **Don't scope a page as "fine, minor fix" from a prior run note — disk-verify its actual state first.** Before scoping a page as "images render acceptably — only needs the map" (or any similar assessment from a prior note), disk-verify the page's current wired-image + style-wrapper state. The reviewer mis-scoped page 01 as "fine" from an old run note while on disk its hero was never wired and its live content was the old version. Same class as `pattern-disk-verify-integration-target-before-drafting` applied to the reviewer's own scoping.
+3. **A fetch-vs-operator-screenshot conflict is a cache question first.** When the reviewer's fetch returns different content than an operator's screenshot, treat the discrepancy as a **page-cache staleness issue**, not a "the other agent lied" conclusion. Never override direct operator visual evidence (a screenshot of the logged-in render) with the reviewer's tool fetch. The correct sequence: cache-bust the fetch (`?v=ts`), compare, and if still conflicting, recommend cache purge + incognito re-check. A stale cached snapshot at the canonical URL is itself a real finding — anonymous visitors + search engine crawlers may see the old page.
+
+4. **Don't scope a page as "fine, minor fix" from a prior run note — disk-verify its actual state first.** Before scoping a page as "images render acceptably — only needs the map" (or any similar assessment from a prior note), disk-verify the page's current wired-image + style-wrapper state. The reviewer mis-scoped page 01 as "fine" from an old run note while on disk its hero was never wired and its live content was the old version. Same class as `pattern-disk-verify-integration-target-before-drafting` applied to the reviewer's own scoping.
 
 ## Substrate detection (3-probe sequence)
 
@@ -262,7 +264,9 @@ The peer-reviewer is normally dispatched by a parent orchestrator. Operator-driv
 ## Reference files (index)
 
 - `references/check-spec.md` — Full verbatim 6-check spec with worked-example anchors. **Load-bearing.**
-- `references/gate-type-registry.md` — Substrate-agnostic registry of gate types + registration shape + 4 named verification procedures. Mode 6 as the seed instance.
+- `references/gate-type-registry.md` — Substrate-agnostic registry of gate types + registration shape + 4 named verification procedures (full-placeholder-family-sweep, source-client-leak-audit, live-rendered-cache-busted-verification, ground-truth-value-cross-check). 19 gate types across 12 orchestrators.
+- `references/regression-harness.md` — Standing planted-defect regression suite. 7 declared fixtures, run at every version bump. Prevents silent regression of known-caught defect classes.
+- `references/regression-fixtures/` — Synthetic test fixtures with planted defects + expected outcomes.
 - `references/return-contract.md` — Full field-by-field JSON return contract + write-authority detail.
 - `references/facts-registry-spec.md` — Ground-truth value-correctness layer: generic facts profile shape, cross-check algorithm, boundary (output-matches-source, not source-matches-reality), non-SEO proof architecture.
 - `references/facts-profiles/` — Registered facts profiles (declarative YAML). `core-30-page-build.yaml` + `research-brief.yaml`.
@@ -273,6 +277,8 @@ The peer-reviewer is normally dispatched by a parent orchestrator. Operator-driv
 
 ## Version history
 
+- **v3.3 (2026-06-07)** — Cross-project reusability + robustness (RQ-sprint step 3). **GPR-9:** Peer-reviewer dispatch blocks wired into all 9 non-Core-30 skills (service-seo-research, intersection-research, city-base-research, client-fact-research, competitor-deep-research, vis-extraction, intel-routing, multi-chat-coordination, multi-source-synthesis) — reviewer now fires across the whole toolkit, not just Core-30. **GPR-13:** Verdict severity tiers (`blocking` vs `advisory`) added to return contract (schema 1.1); operator decision matrix distinguishes must-review from auto-approvable; Check 5 Step 5.0 classifies severity before carry-forward. **GPR-14:** Standing planted-defect regression harness with 7 declared fixtures + 3 seed fixture implementations (meta-only-placeholder, og-title-source-client-leak, jsonld-wrong-value). Run at every version bump to prevent silent regression. Closes GPR-9/GPR-13/GPR-14 from the enhancement log.
+- **v3.2 (2026-06-07)** — Reviewer live-gate self-sufficiency (RQ-sprint step 2). **GPR-11:** `live-rendered-cache-busted-verification` restructured into 3 phases (A: reviewer-owned fetch+parse, B: structural verification, C: cache-coherence second fetch) — reviewer performs its own independent live fetch, operator becomes optional spot-check. **GPR-12:** `full-placeholder-family-sweep` and `source-client-leak-audit` now enumerate 7 mandatory surfaces (body, title, meta-description, og:title, og:description, JSON-LD/schema, frontmatter) — "body only" sweeps impossible. Both procedures engine-level (any artifact with text content + optional metadata). Live-verification discipline expanded from 3 rules to 4. Closes GPR-11/GPR-12 from the enhancement log.
 - **v3.1 (2026-06-07)** — Value-correctness layer (RQ-sprint step 1). New named procedure `ground-truth-value-cross-check`: engine-level facts registry that cross-checks every claimed value in an artifact (body + meta + og + JSON-LD) against declarative ground-truth profiles. Two profiles registered: `core-30-page-build` (6 checkable facts across 3 data sources) and `research-brief` (4 checkable facts — non-SEO proof). Procedure wired into G-data, G-scaffold, G-publish, G-city-brief, G-client-brief. Companion scripts: `hardcode-scanner.py` (SC-1 — post-scaffold default detection) and `facts-completeness-gate.py` (SC-2 — pre-scaffold data completeness). Both engine-level with declarative profiles. Boundary documented: this layer verifies output-matches-source, not source-matches-reality. All three always-required-explicit: even when the default value IS correct, the data file must state it consciously. Closes GPR-10/SC-1/SC-2 from the enhancement log.
 - **v2.1 (2026-06-06)** — Build wave 2 calibration. Applied D-01–D-06 from the Alexandria production run calibration corpus (`lesson-gate-peer-reviewer-build-wave-2-calibration-2026-06-06`). Fixes: (D-01) source-client-leak-audit reads ALL foreign-client identity strings from `data/client-*.json` at runtime, never from memory; (D-02) full-placeholder-family-sweep reports real counts per token type, stage-classifies expected-vs-unexpected, clean-gate reserved for G-publish only; (D-03) pre-gate dispatch checklist — orchestrator must confirm peer-reviewer dispatched at every registered gate incl. G-imagery; Check 1 Step 1.2a requires execution evidence for named procedures. choose-image-variant.py updated: (D-04) variant filename bound in system prompt + post-score cross-variant contamination check; (D-05) 3-tier parse retry (same prompt → simplified prompt → JSON-only instruction), escalates with context instead of silent punt; (D-06) `--display-context hero|thumbnail|full-page` flag down-weights text_legibility for hero-size display. Engine remains project-agnostic (registered-instance pattern, no fork). D-07/D-08 (quality-loop/house-voice) + D-09 (meta-vs-body consistency) deferred to F5 skill-quality-integration-audit — cross-linked.
 - **v2.0 (2026-06-05)** — Build wave 4. Cross-orchestrator generalization: registered client-seo-onboarding's 5 page-build gates (G-data / G-scaffold / G-imagery / G-publish / G-wave-close) as the second instance in the gate-type registry alongside vault-orchestrator Mode 6's 5 research-brief gates. 3 reusable named verification procedures added to the registry (full-placeholder-family-sweep, source-client-leak-audit, live-rendered-cache-busted-verification) — project-agnostic, referenced by gate type entries. Autonomous dispatch: orchestrator spawns peer-reviewer as a Task sub-agent after each gate — operator stops being the manual paste-transport. 6-check engine unchanged — page-build gates are a registered instance, not a fork. Calibrated against S&H Core 30 page-build peer-review corpus (PR-01..PR-40). Acceptance test: independently reproduces catches PR-01/07/15/16/17/19a/19b from Check 1 satisfaction targets without operator prompting.

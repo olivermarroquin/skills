@@ -1,0 +1,15 @@
+fixture_id: jsonld-wrong-value
+description: "Body has correct city, JSON-LD areaServed has wrong city — tests RQ1 value-correctness on schema surface"
+gate_type: G-publish
+defect_class: D-10
+planted_defects:
+  - surface: json-ld
+    defect_type: wrong-value
+    description: "JSON-LD areaServed.name says 'Fairfax' but ground-truth says 'Stafford'"
+    expected_catch_severity: blocking
+expected_verdict: REJECT-AND-REDO
+expected_verdict_severity: blocking
+procedures_that_must_fire:
+  - ground-truth-value-cross-check
+introduced_at_version: "3.2"
+regression_for: "D-10 (Fairfax areaServed on Stafford page)"

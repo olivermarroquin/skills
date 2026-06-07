@@ -768,3 +768,53 @@ The synthesis is what `insert-internal-links.py` reads. The script's `--referenc
 - `~/workspace/repos/ai-agency-core/scripts/README-insert-internal-links.md` — operator-facing docs
 - [[_template-service-brief]] — Section 9 (internal-linking observations) feeds into link-map mode
 - [[execution-log-2026-05-31-internal-linking-automation]] — the build session that shipped this refinement
+
+---
+
+## Peer-reviewer dispatch (GPR-9, gate-peer-reviewer v3.3)
+
+**Gate type:** G-competitor-brief (closing gate — Check 6 KCA applies).
+**Fires after:** Per-competitor deep dives + cross-competitor synthesis, before closing.
+**Dispatch shape:** Orchestrator spawns the peer-reviewer as a Task sub-agent after the synthesis is authored and before the closing protocol completes.
+
+**Per-gate dispatch block (Claude Code substrate):**
+
+```
+## Peer-reviewer dispatch
+
+Gate type: G-competitor-brief
+Orchestrator: competitor-deep-research
+Project: <client-slug>
+Wave: null
+
+Context paths for the Task sub-agent:
+- Gate output: <paths to per-competitor briefs + cross-competitor synthesis>
+- Gate-type registry: ~/workspace/skills/gate-peer-reviewer/references/gate-type-registry.md
+- Check spec: ~/workspace/skills/gate-peer-reviewer/references/check-spec.md
+- Lesson files: ~/workspace/second-brain/05_shared-intelligence/lessons/ (most recent for this skill)
+
+Task instruction: Read the gate-type registry entry for G-competitor-brief. Run Check 1 satisfaction targets.
+Run Checks 2-5 per check-spec.md skip logic. This IS a closing gate — run Check 6 (KCA).
+Classify each catch severity per return-contract.md § Severity tiers.
+Return the structured JSON verdict per references/return-contract.md.
+```
+
+**What the orchestrator does with the verdict:**
+
+- `APPROVE` + `verdict_severity: advisory` → proceed to close. No operator review needed.
+- `APPROVE-WITH-NOTES` + `verdict_severity: advisory` → proceed to close; notes logged for awareness.
+- `APPROVE-WITH-NOTES` + `verdict_severity: blocking` → surface to operator with catches. Operator decides.
+- `REJECT-AND-REDO` → fix the catch, re-run the step, re-dispatch peer-reviewer. Cap at 2 iterations; on 3rd REJECT, escalate to operator.
+- `ESCALATE-AMBIGUOUS` → surface to operator with the peer-reviewer's ambiguity framing.
+
+**Graceful degradation.** If peer-reviewer dispatch fails (skill unavailable on substrate), log:
+
+```
+event-type: peer-reviewer-skipped
+reason: skill not available on <substrate>
+chat-id: <id>
+gate-id: G-competitor-brief
+orchestrator: competitor-deep-research
+```
+
+Then proceed to close with the skip noted.

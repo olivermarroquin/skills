@@ -1,7 +1,7 @@
 ---
 type: reference
 skill: gate-peer-reviewer
-skill-version: 3.1
+skill-version: 3.3
 created: 2026-06-03
 updated: 2026-06-07
 tags: [reference, gate-type-registry, substrate-agnostic, future-orchestrator-friendly, page-build, client-seo-onboarding, value-correctness, ground-truth]
@@ -181,7 +181,7 @@ Named procedures any gate type can reference in `check_1_satisfaction_targets`. 
 
 ### Procedure: `full-placeholder-family-sweep`
 
-**Purpose.** Verify an artifact contains zero residual placeholder tokens. A page/draft/data file is clean ONLY when ALL of these regexes return zero matches (minus documented expected exceptions like pre-imagery image-URL FILLs):
+**Purpose.** Verify an artifact contains zero residual placeholder tokens across ALL content surfaces — not just visible body text. A page/draft/data file is clean ONLY when ALL of these regexes return zero matches across ALL mandatory surfaces (minus documented expected exceptions like pre-imagery image-URL FILLs):
 
 ```
 FILL:
@@ -193,18 +193,34 @@ FILL:
 \{[a-z_]+\}    (unrendered template braces)
 ```
 
-**Calibration source.** S&H Core 30 peer-review PR-15 (reviewer missed `<TBD>` Q&A bodies because token list only had `FILL:` + `<!-- MISSING -->`) + PR-16 (`{phone_display}` leaked because publish hard-block had the same incomplete family). The full family was codified in `publish-core-30-page.py` `check_placeholder_gate()` during the run.
+**Mandatory sweep surfaces (GPR-12, v3.2).** Every execution of this procedure MUST sweep ALL of the following surfaces. Reporting "body clean" without sweeping meta/og/schema is an incomplete execution — same class as D-02 (declaration without counting).
+
+| Surface | What to grep | Example location |
+|---|---|---|
+| 1. Body text | Rendered/raw body HTML content | `post_content`, `<body>`, draft markdown |
+| 2. `<title>` | HTML title element content | `<title>...</title>` |
+| 3. `meta-description` | `<meta name="description" content="...">` | Head section |
+| 4. `og:title` | `<meta property="og:title" content="...">` | Head section |
+| 5. `og:description` | `<meta property="og:description" content="...">` | Head section |
+| 6. JSON-LD / schema | Content within `<script type="application/ld+json">` blocks | Head or body |
+| 7. Frontmatter / data fields | YAML frontmatter, JSON data files (service JSONs, city JSONs, client JSONs) | File-level |
+
+For artifacts that don't have all surfaces (e.g., a JSON data file has no `<title>`), report "N/A — surface not present in this artifact type" per surface. The sweep must ENUMERATE each surface with a verdict, not silently skip non-body surfaces.
+
+**Calibration source.** S&H Core 30 peer-review PR-15 (reviewer missed `<TBD>` Q&A bodies because token list only had `FILL:` + `<!-- MISSING -->`) + PR-16 (`{phone_display}` leaked because publish hard-block had the same incomplete family). The full family was codified in `publish-core-30-page.py` `check_placeholder_gate()` during the run. GPR-12 precipitating event: meta-description missed placeholder THREE times (Alexandria, Springfield, Burke/Lorton) because sweep only checked body HTML.
 
 **How to run.**
 
-1. **Grep the actual artifact files** for each regex. Do not declare counts from memory or by naming the procedure without executing it.
-2. **Report real counts per token type.** Output a table: token family | count | locations (file:line). Zero is a valid count — but it must come from an actual grep, not an assumption.
+1. **Grep the actual artifact files** for each regex **across each mandatory surface.** Do not declare counts from memory or by naming the procedure without executing it. For live-fetched pages (G-publish), grep the reviewer's own fetched + parsed HTML (per GPR-11 Phase A output), not the orchestrator's.
+2. **Report real counts per token type PER SURFACE.** Output a table: surface | token family | count | locations (file:line or element path). Zero is a valid count — but it must come from an actual grep, not an assumption. Every mandatory surface must appear in the table.
 3. **Stage-classify each hit.** For every non-zero count, classify each token as:
    - **expected-at-this-stage** — the token is a known pre-wiring placeholder that a later pipeline step fills (e.g., `hero_image_url FILL` before Step 8 imagery wiring). Must match a named entry in the gate-type's `check_1_expected_exceptions` list.
    - **unexpected** — the token should not be present at this stage. Any unexpected token is a catch.
-4. **Clean-gate is G-publish only.** The sweep may report "0 unexpected tokens" at earlier gates (G-data, G-scaffold, G-imagery), but the procedure must NOT declare the artifact "clean" at those gates — only "0 unexpected tokens at this stage; N expected tokens deferred to G-publish." The **clean declaration** (zero tokens of any kind, expected or not) is reserved for G-publish, the final artifact gate. (Calibration: D-02 from wave-2 calibration — reviewer declared "zero blocking tokens in rendered HTML" at G-data when each draft actually had 10-12 FILL/TBD tokens that were expected but uncounted.)
+4. **Clean-gate is G-publish only.** The sweep may report "0 unexpected tokens" at earlier gates (G-data, G-scaffold, G-imagery), but the procedure must NOT declare the artifact "clean" at those gates — only "0 unexpected tokens at this stage; N expected tokens deferred to G-publish." The **clean declaration** (zero tokens of any kind, expected or not, on ALL surfaces) is reserved for G-publish, the final artifact gate. (Calibration: D-02 from wave-2 calibration — reviewer declared "zero blocking tokens in rendered HTML" at G-data when each draft actually had 10-12 FILL/TBD tokens that were expected but uncounted.)
 
 Expected exceptions (e.g., 2 image-URL FILL entries before Step 8 imagery wiring) must be named in the gate-type entry's `check_1_expected_exceptions` field — any token not in the exception list is a catch regardless of stage.
+
+**Engine-level applicability.** The 7 mandatory surfaces are a superset. Any artifact type maps onto a subset: JSON data files → surfaces 7 only; HTML pages → surfaces 1-6 + 7 if frontmatter exists; deployed web apps → surfaces 1-6; research briefs → surfaces 1 + 7. The procedure enumerates all 7 and marks non-applicable surfaces as N/A — it never silently skips.
 
 **Applies at gate types.** Any gate reviewing a text artifact that may contain templates, drafts, or data files. Currently: G-data, G-scaffold, G-imagery, G-publish.
 
@@ -212,7 +228,7 @@ Expected exceptions (e.g., 2 image-URL FILL entries before Step 8 imagery wiring
 
 ### Procedure: `source-client-leak-audit`
 
-**Purpose.** Verify that artifacts derived from a prior client's templates carry zero source-client-specific content. Audits 6 surfaces:
+**Purpose.** Verify that artifacts derived from a prior client's templates carry zero source-client-specific content across ALL content surfaces — not just visible body text. Audits 6 content surfaces × all metadata layers.
 
 | Surface | What to check | Calibration source |
 |---|---|---|
@@ -223,6 +239,20 @@ Expected exceptions (e.g., 2 image-URL FILL entries before Step 8 imagery wiring
 | 5. Brand-mark in imagery prompts | Wardrobe/uniform clause names THIS client's mark, not the source's | PR-19a (EV Electric logo hardcoded in S&H imagery prompts — costliest catch) |
 | 6. Face reference in imagery | Face-reference path points to THIS client's owner face crop in `reference-photos/`, not `brand_image_url` or other non-face file | PR-19b (`brand_image_url` used instead of owner face crop) |
 
+**Mandatory metadata layers (GPR-12, v3.2).** The identity-string grep (Step 2) MUST cover ALL of the following layers in addition to body text. A leak in `meta-description` or `og:title` is the same severity as a body leak — it's what search engines and social previews show. Reporting "body clean" without sweeping metadata is an incomplete execution.
+
+| Layer | What to grep | Why load-bearing |
+|---|---|---|
+| A. Body text / prose fields | Rendered body, raw HTML, data file prose values | Visible to visitors |
+| B. `<title>` | HTML title element | Browser tab + SERP title |
+| C. `meta-description` | `<meta name="description">` value | SERP snippet + social preview fallback |
+| D. `og:title` / `og:description` | Open Graph meta values | Social sharing previews |
+| E. JSON-LD / schema fields | `name`, `description`, `provider.name`, `areaServed`, any string field in structured data | Search engine knowledge panels + rich results |
+| F. Frontmatter / YAML | `title`, `description`, `author`, `brand` in file frontmatter | CMS rendering + downstream consumers |
+| G. CSS comments / HTML comments | Inline comments, class names, data attributes | Technically visible in source; prior leak in maps iframe title (PR-37) |
+
+For artifacts without all layers (e.g., imagery prompts have no `<title>`), report "N/A — layer not present" per layer. The audit MUST enumerate each layer with a verdict.
+
 **How to run.**
 
 1. **Load foreign-client identity strings at runtime.** Glob `data/client-*.json` in the project's data directory. Exclude the current client's JSON (match on `client_slug`). For each foreign-client JSON, extract:
@@ -230,10 +260,13 @@ Expected exceptions (e.g., 2 image-URL FILL entries before Step 8 imagery wiring
    - `alternate_name` (if present)
    - `owner_name`
    These are the grep targets. **Never reconstruct owner/business names from memory** — always read from the authoritative JSON files on disk. (Calibration: D-01 from wave-2 calibration — reviewer grepped for "Ahmad Suliman" from memory when the actual owner name in `client-ev-electric-services.json` was "Ahmad Shaban".)
-2. Grep the artifact under review for each identity string (case-insensitive). Any hit on any foreign-client identity string = catch.
+2. **Grep ALL mandatory metadata layers** (A through G) for each identity string (case-insensitive). Any hit on any foreign-client identity string on ANY layer = catch. Report per-layer results in a table: layer | identity string | count | locations.
 3. Also verify surfaces 1-3 structurally (prefix match, related_cards membership, domain match). Any hit = catch.
+4. For live-fetched pages (G-publish), run the grep against the reviewer's own fetched + parsed HTML (per GPR-11 Phase A output), not the orchestrator's.
 
-**Applies at gate types.** Any gate reviewing artifacts derived from a prior client template. Currently: G-data (surfaces 1-4), G-imagery (surfaces 4-6), G-scaffold (surfaces 1-4), G-publish (surface 4 via rendered text).
+**Engine-level applicability.** The 7 mandatory layers are a superset covering any artifact with text content + optional metadata. Data files → layers A + F; HTML pages → layers A-G; imagery prompts → layer A only (report B-G as N/A); research briefs → layers A + F. The audit never silently skips a layer.
+
+**Applies at gate types.** Any gate reviewing artifacts derived from a prior client template. Currently: G-data (surfaces 1-4, layers A+F+G), G-imagery (surfaces 4-6, layer A), G-scaffold (surfaces 1-4, layers A-G), G-publish (surfaces 1-4, layers A-G via live-fetched content).
 
 ---
 
@@ -241,23 +274,39 @@ Expected exceptions (e.g., 2 image-URL FILL entries before Step 8 imagery wiring
 
 **Purpose.** Verify a published page renders correctly in the browser, not just in post_content HTML. A grep of HTML source is NOT acceptance — it cannot detect serif fallback, duplicate theme titles, or old-vs-new content structure.
 
-**Verification steps (all required):**
+**Who fetches (GPR-11, v3.2).** The REVIEWER performs its own independent live fetch. It does NOT rely on the orchestrator's self-reported fetch, the operator's confirmation, or any upstream agent's claim about page state. The reviewer is the primary catch layer; operator confirmation is an optional spot-check, not the gate.
 
-1. Fetch the LIVE published URL with a cache-buster (`?v=<timestamp>`).
-2. Verify `modified_time` advanced past the prior value (confirms WP actually updated).
-3. Verify H1 matches expected eyebrow + clean-H1 form (not a combined serif H1 or stale content).
-4. Verify title visibility: WP page title is hidden (no duplicate theme title above the hero). **Per-client theme adaptation required** — the hide-selectors must match THIS client's theme, not the source client's (PR-17: S&H's theme title element not in EV's selector list).
-5. Verify font-family: page renders in sans-serif via `.evp-corepage` styling (serif fallback = style wrapper didn't survive upload → fail).
-6. Verify image fill: hero + about images fill containers edge-to-edge (no dashed border / blue frame / placeholder chrome).
-7. Verify map fill: Google Maps embed fills its container (not undersized / not a placeholder).
-8. Verify zero placeholder text on the RENDERED page (runs `full-placeholder-family-sweep` on the live-fetched content).
-9. Compare RENDERED structure to a named known-good sibling page (same client, same template generation).
-10. **Cache-purge re-check:** after logged-in render verification, purge page cache + re-fetch public URL logged-out/cache-busted. Anonymous visitors + Googlebot must get the new version.
-11. **Fetch-vs-screenshot conflict rule:** when a tool fetch conflicts with an operator screenshot, treat as a cache question first, not a "the other agent lied" conclusion. Never override operator visual evidence with a single anonymous tool fetch.
+**Execution sequence (all required):**
 
-**Calibration source.** PR-17 (duplicate theme title on S&H — CSS hide-selectors tuned to EV theme missed S&H's title element), EV lesson Issues #26/#27/#28 (live-verification failure modes).
+**Phase A — Independent fetch + parse (reviewer-owned).**
 
-**Applies at gate types.** G-publish (mandatory), any gate that touches live page state.
+1. **Reviewer fetches the LIVE published URL** with a cache-buster query parameter (`?v=<unix-timestamp>`). The fetch must be the reviewer's own HTTP request (via `web_fetch`, `curl`, or equivalent substrate tool), not a re-read of the orchestrator's fetch output.
+2. **Reviewer parses the fetched HTML** into a structured representation it can query: extract `<title>`, `<meta name="description">`, `<meta property="og:*">`, `<script type="application/ld+json">`, `<h1>`, rendered body text, image `src` attributes, iframe `src` attributes, stylesheet links, and inline styles. This parsed structure is the artifact-under-review for all subsequent steps.
+3. If the fetch fails (HTTP error, timeout, DNS failure), log the failure and ESCALATE-AMBIGUOUS — do not fall back to the orchestrator's fetch. A fetch failure is itself a finding (the page may not be live).
+
+**Phase B — Structural + content verification (run against Phase A parsed output).**
+
+4. Verify `modified_time` (from `<meta property="article:modified_time">` or equivalent) advanced past the prior value (confirms the CMS actually updated).
+5. Verify H1 matches expected eyebrow + clean-H1 form (not a combined serif H1 or stale content).
+6. Verify title visibility: CMS page title is hidden (no duplicate theme title above the hero). **Per-client theme adaptation required** — the hide-selectors must match THIS client's theme, not the source client's (PR-17: S&H's theme title element not in EV's selector list).
+7. Verify font-family: page renders in sans-serif via style wrapper (serif fallback = style wrapper didn't survive upload → fail).
+8. Verify image fill: hero + about images fill containers edge-to-edge (no dashed border / blue frame / placeholder chrome).
+9. Verify map fill: embedded map fills its container (not undersized / not a placeholder).
+10. Verify zero placeholder text on the RENDERED page (runs `full-placeholder-family-sweep` on the live-fetched content — including meta + og + schema surfaces per GPR-12).
+11. Compare RENDERED structure to a named known-good sibling page (same client, same template generation).
+
+**Phase C — Cache coherence (reviewer-owned second fetch).**
+
+12. **Cache-purge re-check:** after Phase B verification, the reviewer fetches the public URL again with a DIFFERENT cache-buster (`?v=<new-timestamp>`) simulating an anonymous/logged-out visitor. Anonymous visitors + search engine crawlers must get the new version. If Phase B and Phase C return different content, log as a cache-coherence finding.
+13. **Fetch-vs-screenshot conflict rule:** when the reviewer's fetch conflicts with an operator screenshot, treat as a cache question first, not a "the other agent lied" conclusion. Never override operator visual evidence with a single anonymous tool fetch. Correct sequence: cache-bust, compare, and if still conflicting, recommend cache purge + incognito re-check.
+
+**Operator role after GPR-11.** The operator MAY spot-check any live page the reviewer has verified. Operator screenshots override reviewer fetch findings per rule 13. But the operator is no longer the PRIMARY verification layer — the reviewer is. The operator's gate-approval decision is informed by the reviewer's fetch evidence, not by performing the fetch themselves.
+
+**Engine-level applicability.** This procedure is not CMS-specific. Phase A fetches any URL and parses standard HTML elements (title, meta, og, schema, headings, images, iframes). Phase B checks are parameterized by the gate-type entry's expected structural elements. Any artifact type with a live URL — published pages, deployed web apps, hosted documents — can register a gate type that references this procedure.
+
+**Calibration source.** PR-17 (duplicate theme title on S&H — CSS hide-selectors tuned to EV theme missed S&H's title element), EV lesson Issues #26/#27/#28 (live-verification failure modes). GPR-11 precipitating event: D-12 caught twice by operator live fetch, not by reviewer — reviewer was checking orchestrator's self-reported output, not its own fetch.
+
+**Applies at gate types.** G-publish (mandatory), any gate that touches live page state. Any future gate type reviewing a live URL.
 
 ---
 
@@ -280,8 +329,8 @@ Registered by Build wave 4. Calibrated against the S&H Core 30 page-build peer-r
       - image-URL domains use this client's domain, not the source's (PR-07 class)
       - zero source-client owner/brand names in prose fields (PR-04 class)
       - full-placeholder-family-sweep = 0 (minus expected pre-imagery image-URL FILLs)
-      - named procedure: source-client-leak-audit (surfaces 1-4)
-      - named procedure: full-placeholder-family-sweep
+      - named procedure: source-client-leak-audit (surfaces 1-4, all metadata layers per GPR-12)
+      - named procedure: full-placeholder-family-sweep (all 7 mandatory surfaces per GPR-12)
       - named procedure: ground-truth-value-cross-check (profile: core-30-page-build)
     facts_profile_id: core-30-page-build
     check_1_expected_exceptions:
@@ -310,8 +359,8 @@ Registered by Build wave 4. Calibrated against the S&H Core 30 page-build peer-r
       - hero structure matches a known-good sibling (same generation template)
       - maps iframe carries a real embed key, not a placeholder
       - full-placeholder-family-sweep = 0 (minus expected pre-imagery image-URL FILLs)
-      - named procedure: source-client-leak-audit (surfaces 1-4)
-      - named procedure: full-placeholder-family-sweep
+      - named procedure: source-client-leak-audit (surfaces 1-4, all metadata layers per GPR-12)
+      - named procedure: full-placeholder-family-sweep (all 7 mandatory surfaces per GPR-12)
       - named procedure: ground-truth-value-cross-check (profile: core-30-page-build)
     facts_profile_id: core-30-page-build
     check_1_expected_exceptions:
@@ -340,8 +389,8 @@ Registered by Build wave 4. Calibrated against the S&H Core 30 page-build peer-r
       - owner name is THIS client's owner, not the source's (PR-04 class)
       - zero source-client brand/owner strings in any prompt text
       - zero unrendered template tokens in prompt text
-      - named procedure: source-client-leak-audit (surfaces 4-6)
-      - named procedure: full-placeholder-family-sweep
+      - named procedure: source-client-leak-audit (surfaces 4-6, all metadata layers per GPR-12)
+      - named procedure: full-placeholder-family-sweep (all 7 mandatory surfaces per GPR-12)
     check_1_expected_exceptions: []
     check_2_calibration_metrics:
       - none
@@ -361,9 +410,9 @@ Registered by Build wave 4. Calibrated against the S&H Core 30 page-build peer-r
   is_closing_gate: false
   expects:
     check_1_satisfaction_targets:
-      - named procedure: live-rendered-cache-busted-verification (all 11 steps)
-      - named procedure: full-placeholder-family-sweep (on live-fetched content)
-      - named procedure: source-client-leak-audit (surface 4 — brand names in rendered text)
+      - named procedure: live-rendered-cache-busted-verification (all 3 phases / 13 steps — reviewer-owned fetch per GPR-11)
+      - named procedure: full-placeholder-family-sweep (on reviewer's live-fetched content, all surfaces per GPR-12)
+      - named procedure: source-client-leak-audit (surface 4 — brand names in rendered text, all metadata layers per GPR-12)
       - named procedure: ground-truth-value-cross-check (profile: core-30-page-build)
       - Yoast (or AIOSEO) title + meta description + focus keyword populated in page source (PR-11 class)
       - page-options theme meta persists after REST re-publish (PR-17 class — per-client theme config)

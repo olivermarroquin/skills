@@ -1,7 +1,7 @@
 ---
 type: reference
 skill: gate-peer-reviewer
-skill-version: 2.1
+skill-version: 3.3
 created: 2026-06-03
 updated: 2026-06-06
 tags: [reference, check-spec, peer-review, six-checks, load-bearing]
@@ -30,7 +30,7 @@ Step 1.1 — Parse the kickoff prompt for explicit requirements: numbered asks, 
 
 Step 1.2 — For each requirement, scan the gate output for satisfaction. Mark each ✅ / ❌ / ⚠️ (partial).
 
-Step 1.2a — **Named-procedure execution evidence (v2.1).** When a gate-type entry references a named verification procedure (e.g., `full-placeholder-family-sweep`, `source-client-leak-audit`), the reviewer must produce evidence of actual execution — real grep output, real counts, real file reads — not merely state that the procedure was run or name it as satisfied. A procedure that reports "zero tokens" without showing grep output has not been executed. Stage-aware procedures (e.g., placeholder sweep) must classify hits as expected-at-this-stage vs unexpected and defer the clean declaration to the final artifact gate (G-publish). (Calibration: D-02 — reviewer declared "zero blocking tokens" without counting; D-03 — reviewer skipped a gate's dispatch entirely.)
+Step 1.2a — **Named-procedure execution evidence (v2.1; updated GPR-11 v3.2).** When a gate-type entry references a named verification procedure (e.g., `full-placeholder-family-sweep`, `source-client-leak-audit`, `live-rendered-cache-busted-verification`), the reviewer must produce evidence of actual execution — real grep output, real counts, real file reads, real HTTP fetch responses — not merely state that the procedure was run or name it as satisfied. A procedure that reports "zero tokens" without showing grep output has not been executed. A live-verification that cites the orchestrator's fetch output instead of the reviewer's own fetch has not been executed (GPR-11). Stage-aware procedures (e.g., placeholder sweep) must classify hits as expected-at-this-stage vs unexpected and defer the clean declaration to the final artifact gate (G-publish). (Calibration: D-02 — reviewer declared "zero blocking tokens" without counting; D-03 — reviewer skipped a gate's dispatch entirely; GPR-11 precipitating event — D-12 caught by operator live fetch, not by reviewer who was reading orchestrator's self-report.)
 
 Step 1.3 — If the gate being reviewed is a **Mode 6 EXECUTE Gate 4 dispatch prompt emission**, run the Gate-4-specific structural compliance sub-check (below). Load-bearing because carry-forward drift fired at S&H wave A4 → A5 twice in a row.
 
@@ -213,6 +213,8 @@ Step 4b.4 — Apply deliberate-evolution vs silent-drift disambiguation. Look fo
 3. The next wave's kickoff prompt template, if it exists in the spawn queue or as a draft.
 
 **Procedure.**
+
+Step 5.0 — **Classify severity (GPR-13).** For each catch from Checks 1-4, assign a severity tier: `blocking` (end-user/search-engine/downstream-consumer would see incorrect content if shipped), `nit` (cosmetic, not harmful), `calibration` (prediction drift, informational), or `follow-up` (will become defect if unaddressed at a named future step). See `references/return-contract.md` § Severity tiers for full definitions + examples.
 
 Step 5.1 — For each catch, produce three outputs:
 

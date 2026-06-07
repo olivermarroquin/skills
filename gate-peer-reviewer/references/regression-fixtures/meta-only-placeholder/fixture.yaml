@@ -1,0 +1,15 @@
+fixture_id: meta-only-placeholder
+description: "Body clean, meta-description contains FILL placeholder — tests GPR-12 meta surface coverage"
+gate_type: G-publish
+defect_class: PR-15-extended
+planted_defects:
+  - surface: meta-description
+    defect_type: placeholder
+    description: "meta-description contains 'FILL: service description for {city_name}'"
+    expected_catch_severity: blocking
+expected_verdict: REJECT-AND-REDO
+expected_verdict_severity: blocking
+procedures_that_must_fire:
+  - full-placeholder-family-sweep
+introduced_at_version: "3.2"
+regression_for: "Alexandria/Springfield/Burke-Lorton meta-description misses (GPR-12 precipitating event)"

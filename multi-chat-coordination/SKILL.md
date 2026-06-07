@@ -814,3 +814,54 @@ These are observations seeded at skill creation. Promote to standalone notes if 
 - `~/workspace/skills/master-tracker-aggregator/SKILL.md` — Phase 2 aggregator skill that consumes the digest contract above and rolls up into the master tracker
 - `~/workspace/skills/vault-orchestrator/SKILL.md` — Phase 3 orchestrator skill that composes with this skill's NEXT-MOVE mode for ranking + adds session-budget display, substrate recommendations, parallel-work detection, decision-research convention on ties
 - `~/workspace/skills/vault-orchestrator/references/composition-with-multi-chat-coordination.md` — the exact handoff shape used when the orchestrator invokes this skill's NEXT-MOVE
+
+---
+
+## Peer-reviewer dispatch (GPR-9, gate-peer-reviewer v3.3)
+
+**Gate type:** G-decompose (NOT a closing gate — Check 6 skipped).
+**Fires after:** Single comprehensive review gate (proposal before writes).
+**Dispatch shape:** Orchestrator spawns the peer-reviewer as a Task sub-agent after the decomposition proposal is ready and before writes.
+
+**Per-gate dispatch block (Claude Code substrate):**
+
+```
+## Peer-reviewer dispatch
+
+Gate type: G-decompose
+Orchestrator: multi-chat-coordination
+Mode: DECOMPOSE
+Project: <project-slug>
+Wave: null
+
+Context paths for the Task sub-agent:
+- Gate output: <decomposition proposal — project subfolder + handoff files + _README.md + tracker rows>
+- Gate-type registry: ~/workspace/skills/gate-peer-reviewer/references/gate-type-registry.md
+- Check spec: ~/workspace/skills/gate-peer-reviewer/references/check-spec.md
+- Lesson files: ~/workspace/second-brain/05_shared-intelligence/lessons/ (most recent for this skill)
+
+Task instruction: Read the gate-type registry entry for G-decompose. Run Check 1 satisfaction targets.
+Run Checks 2-5 per check-spec.md skip logic. This is NOT a closing gate — skip Check 6.
+Classify each catch severity per return-contract.md § Severity tiers.
+Return the structured JSON verdict per references/return-contract.md.
+```
+
+**What the orchestrator does with the verdict:**
+
+- `APPROVE` + `verdict_severity: advisory` → proceed to write. No operator review needed.
+- `APPROVE-WITH-NOTES` + `verdict_severity: advisory` → proceed; notes logged for awareness.
+- `APPROVE-WITH-NOTES` + `verdict_severity: blocking` → surface to operator. Operator decides.
+- `REJECT-AND-REDO` → fix the catch, re-derive decomposition, re-dispatch peer-reviewer. Cap at 2 iterations; on 3rd REJECT, escalate to operator.
+- `ESCALATE-AMBIGUOUS` → surface to operator with the peer-reviewer's ambiguity framing.
+
+**Graceful degradation.** If peer-reviewer dispatch fails (skill unavailable on substrate), log:
+
+```
+event-type: peer-reviewer-skipped
+reason: skill not available on <substrate>
+chat-id: <id>
+gate-id: G-decompose
+orchestrator: multi-chat-coordination
+```
+
+Then proceed to write with the skip noted.
