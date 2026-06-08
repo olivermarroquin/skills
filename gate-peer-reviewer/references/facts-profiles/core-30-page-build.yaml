@@ -90,9 +90,26 @@ facts_profile:
       extraction_surfaces:
         - body_text
       extraction_patterns:
-        - '((?:Dominion|NOVEC|REC|Manassas\s+Electric|municipal)[^.]*(?:coordination|utility|power))'
+        - '((?:Dominion|NOVEC|REC|Manassas\s+Electric|PEPCO|Potomac\s+Electric|municipal)[^.]*(?:coordination|utility|power))'
       match_mode: contains
       severity: blocking
+
+    # Jurisdiction permit authority (D-row 2026-06-08: DCRA→DOB catch)
+    # Ground truth lives in the city JSON. GPR-10 cross-checks that the page
+    # names the correct permit authority for the jurisdiction.
+    # VA cities: Fairfax County LDS / specific county
+    # MD cities: Montgomery County DPS
+    # DC: Department of Buildings (DOB) — NOT DCRA (dissolved Oct 2022)
+    - fact_key: permit_authority
+      ground_truth_source_path: "cities/{city_slug}.json"
+      ground_truth_field: permit_authority
+      required_in_sources: false          # advisory until all city JSONs populated
+      extraction_surfaces:
+        - body_text
+      extraction_patterns:
+        - '((?:DCRA|DOB|Department of Buildings|Fairfax County LDS|Montgomery County DPS|county permit)[^.]{0,40})'
+      match_mode: contains
+      severity: advisory                  # promote to blocking once registry populated
 
     # Owner name (source-client-leak-audit covers foreign names; this covers correctness)
     - fact_key: owner_name
