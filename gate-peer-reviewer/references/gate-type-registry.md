@@ -1,9 +1,9 @@
 ---
 type: reference
 skill: gate-peer-reviewer
-skill-version: 3.3
+skill-version: 3.4
 created: 2026-06-03
-updated: 2026-06-07
+updated: 2026-06-08
 tags: [reference, gate-type-registry, substrate-agnostic, future-orchestrator-friendly, page-build, client-seo-onboarding, value-correctness, ground-truth]
 ---
 
@@ -699,6 +699,47 @@ Registered by the toolkit-wide quality-tool integration audit (2026-06-06). Thes
 When a new orchestrator skill is built (Phase 5 project-surveyor / project-analyst / project-decider; mission-control-dashboard backend operations; Hermes-daemon spawned waves; any future client- or project-specific orchestrator), the orchestrator's build chat appends entries to this registry covering each of its gate types.
 
 Registration entries land at chat close + are validated by the peer-reviewer's next invocation. Invalid entries (missing required fields, contradicting an existing entry without acknowledgment) trigger a Check 4 cross-wave coherence catch on the registration itself.
+
+## G-default — universal catch-all gate (v3.4, 2026-06-08)
+
+When the mandatory pre-land review gate fires on a task that has **no registered gate type** (ad-hoc edits, indexing backfills, cache purges, ledger edits, one-off fixes, infrastructure builds), the reviewer uses `G-default` as the gate type. This ensures every task has a gate to fire at — the registered orchestrator gates handle their orchestrated flows; G-default handles everything else.
+
+```yaml
+- orchestrator: mandatory-review-gate (Stop/SubagentStop hook)
+  mode: universal
+  gate_id: G-default
+  fires_at: Stop hook — when dirty-ledger has unreviewed entries and no registered gate type applies
+  emits: review verdict for all artifacts/state touched during the task
+  contract_source: workspace CLAUDE.md § Mandatory Pre-Land Review Gate
+  is_closing_gate: true
+  expects:
+    check_1_satisfaction_targets:
+      - all touched artifacts are structurally valid (no broken syntax, no truncation)
+      - full-placeholder-family-sweep: zero residual placeholders across 7 surfaces
+      - source-client-leak-audit: zero foreign-client strings across 6+7 layers
+      - body-level internal-link resolution: zero dead internal links
+      - ground-truth-value-cross-check: all values match facts registry (when a profile applies)
+      - live-rendered-cache-busted-verification Phase A+B+C (when live URL/external state touched)
+    check_2_calibration_metrics: null  # no calibration data for ad-hoc tasks
+    check_3_domain_probe_classes:
+      - content-accuracy (if substantive prose)
+      - structural-integrity (always)
+    check_4_cross_wave_artifact_type: none  # no prior wave for ad-hoc tasks
+    check_4_within_wave_prior_gate: null
+  registered_by: qg-mandatory-review-gate-202606082330
+  registered_at: 2026-06-08
+```
+
+**Tiering (mandatory pre-land review gate scope):**
+
+| Tier | Trigger | Checks run |
+|---|---|---|
+| **fast-path** | Single file, ≤5 changed lines, non-state path, no live/external state change | `full-placeholder-family-sweep` (grep) + `source-client-leak-audit` (grep) + body-level internal-link resolution |
+| **full** | Multi-file, new artifact, state path, or any live/external state change | All Check 1 satisfaction targets above incl. `ground-truth-value-cross-check` + `live-rendered-cache-busted-verification` Phase C when live state touched |
+
+The tier is determined by the dirty-ledger entries accumulated during the task and logged in the review-pass marker.
+
+**Relationship to registered gates:** When a task runs under a registered orchestrator (e.g., client-seo-onboarding G-publish), that orchestrator's registered gate type takes precedence — G-default is NOT used. G-default only fires for work outside any registered orchestrator flow.
 
 ## Build wave 4 — cross-orchestrator generalization (SHIPPED 2026-06-05)
 

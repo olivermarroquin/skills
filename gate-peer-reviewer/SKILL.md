@@ -1,10 +1,10 @@
 ---
 name: gate-peer-reviewer
-version: 3.3
+version: 3.4
 status: active
 created: 2026-06-03
-updated: 2026-06-07
-description: Automated peer-review layer that sits between any orchestrator skill's gate emission and operator review. Fires 6 structured checks + severity tiers + standing regression harness. 19 registered gate types across 12 orchestrators — all 9 non-Core-30 skills now dispatch the reviewer at their gates (GPR-9). Reviewer performs its own live cache-busted fetch (GPR-11). All sweeps enumerate meta/og/schema surfaces (GPR-12). Verdicts carry blocking/advisory severity (GPR-13). Planted-defect regression suite prevents silent regression (GPR-14). Substrate-agnostic. Project-agnostic. Output-agnostic.
+updated: 2026-06-08
+description: Automated peer-review layer that sits between any orchestrator skill's gate emission and operator review. Fires 6 structured checks + severity tiers + standing regression harness. 20 registered gate types across 13 orchestrators — incl. G-default universal catch-all gate (v3.4) for ad-hoc/non-orchestrated tasks. All 9 non-Core-30 skills dispatch the reviewer at their gates (GPR-9). Reviewer performs its own live cache-busted fetch (GPR-11). All sweeps enumerate meta/og/schema surfaces (GPR-12). Verdicts carry blocking/advisory severity (GPR-13). Planted-defect regression suite prevents silent regression (GPR-14). Substrate-agnostic. Project-agnostic. Output-agnostic.
 triggers:
   - any orchestrator emits a gate decision for operator review
   - vault-orchestrator Mode 6 EXECUTE Gates 1-5
@@ -13,6 +13,7 @@ triggers:
   - knowledge-artifact gates G-extraction / G-routing / G-decompose / G-synthesis (v3.0)
   - any closing gate emitting a Knowledge Capture Audit self-report
   - any future orchestrator that registers a gate type in references/gate-type-registry.md
+  - mandatory pre-land review gate Stop hook — when invoked without a registered gate_id, use G-default (v3.4)
 composes-with:
   - vault-orchestrator (Mode 6 EXECUTE dispatch slot per gate; v1.3+ integration block)
   - client-seo-onboarding (page-build gates; v1.4+ integration block; autonomous dispatch via Task sub-agent)
@@ -23,7 +24,7 @@ composes-with:
 tags: [skill, peer-review, gate-review, process-quality, orchestrator-coaching, substrate-agnostic, v2, page-build, autonomous-dispatch, deliberate-evolution-vs-silent-drift]
 ---
 
-# `gate-peer-reviewer` skill v3.3
+# `gate-peer-reviewer` skill v3.4
 
 Automated peer-review layer that fires on every orchestrated output across every project across every skill. v1 replaced the parallel-Cowork coaching layer Oliver ran by hand through waves A2-A6 of S&H Core 30 research. v2 extends to page-build gates (replacing the manual peer-review transport from the S&H Core 30 page-build run, PR-01..PR-40) and adds autonomous dispatch so the operator stops being the paste-transport layer.
 
@@ -264,7 +265,7 @@ The peer-reviewer is normally dispatched by a parent orchestrator. Operator-driv
 ## Reference files (index)
 
 - `references/check-spec.md` — Full verbatim 6-check spec with worked-example anchors. **Load-bearing.**
-- `references/gate-type-registry.md` — Substrate-agnostic registry of gate types + registration shape + 4 named verification procedures (full-placeholder-family-sweep, source-client-leak-audit, live-rendered-cache-busted-verification, ground-truth-value-cross-check). 19 gate types across 12 orchestrators.
+- `references/gate-type-registry.md` — Substrate-agnostic registry of gate types + registration shape + 4 named verification procedures (full-placeholder-family-sweep, source-client-leak-audit, live-rendered-cache-busted-verification, ground-truth-value-cross-check). 20 gate types across 13 orchestrators.
 - `references/regression-harness.md` — Standing planted-defect regression suite. 7 declared fixtures, run at every version bump. Prevents silent regression of known-caught defect classes.
 - `references/regression-fixtures/` — Synthetic test fixtures with planted defects + expected outcomes.
 - `references/return-contract.md` — Full field-by-field JSON return contract + write-authority detail.
@@ -277,6 +278,7 @@ The peer-reviewer is normally dispatched by a parent orchestrator. Operator-driv
 
 ## Version history
 
+- **v3.4 (2026-06-08)** — G-default universal catch-all gate. New gate type `G-default` registered in `references/gate-type-registry.md` for ad-hoc/non-orchestrated tasks. When the mandatory pre-land review gate (Stop hook) fires and no registered orchestrator gate applies, G-default provides the gate contract: full-placeholder-family-sweep + source-client-leak-audit + body-level link-resolution + ground-truth-value-cross-check + live-rendered-cache-busted-verification Phase C (when live state touched). Tiered: fast-path (grep-based, single trivial edit) vs full (multi-file/new-artifact/state-change). Gate count 19→20, orchestrator count 12→13. Composes with the mandatory-review-gate Stop/SubagentStop hook in `.claude/settings.json`. Addresses GAP-01/02/06 from `lesson-review-layer-misses-indexing-cache-run-2026-06-08`.
 - **v3.3 (2026-06-07)** — Cross-project reusability + robustness (RQ-sprint step 3). **GPR-9:** Peer-reviewer dispatch blocks wired into all 9 non-Core-30 skills (service-seo-research, intersection-research, city-base-research, client-fact-research, competitor-deep-research, vis-extraction, intel-routing, multi-chat-coordination, multi-source-synthesis) — reviewer now fires across the whole toolkit, not just Core-30. **GPR-13:** Verdict severity tiers (`blocking` vs `advisory`) added to return contract (schema 1.1); operator decision matrix distinguishes must-review from auto-approvable; Check 5 Step 5.0 classifies severity before carry-forward. **GPR-14:** Standing planted-defect regression harness with 7 declared fixtures + 3 seed fixture implementations (meta-only-placeholder, og-title-source-client-leak, jsonld-wrong-value). Run at every version bump to prevent silent regression. Closes GPR-9/GPR-13/GPR-14 from the enhancement log.
 - **v3.2 (2026-06-07)** — Reviewer live-gate self-sufficiency (RQ-sprint step 2). **GPR-11:** `live-rendered-cache-busted-verification` restructured into 3 phases (A: reviewer-owned fetch+parse, B: structural verification, C: cache-coherence second fetch) — reviewer performs its own independent live fetch, operator becomes optional spot-check. **GPR-12:** `full-placeholder-family-sweep` and `source-client-leak-audit` now enumerate 7 mandatory surfaces (body, title, meta-description, og:title, og:description, JSON-LD/schema, frontmatter) — "body only" sweeps impossible. Both procedures engine-level (any artifact with text content + optional metadata). Live-verification discipline expanded from 3 rules to 4. Closes GPR-11/GPR-12 from the enhancement log.
 - **v3.1 (2026-06-07)** — Value-correctness layer (RQ-sprint step 1). New named procedure `ground-truth-value-cross-check`: engine-level facts registry that cross-checks every claimed value in an artifact (body + meta + og + JSON-LD) against declarative ground-truth profiles. Two profiles registered: `core-30-page-build` (6 checkable facts across 3 data sources) and `research-brief` (4 checkable facts — non-SEO proof). Procedure wired into G-data, G-scaffold, G-publish, G-city-brief, G-client-brief. Companion scripts: `hardcode-scanner.py` (SC-1 — post-scaffold default detection) and `facts-completeness-gate.py` (SC-2 — pre-scaffold data completeness). Both engine-level with declarative profiles. Boundary documented: this layer verifies output-matches-source, not source-matches-reality. All three always-required-explicit: even when the default value IS correct, the data file must state it consciously. Closes GPR-10/SC-1/SC-2 from the enhancement log.

@@ -342,6 +342,33 @@ If a future need arises to evaluate dispatch-plan COMPLETENESS (did Mode 6 dispa
 
 - v1.0 addition driven by `gate-peer-reviewer` skill v1 ship, 2026-06-03.
 
+## Catch-all / unrouted artifact types (v1.3, 2026-06-08)
+
+When the artifact type detector finds **no matching row** in this table, the quality loop uses this catch-all entry instead of skipping the evaluation entirely. This ensures every artifact — even unrouted ones — gets a baseline quality evaluation.
+
+**Catch-all spec sources (3 — always available, project-agnostic):**
+
+1. **Plain-language conventions** (required) — `vault://_meta/plain-language-conventions.md`
+   - Drives: readability, jargon avoidance, sentence structure.
+2. **Vault conventions** (required) — `vault://_meta/conventions.md`
+   - Drives: frontmatter correctness, naming, folder placement, wikilink format.
+3. **CLAUDE.md workspace rules** (required) — `~/workspace/CLAUDE.md`
+   - Drives: structural discipline, knowledge capture protocol adherence, commit mechanics.
+
+**Catch-all evaluation scope:**
+- Hard requirements: valid syntax (YAML frontmatter parses, no truncation, no broken markdown), file in correct location per conventions
+- Quality dimensions: plain language score, completeness (no TODO/FIXME/PLACEHOLDER tokens), attribution density where claims exist
+- Discipline rules: non-destructive editing, no premature abstraction, no undocumented side effects
+
+**When the catch-all fires, the evaluation report header includes:**
+```
+**Artifact type:** unrouted (catch-all evaluation)
+**Spec sources loaded:** [plain-language-conventions, conventions, CLAUDE.md] (catch-all; no type-specific routing row)
+**Note:** This artifact type has no dedicated routing entry. If this type recurs, add a row to spec-routing-table.md.
+```
+
+- v1.3 addition driven by mandatory pre-land review gate build (2026-06-08). Addresses the gap where ad-hoc artifacts (scripts, config files, infrastructure) had no quality loop entry and were silently skipped.
+
 ## Operator overrides
 
 When the operator runs `quality-check <artifact> against <spec1> <spec2>`, the routing table is bypassed and the operator-named specs are used. Surface the override in the evaluation report so the audit trail names what was actually loaded:

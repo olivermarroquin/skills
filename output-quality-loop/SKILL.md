@@ -3,7 +3,7 @@ name: output-quality-loop
 description: Evaluate a finished Knowledge OS artifact against the specs that define what "good" looks like for its type, produce a structured verdict (PASS / NEEDS REVISION minor or substantive / FAIL), generate a revision prompt the producing chat can ingest to regenerate, and (Mode 4) compose with `perplexity-refinement` to research the strongest published version of each gap and feed those elevation suggestions back into the revision prompt. Triggers on phrases like "quality-check <artifact-path>," "evaluate <artifact-path>," "run output-quality-loop on <artifact-path>," "is this draft ready to ship," "does this brief meet the spec," "did the refinement pass actually elevate the source note," "audit this synthesis against its sources," "elevate this draft against the strongest published version," "what's the best version of this artifact in the world," or any time the operator wants a structured fitness evaluation of an artifact already on disk. Also fires via the auto-invoke convention block other skills emit at completion (see references/auto-invoke-convention.md). The keystone of the output-quality-loop system; Phases 2-6 of the roadmap build on top of this skill.
 ---
 
-# Output Quality Loop Skill (v1.2)
+# Output Quality Loop Skill (v1.3)
 
 The quality-evaluation layer of the Knowledge OS. Runs after an artifact lands. Reads the artifact, walks the spec-routing table to gather every spec source that applies to that artifact type, builds an evaluation checklist from the specs, scores the artifact against the checklist, lands a verdict, writes the verdict to the folder-level quality log, and — when the verdict is NEEDS REVISION or FAIL — produces a revision prompt the producing chat can ingest to regenerate.
 
@@ -724,6 +724,10 @@ When you need them, read these:
 When the skill errors or produces a miss in production, add a new entry: **Issue → How it surfaces → How to fix → Why it wasn't designed away.** Date-stamp the entry. Future-Claude learns from past misses without re-hitting the same wall.
 
 ---
+
+### M-catchall: Catch-all routing for unrouted types (added 2026-06-08, v1.3)
+
+**The change:** `spec-routing-table.md` now has a catch-all entry that fires when no artifact type matches. Previously, unrouted types caused the quality loop to surface a gap and stop. Now, unrouted types get a baseline evaluation against 3 project-agnostic spec sources (plain-language-conventions, conventions, CLAUDE.md) + conservative confidence threshold (90 auto-approve, 65 PASS anchor). The catch-all evaluation report flags the missing routing row so it can be added if the type recurs. Companion `confidence-calibration.md` row added. Driven by the mandatory pre-land review gate build (every task must pass quality evaluation, including ad-hoc tasks producing unrouted artifact types).
 
 ## See also
 
