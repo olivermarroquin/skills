@@ -1,9 +1,9 @@
 ---
 name: hub-and-nav-build
-version: 1.1
+version: 1.2
 status: active
 created: 2026-06-09
-updated: 2026-06-09
+updated: 2026-06-10
 changelog: "v1.1 (2026-06-09) — added §5 Option D (client-side WPCode JS snippet for non-REST-writable Elementor footers); proven on EV footer-links fix."
 description: >
   Builds the hub-page + site-navigation layer on top of an already-live Core 30 leaf corpus for a WordPress
@@ -31,7 +31,7 @@ composes-with:
 tags: [skill, page-build, hubs, navigation, internal-linking, wordpress, elementor, css-contract, render-verification, seo, substrate-agnostic, client-agnostic]
 ---
 
-# `hub-and-nav-build` skill v1.0
+# `hub-and-nav-build` skill v1.2
 
 Builds and verifies the **hub + navigation layer** that sits on top of a live Core 30 leaf corpus. Born from the
 2026-06-09 EV Electric run, where the leaves were live but **27 of 30 were orphaned from site navigation**, and the
@@ -88,10 +88,14 @@ Confirm and record these for the target client — they differ per theme and per
 | Elementor cache clear | `DELETE /elementor/v1/cache` → 200 | — |
 | Canonical leaf for CSS source | a known-good leaf, e.g. ev-charger-mclean-va **ID 6330** | pick any leaf confirmed styled-correct |
 
-**S&H deltas (recorded for the test run):** Plumbit theme (no Elementor in header/footer); header = WP `main-menu`,
-footer = WP `widget_nav_menu` widgets → **footer IS REST-writable** (Option A viable) **once** the app-password user
-has admin caps. The current S&H app-password user **lacks `edit_theme_options`** (menu endpoints 401) → **grant
-that user Administrator first** (one-time operator action). 29 leaves → needs **5 hubs** (4 service + 1 master).
+**S&H deltas (validated 2026-06-10):** Plumbit theme (no Elementor in header/footer); header = WP `main-menu`
+(menu ID 40, "Services" parent item 3321), footer = WP `widget_nav_menu` widgets → **footer IS REST-writable**
+(Option A). App-password user `oliver` is Administrator — `GET /wp/v2/menu-items` returns 200. 29 leaves → **5 hubs**
+(4 service + 1 master Service Areas matrix). CSS source: leaf #4911 (render-confirmed good). CSS Contract for S&H:
+18,885 chars base / 143 braces + ~3,293 hub additions = ~22,178 total / 173 braces. **Critical S&H-specific finding:**
+28/29 leaves were missing their `<!-- wp:html -->` wrapper at publish time → `wpautop` corrupted inline CSS → hero
+rendered broken while all structural checks passed. Guard 4 (verify-after-write) in `publish-core-30-page.py` now
+prevents this. See [[pattern-wordpress-wp-html-verify-after-write-guard]].
 
 If `GET /wp/v2/menu-items` returns 401, stop and surface the admin-caps blocker — do not proceed to nav steps.
 
