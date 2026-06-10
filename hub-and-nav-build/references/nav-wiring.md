@@ -64,8 +64,23 @@ Pick the option the theme allows (see SKILL.md §5):
 - One extra hop vs. site-wide footer links, but it scales infinitely and is the standard pattern for 30–500
   location-page sites.
 
+### Option D — client-side WPCode JS snippet (when the footer's own links are wrong/missing)
+- Use when the footer is NOT REST-writable but you want the **actual footer links** fixed/populated (EV's footer
+  Services + Service Areas columns had wrong hrefs + plain-text items). Complements C — keep `/service-areas/` as the
+  crawlable grid, add D for real site-wide footer links.
+- Deliver via **WPCode → JavaScript Snippet (raw JS, no `<script>` tags) → Site Wide Footer → Active.**
+- **Select on the widget class, not a footer wrapper.** Elementor footers often have no `<footer>` /
+  `[data-elementor-type="footer"]` element (the footer is just the last `.elementor-top-section`) → a wrapper
+  selector silently matches nothing. EV footer columns = Elementor icon-list → `span.elementor-icon-list-text`.
+- **Scope by widget-class + exact text** to avoid the same labels in body cards (`h5.dtr-infobox-title`), body
+  buttons (`span.dtr-btn-text`), and header menu (`a.ekit-menu-dropdown-toggle`). Per matched span: `closest('a')` →
+  set href, else wrap span in a new `<a>`. Shape = `label → URL` map + text-match loop. **Verify live before handoff.**
+- Caveat: client-side links help users immediately but carry weaker crawl-equity than a server-side menu (Option A);
+  prefer A/server-side when the footer ever becomes editable. Pattern: `pattern-elementor-clientside-snippet-nav-footer-fix`.
+
 **Decision rule:** if the footer is REST-writable or the operator will do the one-time widget add → Option A.
-Otherwise → Option C. Never block the whole build waiting on a footer edit.
+Otherwise → Option C for the crawlable grid; add **Option D** when the footer's own links need fixing and there's no
+server-side path. Never block the whole build waiting on a footer edit.
 
 ## `/services/` page (P4)
 EV `/services/` = **page ID 97**, Elementor content, originally zero internal links. Add links to the 6 service

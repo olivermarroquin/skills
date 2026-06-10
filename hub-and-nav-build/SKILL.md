@@ -1,9 +1,10 @@
 ---
 name: hub-and-nav-build
-version: 1.0
+version: 1.1
 status: active
 created: 2026-06-09
 updated: 2026-06-09
+changelog: "v1.1 (2026-06-09) — added §5 Option D (client-side WPCode JS snippet for non-REST-writable Elementor footers); proven on EV footer-links fix."
 description: >
   Builds the hub-page + site-navigation layer on top of an already-live Core 30 leaf corpus for a WordPress
   client, and verifies it renders correctly. This is the layer that makes orphaned city pages reachable: per-service
@@ -157,9 +158,34 @@ not content CSS. A styled page with an unwanted title banner beats a cosmeticall
 | **A — WP nav menu in footer widget** | footer is REST-writable (e.g. Plumbit/widget themes) OR operator will do the one-time Elementor widget add | best SEO (site-wide footer links); fully scriptable via `POST /wp/v2/menu-items` thereafter |
 | **B — hardcoded HTML grid in footer** | rarely | needs manual update per page; not recommended |
 | **C — Service Areas hub as the link surface** | footer NOT REST-writable and no operator edit (e.g. EV's Elementor footer post 4854) | one extra hop vs. direct footer links; scales infinitely; the standard pattern for 30–500 location pages |
+| **D — client-side WPCode JS snippet** | footer NOT REST-writable, but you want *real* site-wide footer links (repair wrong hrefs / linkify plain-text items) without an Elementor hand-edit | links appear for users immediately + one-click reversible; injected client-side so crawl-equity is weaker than a server-side menu — pair with C for the crawlable grid |
 
-EV shipped **Option C**. S&H can do **Option A** once its app-password user has admin caps. Default to C if the
-footer is untouchable; don't block the whole build on a footer edit.
+EV shipped **Option C** for the crawlable grid, then added **Option D** (2026-06-09) to fix/populate the actual
+footer Services + Service Areas columns. S&H can do **Option A** once its app-password user has admin caps. Default
+to C if the footer is untouchable; add D when the footer's own links are wrong/missing; don't block the whole build
+on a footer edit.
+
+### Option D — how (proven on EV, 2026-06-09)
+
+Use when the footer is a non-REST-writable Elementor template and its links need fixing. Deliver as a **WPCode**
+snippet: **Code Type = JavaScript Snippet** (raw JS, no `<script>` tags — WPCode auto-wraps), **Location = Site Wide
+Footer**, Active. Two hard rules learned the expensive way:
+
+1. **Don't select on a footer wrapper.** Elementor footers frequently have **no** `<footer>` /
+   `[data-elementor-type="footer"]` / `.elementor-location-footer` — the footer is just the last
+   `.elementor-top-section`, so a wrapper selector matches nothing and the snippet **silently no-ops**. Inspect the
+   live DOM and select on the **widget class** that holds the links. On EV the footer columns are Elementor
+   **icon-list** widgets → `span.elementor-icon-list-text`.
+2. **Scope by widget-class + exact text** (the same service/city strings also appear in body cards
+   `h5.dtr-infobox-title`, body buttons `span.dtr-btn-text`, and the header menu `a.ekit-menu-dropdown-toggle`).
+   For each matching span: if `closest('a')` exists → set its `href`; else wrap the span in a new `<a>`.
+
+Shape = a `label → URL` map + the text-match loop. Re-inspect the footer widget class per client (may differ by
+theme). **Verify live** (Claude in Chrome) before handing the snippet to the operator: confirm every target href and
+that the header/body were untouched. Full write-up + reusable snippet:
+[[pattern-elementor-clientside-snippet-nav-footer-fix]] · lesson [[lesson-elementor-footer-clientside-link-fix-2026-06-09]] ·
+log [[execution-log-2026-06-09-footer-links-fix]]. (Same WPCode channel also fixes header behavior — EV mobile
+"Services" dropdown, instance 1 of the pattern.)
 
 ## §6. THE VERIFICATION GATE (render-accurate — not skippable)
 
@@ -176,8 +202,17 @@ live, cache-busted page. Full protocol + exact assertions in `references/verific
    the 13-city `/electrical-troubleshooting/`). Same restore op ⇒ sampling two representative layouts is sufficient.
 4. Log the verdict with the computed-style evidence. A grep for `gradient` in the HTML is **not** evidence.
 
-If Claude in Chrome is unavailable, the fallback is an operator incognito screenshot — but the computed-style check
-is preferred because it's self-service and unambiguous.
+**The gate always resolves to PASS / FAIL / BLOCKED — and BLOCKED is not a pass.** If the browser/extension is
+unavailable, the gate is BLOCKED: raise it loudly, do NOT silently fall back to structural (byte-count / brace /
+CSS-present) checks and call it good (a malformed or parse-broken `<style>` passes every structural check while the
+rule fails to render). Recovery: run `list_connected_browsers`; if empty, have the operator relaunch Chrome + sign
+the extension back in (a pending "Relaunch to update" state is the #1 cause — it suspends the extension); retry. If
+still blocked, use the explicit operator-incognito-screenshot fallback and record the verdict as
+"PASS-via-operator-screenshot," never a bare PASS. **Two hard corollaries:** (a) the known-good leaf whose CSS the
+hubs copy MUST be render-confirmed PASS, never chosen on structural checks (S&H #4895 passed every structural check
+and rendered with `backgroundImage: none`); (b) scoping render defects across EXISTING leaves must be done by
+render, not a REST CSS-presence diff — a parse-broken leaf still *contains* the right rule, so a presence check
+falsely passes it. Full state machine + connectivity protocol: `references/verification-gate.md`.
 
 ## §7. Serialized-data safety (Elementor `_elementor_data`)
 
