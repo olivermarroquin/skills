@@ -595,7 +595,21 @@ In steady state, indexing happens inline during Step 8. Step 9 exists as an expl
 1. Confirm every published page has an indexing record (`page_status[*].indexed == true`).
 2. For any page where indexing failed/skipped, surface manual fallback: "GSC → URL Inspection → request indexing." List URLs.
 
-**Operator gate:** surface indexing status list. Wait for operator to resolve manual ones or explicitly defer.
+**Run the post-build discovery checklist — `[[sop-page-indexing-and-discovery]]`.** After a wave is live + verified,
+indexing-record confirmation alone is not enough; run the discovery sequence: (a) **sitemap fresh in GSC** —
+confirm the new URLs are in the live sitemap AND that GSC's "Last read" is recent; if Last read predates the batch,
+**re-submit the sitemap** (Domain property needs the FULL URL) to force a fresh read; remove any bogus
+page-as-sitemap entries; (b) **internal-linked** — pages reachable from hubs/nav (the `hub-and-nav-build`
+deliverable); (c) **Request-Index priority pages manually** — hubs first, then top-demand city leaves, ~10–12/day
+per property (multi-day for big batches → schedule it); (d) kick off **authority signals** (`[[sop-gbp-posting-cadence]]`);
+(e) **~2 weeks later** check GSC → Pages for "Crawled – currently not indexed" (= thin/near-dup → differentiate, not
+re-submit). **Automation reality (so we don't chase it):** the Indexing-API ping in `publish-core-30-page.py` is
+off-label for normal pages (JobPosting/BroadcastEvent only) and unreliable; **GSC "Request Indexing" has NO API and
+must stay manual** (don't browser-automate the GSC UI — ToS-gray, brittle, quota-capped). The legit automatable
+levers (sitemap + internal linking) are already in the pipeline. Full detail + the options table:
+`[[sop-page-indexing-and-discovery]]`.
+
+**Operator gate:** surface indexing status list + the discovery-checklist state. Wait for operator to resolve manual ones or explicitly defer.
 
 **Output:** state updated. Step 9 marked done.
 
