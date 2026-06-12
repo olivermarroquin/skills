@@ -1,9 +1,9 @@
 ---
 name: gate-peer-reviewer
-version: 3.4
+version: 3.5
 status: active
 created: 2026-06-03
-updated: 2026-06-08
+updated: 2026-06-11
 description: Automated peer-review layer that sits between any orchestrator skill's gate emission and operator review. Fires 6 structured checks + severity tiers + standing regression harness. 20 registered gate types across 13 orchestrators — incl. G-default universal catch-all gate (v3.4) for ad-hoc/non-orchestrated tasks. All 9 non-Core-30 skills dispatch the reviewer at their gates (GPR-9). Reviewer performs its own live cache-busted fetch (GPR-11). All sweeps enumerate meta/og/schema surfaces (GPR-12). Verdicts carry blocking/advisory severity (GPR-13). Planted-defect regression suite prevents silent regression (GPR-14). Substrate-agnostic. Project-agnostic. Output-agnostic.
 triggers:
   - any orchestrator emits a gate decision for operator review
@@ -24,7 +24,7 @@ composes-with:
 tags: [skill, peer-review, gate-review, process-quality, orchestrator-coaching, substrate-agnostic, v2, page-build, autonomous-dispatch, deliberate-evolution-vs-silent-drift]
 ---
 
-# `gate-peer-reviewer` skill v3.4
+# `gate-peer-reviewer` skill v3.5
 
 Automated peer-review layer that fires on every orchestrated output across every project across every skill. v1 replaced the parallel-Cowork coaching layer Oliver ran by hand through waves A2-A6 of S&H Core 30 research. v2 extends to page-build gates (replacing the manual peer-review transport from the S&H Core 30 page-build run, PR-01..PR-40) and adds autonomous dispatch so the operator stops being the paste-transport layer.
 
@@ -146,7 +146,29 @@ Full field-by-field spec at `references/return-contract.md`. Top-level shape:
 
 (`checks_run` is implicit: `{check_1, check_2, ..., check_6} \ {checks_skipped[].check}`.)
 
-**Write-authority.** The peer-reviewer does NOT write pattern files, lesson D-rows, kickoff prompts, or any other vault artifact directly. It SURFACES proposed changes in `catches[]`, `d_row_candidates[]`, `kickoff_prompt_patches[]`, `pattern_promotion_signals[]` + names them in `operator_reply_text`. The originating chat (or operator) does the actual `times-observed` increment + decision-archaeology append + D-row write + kickoff edit. Peer-reviewer is a review layer, not a write layer.
+**Verdict-file emission (RGH-1, v3.5).** When the peer-reviewer runs under the mandatory pre-land review gate, it MUST emit its structured return contract to a verdict file that `log-review-pass.py` can consume. The verdict file maps the full return contract to the gate script's expected schema:
+
+```json
+{
+  "verdict": "PASS|BLOCKING|FAIL",
+  "checks_run": [
+    {"name": "placeholder-sweep", "result": "PASS", "count": 0},
+    {"name": "leak-audit", "result": "PASS", "count": 0},
+    {"name": "link-resolution", "result": "PASS", "count": 0},
+    {"name": "ground-truth-cross-check", "result": "PASS", "count": 0}
+  ],
+  "catches": [],
+  "cost_usd": 0.0
+}
+```
+
+**Verdict mapping:** `APPROVE` / `APPROVE-WITH-NOTES` → `PASS`. `REJECT-AND-REDO` / `ESCALATE-AMBIGUOUS` → `BLOCKING`. Any unrecoverable error → `FAIL`.
+
+**checks_run mapping:** each of the 6 checks that was NOT skipped becomes an entry. Use the named procedure name where applicable (`placeholder-sweep`, `leak-audit`, `link-resolution`, `ground-truth-cross-check`, `value-cross-check`, `live-verification`). Full-tier reviews MUST include `ground-truth-cross-check` or `value-cross-check`.
+
+**File location:** write to `.review-gate/state/verdict-<gate_id>-<timestamp>.json`. Then pass the path to `log-review-pass.py --verdict-file <path>`.
+
+**Write-authority.** The peer-reviewer does NOT write pattern files, lesson D-rows, kickoff prompts, or any other vault artifact directly. It SURFACES proposed changes in `catches[]`, `d_row_candidates[]`, `kickoff_prompt_patches[]`, `pattern_promotion_signals[]` + names them in `operator_reply_text`. The originating chat (or operator) does the actual `times-observed` increment + decision-archaeology append + D-row write + kickoff edit. Peer-reviewer is a review layer, not a write layer. The ONE file the reviewer writes directly is the verdict file (above) — this is enforcement infrastructure, not a vault artifact.
 
 ## Composition with `output-quality-loop`
 
@@ -278,6 +300,7 @@ The peer-reviewer is normally dispatched by a parent orchestrator. Operator-driv
 
 ## Version history
 
+- **v3.5 (2026-06-11)** — Verdict-file emission (RGH-1). When running under the mandatory pre-land review gate, the peer-reviewer now emits its structured return contract to a verdict file (`.review-gate/state/verdict-<gate_id>-<timestamp>.json`) that `log-review-pass.py` consumes. Verdict mapping: APPROVE/APPROVE-WITH-NOTES→PASS, REJECT-AND-REDO/ESCALATE-AMBIGUOUS→BLOCKING. checks_run mapped to named procedures (placeholder-sweep, leak-audit, ground-truth-cross-check, etc.). Full-tier requires ground-truth-cross-check or value-cross-check. Write-authority updated: verdict file is the ONE file the reviewer writes directly (enforcement infrastructure, not a vault artifact). Composes with the hardened mandatory-review-gate scripts (verdict-file-backed markers, tier enforcement, scoped aggregation).
 - **v3.4 (2026-06-08)** — G-default universal catch-all gate. New gate type `G-default` registered in `references/gate-type-registry.md` for ad-hoc/non-orchestrated tasks. When the mandatory pre-land review gate (Stop hook) fires and no registered orchestrator gate applies, G-default provides the gate contract: full-placeholder-family-sweep + source-client-leak-audit + body-level link-resolution + ground-truth-value-cross-check + live-rendered-cache-busted-verification Phase C (when live state touched). Tiered: fast-path (grep-based, single trivial edit) vs full (multi-file/new-artifact/state-change). Gate count 19→20, orchestrator count 12→13. Composes with the mandatory-review-gate Stop/SubagentStop hook in `.claude/settings.json`. Addresses GAP-01/02/06 from `lesson-review-layer-misses-indexing-cache-run-2026-06-08`.
 - **v3.3 (2026-06-07)** — Cross-project reusability + robustness (RQ-sprint step 3). **GPR-9:** Peer-reviewer dispatch blocks wired into all 9 non-Core-30 skills (service-seo-research, intersection-research, city-base-research, client-fact-research, competitor-deep-research, vis-extraction, intel-routing, multi-chat-coordination, multi-source-synthesis) — reviewer now fires across the whole toolkit, not just Core-30. **GPR-13:** Verdict severity tiers (`blocking` vs `advisory`) added to return contract (schema 1.1); operator decision matrix distinguishes must-review from auto-approvable; Check 5 Step 5.0 classifies severity before carry-forward. **GPR-14:** Standing planted-defect regression harness with 7 declared fixtures + 3 seed fixture implementations (meta-only-placeholder, og-title-source-client-leak, jsonld-wrong-value). Run at every version bump to prevent silent regression. Closes GPR-9/GPR-13/GPR-14 from the enhancement log.
 - **v3.2 (2026-06-07)** — Reviewer live-gate self-sufficiency (RQ-sprint step 2). **GPR-11:** `live-rendered-cache-busted-verification` restructured into 3 phases (A: reviewer-owned fetch+parse, B: structural verification, C: cache-coherence second fetch) — reviewer performs its own independent live fetch, operator becomes optional spot-check. **GPR-12:** `full-placeholder-family-sweep` and `source-client-leak-audit` now enumerate 7 mandatory surfaces (body, title, meta-description, og:title, og:description, JSON-LD/schema, frontmatter) — "body only" sweeps impossible. Both procedures engine-level (any artifact with text content + optional metadata). Live-verification discipline expanded from 3 rules to 4. Closes GPR-11/GPR-12 from the enhancement log.
