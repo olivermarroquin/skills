@@ -1,10 +1,12 @@
 ---
 name: client-seo-onboarding
-version: 1.6
+version: 1.7
 description: One-Cowork-message entry point for onboarding a brand-new SEO client end-to-end. v1.1 wraps the v1.0 11-step pipeline (research → author data → verify WP → scaffold → imagery → publish → index → internal links → report) with three load-bearing additions — per-step `output-quality-loop` integration (Mode 1 EVALUATE + Mode 4 AUTO-RESEARCH + Mode 5 AUTO-APPROVE per artifact), multi-chat wave decomposition baked into the plan-bullet opening (scope-estimation gate computes hours + chat count + wave shape before any work fires), and the AI-surface reachability matrix that replaces "Cowork can't reach X" framing with concrete per-surface paths (Perplexity Sonar + OpenAI + Gemini + Anthropic Claude all working today via tier-3 carve-out; AI Overviews via Claude in Chrome). Triggers on phrases like "process this new client," "onboard this client for SEO," "run client-seo-onboarding on <slug>," "kick off the Core 30 build for <client>," "set up <client> end to end," "ingest these meeting notes and start the onboarding," or any time the operator hands over meeting notes + an intake form + a client slug and wants the full Core 30 pipeline run. Also use to resume a partially-completed onboarding when the operator says "pick up <slug>'s onboarding where we left off" — the skill detects the state file at 04_projects/clients/_active/<slug>/_state/onboarding.json and continues from the last completed step (or last in-progress wave for multi-chat runs).
 ---
 
-# Client SEO Onboarding (orchestrator skill, v1.5)
+# Client SEO Onboarding (orchestrator skill, v1.7)
+
+> **v1.7 changelog (2026-06-12, [WF-2] close-out)** — `seo-site-teardown` (v1.1, registered 2026-06-11) wired into Step 2 as the website-factory path check: when the engagement includes (or will include) a custom-site build, run `seo-site-teardown` on the strongest reference competitor BEFORE or alongside the research briefs — it is the mandatory first step of every website-factory client build and its reproduction blueprint is what the build phases consume. Composes with `competitor-deep-research` (landscape first, teardown the winner). Also fixes the stale title-line version (said v1.5 since the v1.6 bump). No other behavior change.
 
 > **v1.6 changelog (2026-06-06, quality-tool-integration-audit)** — Three D-row fixes from S&H wave-2 calibration. (1) **D-07 fix:** quality-loop-fired checkpoint — orchestrator must verify `quality_log` has a verdict for every artifact before declaring any step done; not optional under time pressure. (2) **D-08 fix:** house-voice-rewrite Mode 2 wired as a mandatory compose step between Produce and Auto-evaluate on Steps 5 and 8 (client-facing copy steps); personality file referenced from client state. (3) **D-09 fix:** meta-vs-body consistency dimension added to `evaluation-heuristics-by-type.md` for Core 30 page drafts — response-time, pricing, and credential claims cross-checked between body HTML and `aioseo_description:` frontmatter.
 
@@ -323,6 +325,8 @@ This step produced:
 
   Per-brief §4 (AI-search question mining) backfills via these surfaces inline. Any FAIL on §4 with a "surface unreachable" framing is a bug, not a legitimate gap.
   ```
+
+- **Website-factory path check (v1.7).** If the engagement includes — or is expected to graduate to — a custom-site build (website-factory program), confirm a `seo-site-teardown` run exists for the client's strongest reference competitor (look for `<client-vault>/admin-extracts/competitor-research/<slug>-teardown/`). If absent, surface to the operator: "This client is on the custom-build path; the website-factory program requires a `seo-site-teardown` of the strongest reference site as the mandatory first step. Run it now (~6–12h, decomposable by pass) or schedule it as a parallel chat?" The teardown's reproduction blueprint is what the build phases consume; the Core 30 pipeline below does not block on it. Compose: `competitor-deep-research` for the landscape → `seo-site-teardown` on the one site to out-build.
 
 - **Build-order cell verification.** Cross-check the cell count from `_build-order.md` against the (service × city) matrix the briefs imply. Surface mismatches.
 
