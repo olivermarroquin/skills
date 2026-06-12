@@ -1,6 +1,6 @@
 ---
 name: seo-site-teardown
-version: 1.0
+version: 1.1
 description: >
   Multi-pass forensic teardown of a high-performing SEO website, top to bottom, to produce a
   reproduction blueprint — the inputs a custom Next.js client-site build needs. Use this whenever the
@@ -11,7 +11,7 @@ description: >
   history (via DataForSEO), and the conversion/UX system that turns traffic into booked jobs. Triggers:
   "tear down <site>", "reverse-engineer <site>", "study <competitor>'s whole build", "how is <site>
   built", "blueprint <site> so we can replicate it", "deep teardown for the website factory",
-  "what is <site> doing that's working and how do we copy it". Runs in 4 escalating passes with operator
+  "what is <site> doing that's working and how do we copy it". Runs in 6 escalating passes with operator
   gates, retains ALL raw data, and emits a teardown dossier + a reproduction blueprint. This is the
   research front-end of the website-factory program — run it on every reference site before a client
   Next.js build. Distinct from `competitor-deep-research` (SEO/positioning briefs); this is a full-build
@@ -19,7 +19,25 @@ description: >
   the one site you intend to out-build.
 ---
 
-# SEO Site Teardown (v1.0)
+# SEO Site Teardown (v1.1)
+
+> **v1.1 changelog (2026-06-11)** — Peer-reviewed + second-target validated via [WF-2] skill-build
+> chat. (1) **Decoder rewrite:** `extract_nextjs.py` now supports 3 extraction paths — Next.js RSC
+> (`self.__next_f.push`, App Router 13+), Next.js `__NEXT_DATA__` (Pages Router ≤12), and HTML
+> fallback (WordPress, Hugo, GoDaddy, any non-Next.js site). Auto-detects framework. Platform
+> fingerprinting for WordPress/Hugo/Jekyll/Gatsby/GoDaddy/Wix/Squarespace/Nuxt/Svelte. Validated
+> on 3 real sites. (2) **6 peer-review fixes:** frontmatter pass count corrected (4→6), checklist
+> Pass 6 (Blog) added (8 items), internal-linking architecture step added to Pass 1 + checklist,
+> "reverse-engineered machine" synthesis section made explicit in deliverables + checklist,
+> framework-artifact sitemap exclusion note added (tcb_symbol, elementor_library), "matrix absent"
+> handling for sites without service×city cross-product. (3) **3 new reference files:**
+> `tells-catalog.md` (47 tells across 6 passes), `dataforseo-endpoints.md` (4 endpoints with
+> costs/fallbacks), `teardown-dossier-template.md` (28-section template). (4) **Second-target
+> validation:** Root Electric (rootelectric.com) — WordPress/Thrive, 159 content pages, 947 ranked
+> keywords, full 6-pass teardown with dossier at
+> `s-and-h-contracting/admin-extracts/competitor-research/root-electric-teardown/`. DataForSEO
+> $0.126. Key finding: Root Electric's 159 pages outperform AJ Long's 1,018 pages on every
+> ranking metric (73 top-3 vs 2, $10.5K vs $516 ETV) — quality+authority beats quantity.
 
 > Distilled from the 2026-06-04/05 AJ Long Electric teardown (the canonical worked example):
 > `~/workspace/second-brain/04_projects/clients/_active/ev-electric-services/admin-extracts/competitor-research/aj-long-teardown/`.
@@ -93,9 +111,13 @@ Goal: the page-tier taxonomy, the content templates, the per-entity data layer, 
 
 1. **Page inventory from the sitemap.** Fetch `sitemap.xml`; if it's a sitemap index, fetch every nested
    sitemap and count `<loc>` each. Record the true page count and the per-type breakdown. This is the
-   ground truth — never trust a third-party "page count."
+   ground truth — never trust a third-party "page count." **Exclude framework artifact sitemaps** from the
+   content count (e.g., Thrive Architect `tcb_symbol-sitemap`, Elementor `elementor_library-sitemap`,
+   WordPress `wp_template-sitemap`) — these are reusable template fragments, not pages visitors see.
 2. **Identify the page tiers.** Group URLs by pattern into tiers (core/conversion, service hubs,
    **service×city matrix**, city/location, neighborhood, problem/symptom, guide, blog). Note counts.
+   Not all sites have a matrix — many use flat service pages + flat city pages without cross-product.
+   Record "matrix absent" explicitly (this is a finding, not a gap in the teardown).
 3. **Decode representative pages (≥1 per tier).** Fetch full HTML, run `extract.py` to pull JSON-LD schema
    + RSC content. For each tier capture: section order, FAQ Q&As (verbatim), pricing, the **data points
    fused** (see below), word/heading counts, internal links.
@@ -105,9 +127,15 @@ Goal: the page-tier taxonomy, the content templates, the per-entity data layer, 
    what's expensive to research and what we must reproduce — templates are cheap.
 5. **Read the language / craft ladder.** Premium tier (money pages) vs light tier (long-tail) — note the
    voice difference and the trust devices (certs, reviews, warranty, verifiable claims, local specificity).
+6. **Map the internal-linking architecture.** From decoded pages, trace the full linking topology:
+   hub→leaf (service hub → service×city pages), breadcrumb chains, cross-sell sidebar links, blog→service
+   funneling, footer/nav link surfaces. Note: is linking template-driven (automatic) or hand-curated? How
+   deep is the longest path from homepage? What's the orphan risk? (Canonical run: §8 found hub-spoke +
+   breadcrumbs + sidebar cross-sell + blog→service funneling — all template-driven, max 3 clicks.)
 
 **Pass-1 questions to answer:** What are the tiers and counts? What's the matrix (services × cities)? What
-per-entity data is fused? Is there a craft ladder (premium vs templated)? What's the headline finding?
+per-entity data is fused? Is there a craft ladder (premium vs templated)? What's the internal-linking
+topology? What's the headline finding?
 
 **Gate 1:** report the structure + page count + headline. If a watchdog signal triggered this, this is
 where you confirm "real vs artifact." Get operator confirmation before the deep passes.
@@ -313,7 +341,9 @@ Emit the standard auto-invoke block at closing (see `output-quality-loop` conven
 2. **Teardown dossier** — `teardown-YYYY-MM-DD-full-build-analysis.md`: the page-tier taxonomy, per-template
    anatomy, data-fusion layer, language, schema architecture, internal linking, **full tech/tools stack
    table**, service taxonomy, **DataForSEO reality-check** (what ranks + history), **conversion/UX system**,
-   quality tells/inconsistencies, what-changed-vs-prior, and a "reverse-engineered machine" synthesis.
+   quality tells/inconsistencies, what-changed-vs-prior, and a dedicated **"reverse-engineered machine"
+   synthesis** section that explains how all the pieces compound into the site's competitive advantage
+   (canonical: §10 — one page showing structure + data + schema + conversion + authority as a system).
 3. **Reproduction blueprint** — the 5-object data model (+ population/ZIP), tiered templates, build/render
    layer, research fan-out, the math to ~N pages, the **conversion + authority layer**, the migration
    redirect playbook, and a phased program decomposition mapping to existing tools.
@@ -373,10 +403,28 @@ Codified so future runs don't miss them. Look for each; note present/absent:
 - `references/teardown-checklist.md` — the per-pass concrete checklist (copy into the run's task list).
 - `references/questions-bank.md` — the "why did they do that?" psychology/strategy questions to run on every
   page, dataset, and before/after change. Add good new questions as they arise.
-- `scripts/extract_nextjs.py` — the JSON-LD + RSC decoder (reusable on any Next.js site).
+- `scripts/extract_nextjs.py` — multi-path content decoder: Next.js RSC (App Router), `__NEXT_DATA__`
+  (Pages Router), and HTML fallback (WordPress, Hugo, any non-Next.js site). Auto-detects framework.
+  JSON-LD extraction works on all paths.
 - `scripts/capture_screenshots.mjs` — Playwright host script for automated tier screenshots (desktop+mobile,
-  fold+full, dated folders for before/after). Run on host/CI, not the sandbox.
+  fold+full, dated folders for before/after). Run on host/CI, not the sandbox. **Requires:**
+  `npm install playwright` + `npx playwright install chromium` on the host machine.
+- `references/tells-catalog.md` — expanded per-pass catalog of concrete things to look for.
+- `references/dataforseo-endpoints.md` — exact API calls, parameters, costs, and fallbacks.
+- `references/teardown-dossier-template.md` — copy this section structure when starting a new run.
+- `references/questions-bank.md` — psychology/strategy probes to run on every page and dataset.
 - Worked example: the AJ Long teardown folder (path at top) — the canonical finished output.
+- Second-target validation: Root Electric (rootelectric.com) — WordPress/Thrive, 159 content pages,
+  Rank Math SEO, llms.txt present. Validated generalization beyond Next.js.
+
+## Registration
+
+This skill is registered by **convention**: the presence of `SKILL.md` at
+`~/workspace/skills/seo-site-teardown/` makes it loadable by any Claude Code session or Cowork
+chat. There is no separate "Settings > Capabilities" registration step — skills are discovered
+by the SKILL.md convention. The toolkit-reuse-map at
+`second-brain/05_shared-intelligence/tools/_toolkit-reuse-map.md` tracks the version and
+reusability classification.
 
 ## Composition
 

@@ -15,6 +15,8 @@ present (absence is a finding too). Bash = sandbox curl; decode with `scripts/ex
 - [ ] List the per-entity data points fused into matrix pages (permit authority/portal, utility, code dates,
       neighborhoods, housing era, brand/condition prevalence, year-stamped price, ZIPs, population, cross-sells).
 - [ ] Note the craft ladder (premium vs templated) + voice + trust devices.
+- [ ] Map internal-linking architecture: hub→leaf, breadcrumbs, cross-sell sidebar, blog→service funneling,
+      footer/nav surfaces. Template-driven or hand-curated? Max click-depth from homepage? Orphan risk?
 - [ ] **GATE 1:** report structure + count + headline; confirm real-vs-artifact if signal-triggered.
 
 ## Pass 2 — Gap-fill
@@ -63,7 +65,22 @@ present (absence is a finding too). Bash = sandbox curl; decode with `scripts/ex
       click-to-call density, form friction (count forms+fields), call-tracking.
 - [ ] State plainly: are we copying BOTH ends (pages + conversion/authority), not just pages?
 
+## Pass 6 — Blog deep-analysis (for the reusable blog engine)
+- [ ] Sample ≥6 posts across topic types (comparison/decision, symptom/emergency, code-explainer,
+      seasonal, buyer-stage, positioning). Decode each.
+- [ ] Writing style/voice — authoritative + calm + specific? Non-alarmist? Quote real examples.
+- [ ] Structure — intro → why it matters → context → identify → code → options+prices → local angle →
+      action steps → soft CTA → authoritative sources → FAQ schema.
+- [ ] Depth signals — code citations (NEC §), real price ranges, authority links (CPSC/NFPA/ESFI),
+      local specificity, word count.
+- [ ] Topic engineering — geo-tagged? Seasonal? County-data? Decision-stage? Map the topic taxonomy.
+- [ ] Internal linking — does the post funnel informational traffic to service/city pages?
+- [ ] Cross-reference DataForSEO: which posts rank, for what, at what position.
+- [ ] Output: blog-analysis section + reusable "what good blog content looks like" spec.
+
 ## Closing
+- [ ] "Reverse-engineered machine" synthesis section written — how structure + data + schema + conversion +
+      authority compound into the site's competitive advantage (canonical: §10, ~1 page).
 - [ ] Teardown dossier complete (all sections incl. tech table, DataForSEO reality-check, conversion system).
 - [ ] Reproduction blueprint (data model + conversion/authority layer + migration + phased program).
 - [ ] Non-destructive updates to any prior dossier/synthesis.

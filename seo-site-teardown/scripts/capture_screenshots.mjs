@@ -24,18 +24,15 @@ const outRoot = process.argv[3];
 const urlsFile = process.argv[4];
 if (!domain || !outRoot) { console.error('usage: node capture_screenshots.mjs <domain> <out-dir> [urls.txt]'); process.exit(1); }
 
-// Default tier-representative pages — override by passing a urls.txt (recommend: 1 per tier + top rankers).
+// Default tier-representative pages — generic paths that work for most sites.
+// Override by passing a urls.txt with one URL per line (recommend: 1 per tier + top rankers).
+// When running on a specific site, a urls.txt is almost always better than these defaults.
 const defaults = [
   ['home', '/'],
-  ['service-hub', '/services'],
-  ['service-city', '/services/panel-upgrades/fairfax'],
-  ['service-areas', '/service-areas'],
-  ['city', '/service-areas/fairfax'],
-  ['neighborhood', '/neighborhoods/mantua'],
-  ['costs', '/costs'],
-  ['reviews', '/reviews'],
-  ['ai-assistant', '/ai-assistant'],
-  ['blog-post', '/blog'],
+  ['about', '/about'],
+  ['services', '/services'],
+  ['blog', '/blog'],
+  ['contact', '/contact'],
 ];
 let targets = defaults;
 if (urlsFile && fs.existsSync(urlsFile)) {
