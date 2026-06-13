@@ -209,6 +209,9 @@ Plus any phrasing involving "emulation," "verify," or "diff" in a website-design
 - [[decision-2026-05-23-pivot-to-custom-coded-websites-via-nextjs]] — the canonical decision that justifies this skill
 - [[strategy-custom-coded-nextjs-via-ai-with-competitor-inspiration]] — Pillar 3 (Verified Emulation) is what this skill operationalizes
 - [[tactic-emulate-competitor-design-patterns-with-ai]] — Step 5-6 of the tactic invoke this skill
+- `website-design` skill — **upstream**: produces the mockups this skill verifies. The design-notes
+  document serves as the "composition doc" (which patterns were intentionally emulated vs carried
+  over). Wired 2026-06-12 as part of the 3-pillar composition: teardown → design → verify.
 - `competitor-deep-research` skill — sister skill that produces the reference dossiers this skill consumes
 - `second-brain/03_domains/website-design/inspiration/high-performing/_README.md` — dossier format spec
 - `second-brain/03_domains/website-design/catalog/_README.md` — where verified patterns from emulated builds graduate to

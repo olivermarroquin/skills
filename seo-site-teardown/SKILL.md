@@ -431,5 +431,8 @@ reusability classification.
 - `competitor-deep-research` — run first for the landscape (who ranks); then this skill on the one site to
   out-build.
 - `output-quality-loop` — closing eval on the teardown + blueprint.
+- `website-design` — **downstream**: consumes the teardown dossier's design-fingerprint sections (palette,
+  typography, layout patterns, section conventions) as design direction inputs. The teardown feeds the
+  design skill; the design skill feeds `design-emulation-verify`.
 - The **website-factory program** consumes the blueprint; `vault-orchestrator` PROVISIONs the build phases;
   `scaffold-core-30-page.py` + `insert-internal-links.py` generate pages; `gate-peer-reviewer` reviews.
