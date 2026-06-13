@@ -293,13 +293,13 @@ Don't restate the files — the operator can open them.
 
 ## Maintenance notes
 
-### M1: Homepage capture depends on web_fetch / Claude in Chrome (added 2026-06-08, v1.0)
+### M1: Homepage capture depends on web_fetch / Claude in Chrome (added 2026-06-11, v1.0)
 
 **The issue:** Phase 2 needs source HTML. Client-rendered sites return a shell from web_fetch.
 **How to fix:** Escalate to Claude in Chrome `get_page_text`. Check for embedded JSON-LD/RSC first —
 often the raw fetch is enough even when it looks empty.
 
-### M2: Slug must match the eventual active slug (added 2026-06-08, v1.0)
+### M2: Slug must match the eventual active slug (added 2026-06-11, v1.0)
 
 **The issue:** If the prospect slug differs from the slug used when they sign, promotion isn't a
 clean copy and links break.
