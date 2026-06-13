@@ -1,0 +1,71 @@
+{
+  "_comment": "Sample extraction output for one page. This is what Steps 1-4 of the WP→custom-html skill produce per page. A future agent uses this to understand the expected output shape.",
+  "_source_page": "electrical-troubleshooting-vienna-va (EV Electric, instance 1)",
+  "_generated": "2026-06-13",
+
+  "per_page_json_shape": {
+    "_extracted": "YYYY-MM-DD",
+    "_source": "https://<domain>/<slug>/",
+    "url": "https://<domain>/<slug>/",
+    "path": "/<slug>/",
+    "tier": "core_static | core_index | service_hub | service_city_leaf",
+    "lastmod": "ISO 8601 from sitemap",
+    "meta": {
+      "title": "Page title from <title> tag",
+      "description": "Meta description from <meta name='description'>"
+    },
+    "content": {
+      "h1": "H1 tag text",
+      "breadcrumb": "Breadcrumb trail text"
+    },
+    "schema": {
+      "types_found": ["list of all @type values across all JSON-LD blocks"],
+      "block_count": "number of <script type='application/ld+json'> blocks",
+      "has_local_business": "boolean",
+      "has_faq": "boolean",
+      "has_service": "boolean"
+    },
+    "internal_links": [
+      { "href": "/relative-path/", "text": "Anchor text" }
+    ]
+  },
+
+  "sitemap_inventory_shape": {
+    "_extracted": "YYYY-MM-DD",
+    "_source": "https://<domain>/page-sitemap.xml",
+    "core_static": [{ "url": "...", "lastmod": "...", "tier": "core", "path": "/.../" }],
+    "core_index": [{ "url": "...", "lastmod": "...", "tier": "index", "path": "/.../" }],
+    "service_hubs": [{ "url": "...", "lastmod": "...", "tier": "hub", "path": "/.../" }],
+    "service_city_leaves": [{ "url": "...", "service": "data-slug", "city": "city-slug" }]
+  },
+
+  "slug_map_shape": {
+    "services": {
+      "<data-slug>": {
+        "data_slug": "filename in data/services/",
+        "url_slug": "path segment in live URLs",
+        "leaf_template": "pattern with {city_slug} token"
+      }
+    },
+    "services_excluded": {
+      "<data-slug>": { "reason": "why excluded from this client build" }
+    },
+    "cities_excluded": {
+      "<city-slug>": { "reason": "why excluded (e.g., test file)" }
+    },
+    "core_pages": {
+      "<name>": { "url_path": "/<path>/" }
+    }
+  },
+
+  "link_graph_shape": {
+    "pages": {
+      "<slug>": {
+        "path": "/<slug>/",
+        "tier": "...",
+        "outbound_count": "number",
+        "outbound": [{ "path": "/target/", "text": "anchor" }]
+      }
+    }
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "_comment": "Sample of what the three-layer merge produces for one page: panel-upgrade-vienna-va. This is the RESOLVED output after base + client overlay + city data + client config merge + token substitution. A future agent uses this to understand the data shape the page template receives.",
+  "_generated": "2026-06-13",
+  "_layers": {
+    "service_base": "data/services/panel-upgrade.json",
+    "service_overlay": "data/services/ev-electric-services/panel-upgrade.json",
+    "city_base": "data/cities/vienna-va.json",
+    "city_overlay": "data/cities/ev-electric-services/burke-va.json (example — Vienna has no EV overlay)",
+    "client_config": "data/client-ev-electric-services.json"
+  },
+
+  "page_slug": "panel-upgrade-vienna-va",
+  "service_slug": "panel-upgrade",
+  "city_slug": "vienna-va",
+  "client_slug": "ev-electric-services",
+
+  "resolved_tokens": {
+    "city_name": "Vienna",
+    "city_name_with_state": "Vienna, VA",
+    "county": "Fairfax County",
+    "utility_provider": "Dominion Energy",
+    "owner_name": "Ahmad Shaban",
+    "owner_first_name": "Ahmad",
+    "license_state": "Virginia",
+    "license_issuer": "Commonwealth of Virginia, Department of Professional and Occupational Regulation",
+    "client_name": "EV Electric Services",
+    "review_count_phrase": "5.0-star average across 148 customer reviews",
+    "review_pitch": "Our review base is real, recent, and from Northern Virginia homeowners. We don't ghost-write reviews or recycle them across business directories.",
+    "phone_display": "571-500-6637",
+    "phone_tel": "5715006637",
+    "final_cta_response_promise": "We respond within one business day."
+  },
+
+  "resolved_content_sample": {
+    "hero_heading": "Electrical Panel Upgrade in Vienna, VA",
+    "what_it_means_p3_excerpt": "Ahmad Shaban is a Virginia-licensed Master Electrician with a maintenance team behind him. Panel upgrades are full-day jobs that involve pulling a permit, coordinating with Dominion Energy to drop the meter...",
+    "process_step_2_title": "Permit pulled with Fairfax County",
+    "process_step_3_body_excerpt": "We schedule the meter drop with Dominion Energy as part of the project...",
+    "faq_q3": "Do I need a permit for a panel upgrade in Fairfax County?",
+    "faq_q4": "Will Dominion Energy need to come out and disconnect power?",
+    "cta": "Modern panel upgrades in Vienna, VA — permitted, code-compliant, one-day install. We respond within one business day."
+  },
+
+  "city_data_used": {
+    "neighborhoods": ["Vienna Woods", "Country Club Hills / Westwood Country Club area", "Hunter Mill District", "Tysons-edge", "Wolf Trap area", "Maple Avenue corridor", "Dunn Loring-edge"],
+    "housing_patterns": [
+      { "title": "1950s-1970s split-levels & ranches", "neighborhood_examples": "Vienna Woods, Country Club area, neighborhoods near Westwood" },
+      { "title": "1970s-1990s colonials & traditionals", "neighborhood_examples": "Hunter Mill District, Vienna proper, north of Maple Avenue" },
+      { "title": "2000s-2020s townhomes & newer detached", "neighborhood_examples": "Tysons-edge, Wolf Trap area, newer subdivisions" }
+    ],
+    "utility_provider": "Dominion Energy",
+    "distance_from_hq_phrase": "Vienna is 10-15 minutes from our home base in Fairfax"
+  },
+
+  "merge_rules": {
+    "overlay_wins": "For any key present in both base and overlay, the overlay value is used",
+    "city_tokens_injected": "All {city_*}, {county}, {utility_provider} tokens resolve from the city JSON",
+    "client_tokens_injected": "All {owner_*}, {client_*}, {license_*}, {phone_*}, {review_*} tokens resolve from the client config",
+    "neighborhoods_from_city": "Neighborhood list and housing-pattern cards come from the city JSON, NOT the service overlay",
+    "non_destructive": "The base service JSON is never modified — overlays are additive"
+  }
+}
