@@ -198,12 +198,12 @@ Never grade "EXACT" when the text differs. Never grade "minor refinement" when s
 ## Dependencies
 - Live WP site must be accessible (read-only)
 - Data layer files must exist (for slug mapping)
-- `[WF-2]` seo-site-teardown skill (competitor benchmark context)
+- `[WF-2]` site-capture-engine skill (competitor benchmark context)
 
 ## Composes With
 - `[WF-6]` custom-html-build (consumes the extraction output)
 - `[WF-3]` website-design (design system feeds the build)
-- `[WF-2]` seo-site-teardown (benchmark comparison)
+- `[WF-2]` site-capture-engine (benchmark comparison)
 
 ---
 

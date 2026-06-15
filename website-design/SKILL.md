@@ -6,19 +6,19 @@ description: >
   Design a custom-coded page (or site) from brand inputs + teardown/reference + content, producing a
   single-file HTML mockup with inline CSS, deliberate typography, and conversion plumbing — ready for
   implementation as Next.js components. The design pillar of the website-factory program. Takes the
-  output of `seo-site-teardown` (research) and feeds `design-emulation-verify` (QA). Use whenever a
+  output of `site-capture-engine` (research) and feeds `design-emulation-verify` (QA). Use whenever a
   Keelworks client or prospect needs a designed page concept before the full Next.js build begins.
   Triggers: "design a homepage for <client>", "mockup <page> for <client>", "create a design concept
   for <client>", "what should <client>'s site look like", "run the design skill on <client>",
   "design a page from the teardown". Produces a self-contained HTML mockup + design-notes doc capturing
-  all reasoning for reuse. Composes with seo-site-teardown (upstream) and design-emulation-verify
+  all reasoning for reuse. Composes with site-capture-engine (upstream) and design-emulation-verify
   (downstream).
 status: active
 created: 2026-06-12
 updated: 2026-06-12
 extracted-from: east-coast-furniture-services mockup v1 (Fable subagent, 2026-06-11)
 depends-on: []
-composes-with: [seo-site-teardown, design-emulation-verify]
+composes-with: [site-capture-engine, design-emulation-verify]
 tags: [skill, website-design, website-factory, design, mockup, fable, reusable]
 ---
 
@@ -74,7 +74,7 @@ Do NOT use this skill for:
    existing site, provided by the client, or drafted from the brief.
 
 3. **Design direction** — at least ONE of:
-   - A teardown dossier from `seo-site-teardown` (design tokens, patterns, layout conventions)
+   - A teardown dossier from `site-capture-engine` (design tokens, patterns, layout conventions)
    - A reference site URL with specific patterns to emulate
    - Explicit brand guidelines (colors, fonts, logo, imagery style)
    - A positioning statement that implies visual direction ("government-grade + premium contractor")
@@ -350,7 +350,7 @@ This is a hook, not a full integration. The imagery pipeline has its own skill
 
 ## Composition with other skills
 
-### Upstream: seo-site-teardown
+### Upstream: site-capture-engine
 
 The teardown produces the design inputs this skill consumes:
 - Design tokens (palette, typography from `design-tokens.md`)
@@ -409,7 +409,7 @@ The mockup must:
 
 ## Related
 
-- [[seo-site-teardown]] — upstream (research front-end)
+- [[site-capture-engine]] — upstream (research front-end)
 - [[design-emulation-verify]] — downstream (verification QA)
 - [[custom-html-build]] — downstream (full Next.js implementation)
 - [[strategy-custom-coded-nextjs-via-ai-with-competitor-inspiration]] — the 3-pillar strategy

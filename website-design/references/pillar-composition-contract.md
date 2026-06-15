@@ -17,7 +17,7 @@ between them.
 ## The flow
 
 ```
-seo-site-teardown          website-design           design-emulation-verify
+site-capture-engine          website-design           design-emulation-verify
 (Pillar 2: SEO)     →     (Pillar 1: Design)    →  (Pillar 3: Verification)
                     →                             →
 teardown dossier    →     mockup HTML             →  gap report
@@ -27,7 +27,7 @@ patterns list       →     CSS custom properties   →  pattern presence check
 
 ## Contract 1: teardown → design
 
-**Producer:** `seo-site-teardown`
+**Producer:** `site-capture-engine`
 **Consumer:** `website-design`
 
 The teardown produces a dossier. The design skill reads these sections:
@@ -47,7 +47,7 @@ guidelines, reference URL, positioning statement) instead. The teardown makes th
 better-informed but is not a hard blocker.
 
 **The design skill NEVER re-runs the teardown.** If teardown data is missing or stale,
-ask the operator to run `seo-site-teardown` first.
+ask the operator to run `site-capture-engine` first.
 
 ## Contract 2: design → verify
 

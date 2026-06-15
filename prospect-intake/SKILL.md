@@ -46,7 +46,7 @@ prospect's `analysis/brief.md` is the same shape, just researched from public so
 Do **not** use this skill for:
 
 - Signed clients → use [[client-fact-research]] + [[checklist-new-client-onboarding]].
-- A full competitive teardown → use [[seo-site-teardown]] or the full [[competitor-deep-research]] run.
+- A full competitive teardown → use [[site-capture-engine]] or the full [[competitor-deep-research]] run.
 - Issuing a real invoice → use [[invoice-generation]] (only after signing).
 
 ---

@@ -30,7 +30,7 @@ Scoring mode: **weighted-sum** (criteria trade off against each other; high leve
 | prioritization-skill | Extract prioritization engine from client-seo-onboarding | 4 | 3 | 0 | 5 |
 | page-factory-hardening | Zero-hardcoded audit + toolkit reuse map + 3rd-client proof | 4 | 4 | 0 | 4 |
 | website-factory-phase-0 | Complete Phase 0 intel (CWV, DataForSEO, build inputs) | 3 | 3 | 0 | 2 |
-| seo-site-teardown | Build/calibrate seo-site-teardown skill | 3 | 5 | 0 | 3 |
+| site-capture-engine | Build/calibrate site-capture-engine skill | 3 | 5 | 0 | 3 |
 | imagery-automation-pivot | Pivot imagery to programmatic Higgsfield MCP/CLI | 3 | 6 | 0 | 3 |
 | website-factory-program | Strategy/planning for 1,000-page Next.js site factory | 5 | 4 | 2 | 4 |
 
@@ -42,7 +42,7 @@ Scoring mode: **weighted-sum** (criteria trade off against each other; high leve
 | 02 | page-factory-hardening | **0.82** | 4 (0.75 × 0.40 = 0.30) | 4 (0.67 × 0.20 = 0.13) | 0 (1.00 × 0.15 = 0.15) | 4 (0.75 × 0.25 = 0.19) | High leverage — eliminates client-identity leaks across the toolkit. High reuse (every future client benefits). Slightly more effort than prioritization-skill. |
 | 03 | website-factory-program | **0.73** | 5 (1.00 × 0.40 = 0.40) | 4 (0.67 × 0.20 = 0.13) | 2 (0.33 × 0.15 = 0.05) | 4 (0.75 × 0.25 = 0.19) | Highest strategic leverage (unlocks the 1,000-page factory vision). Penalized by dependency risk — gated on Core 30 completion for both clients. |
 | 04 | website-factory-phase-0 | **0.72** | 3 (0.50 × 0.40 = 0.20) | 3 (0.83 × 0.20 = 0.17) | 0 (1.00 × 0.15 = 0.15) | 2 (0.25 × 0.25 = 0.06) | Low effort + zero dependencies make this fast to ship. Lower reuse multiplier (benefits website-factory program specifically, not all project types). Feeds into website-factory-program. |
-| 05 | seo-site-teardown | **0.63** | 3 (0.50 × 0.40 = 0.20) | 5 (0.33 × 0.20 = 0.07) | 0 (1.00 × 0.15 = 0.15) | 3 (0.50 × 0.25 = 0.13) | Moderate leverage and reuse. Higher effort (5 hrs) pulls it down. No dependencies — could start anytime. |
+| 05 | site-capture-engine | **0.63** | 3 (0.50 × 0.40 = 0.20) | 5 (0.33 × 0.20 = 0.07) | 0 (1.00 × 0.15 = 0.15) | 3 (0.50 × 0.25 = 0.13) | Moderate leverage and reuse. Higher effort (5 hrs) pulls it down. No dependencies — could start anytime. |
 | 06 | imagery-automation-pivot | **0.58** | 3 (0.50 × 0.40 = 0.20) | 6 (0.17 × 0.20 = 0.03) | 0 (1.00 × 0.15 = 0.15) | 3 (0.50 × 0.25 = 0.13) | Highest effort item (6 hrs) pulls total score down despite moderate leverage. Reuse multiplier is moderate (benefits page-build workflows, not all project types). |
 
 ## Dependency constraints applied

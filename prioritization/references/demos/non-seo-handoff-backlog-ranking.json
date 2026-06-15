@@ -45,7 +45,7 @@
     },
     {
       "rank": 5,
-      "item_id": "seo-site-teardown",
+      "item_id": "site-capture-engine",
       "scores": { "strategic_leverage": 3, "effort_hours": 5, "dependency_risk": 0, "reuse_multiplier": 3 },
       "total_score": 0.63,
       "rationale": "Moderate leverage and reuse. Higher effort pulls it down."

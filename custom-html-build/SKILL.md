@@ -190,7 +190,7 @@ This catches unresolved `{tokens}` and leaked FILL placeholders across ALL rende
 - `[WF-5]` wordpress-to-custom-html (extraction feeds this build)
 - `[WF-7]` data-model spec (schema definitions)
 - `[WF-3]` website-design (design system)
-- `[WF-2]` seo-site-teardown (AJ Long benchmark)
+- `[WF-2]` site-capture-engine (AJ Long benchmark)
 
 ## Composes With
 - `[WF-5]` extraction → `[WF-6]` build → parity verification → cutover
