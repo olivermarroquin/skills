@@ -1,0 +1,1914 @@
+{
+  "generated_at": "2026-06-14T19:45:34.992335+00:00",
+  "summary": {
+    "total_handoffs": 196,
+    "done": 85,
+    "in_flight": 14,
+    "ready_now": 70,
+    "waiting_on": 27,
+    "clusters": 22
+  },
+  "ready_now": [
+    "vis-system-enhancement/PHASE-0",
+    "DA1",
+    "RQ1",
+    "seo-client-meeting-prep-skill",
+    "MI-5",
+    "custom-html-build-skill",
+    "wordpress-to-custom-html-migration-skill",
+    "MI-3",
+    "MI-4",
+    "skill-quality-integration-audit",
+    "gate-peer-reviewer-build-wave-2-calibration",
+    "WF10",
+    "WF9",
+    "handoff-skool-download-tooling",
+    "review-engine-build",
+    "gbp-api-automation-toolbuild",
+    "MI-6",
+    "MI-7",
+    "RGH-6",
+    "MI-8",
+    "research-substrate-comparison-skill",
+    "RQ4",
+    "keelworks-growth-ventures-scoping",
+    "OR-2",
+    "OR-3",
+    "page-factory-reusability-hardening",
+    "DA4",
+    "DA6",
+    "dad-businesses-bilingual-sites-build",
+    "dealership-app-scoping",
+    "WF12",
+    "WF13",
+    "WF8",
+    "TIER-3",
+    "vault-orchestrator/PHASE-6",
+    "vault-orchestrator/PHASE-5",
+    "ads-and-marketing/PHASE-2",
+    "ads-and-marketing/PHASE-3",
+    "ads-and-marketing/PHASE-4",
+    "ads-and-marketing/PHASE-5",
+    "ads-and-marketing/PHASE-6",
+    "ads-and-marketing/PHASE-7",
+    "ads-and-marketing/PHASE-8",
+    "ads-and-marketing/PHASE-9",
+    "client-onboarding-automation/PHASE-1",
+    "client-onboarding-automation/PHASE-2",
+    "client-onboarding-automation/PHASE-3",
+    "client-onboarding-automation/PHASE-4",
+    "client-onboarding-automation/PHASE-5",
+    "client-onboarding-automation/PHASE-7",
+    "client-onboarding-automation/PHASE-7B",
+    "client-onboarding-automation/PHASE-8",
+    "client-onboarding-automation/PHASE-9",
+    "gate-peer-reviewer-wave4-client-seo-onboarding-autonomous",
+    "roadmap-client-seo-onboarding-automation/PHASE-5",
+    "CORE-30",
+    "CORE-30",
+    "CORE-30",
+    "CORE-30",
+    "PHASE-2",
+    "anthropic-api-caching-discipline",
+    "dataforseo-local-seo-defaults-hardening",
+    "provision-gap-detection-automation",
+    "topic-subfolder-status-standardization",
+    "vault-orchestrator-dispatch-prompt-skeleton-template",
+    "frictionless-imagery-inbox-ingest",
+    "imagery-automation-pivot-higgsfield-mcp",
+    "phase-5-social-short-form-extraction",
+    "wf4-r2-ev-clean-migration-redo",
+    "client-onboarding-automation/PHASE-6"
+  ],
+  "ordered_ready_to_spawn": [
+    {
+      "rank": 1,
+      "id": "vis-system-enhancement/PHASE-0",
+      "tag": "PHASE-0",
+      "title": "Handoff \u2014 Phase 0 \u2014 VIS weaknesses audit",
+      "cluster": "vis-system-enhancement",
+      "leverage_score": 3.5,
+      "effort_hours": 4.0,
+      "weighted_score": 0.643,
+      "unblocks": [
+        "vis-system-enhancement/PHASE-1",
+        "vis-system-enhancement/PHASE-2",
+        "vis-system-enhancement/PHASE-3",
+        "vis-system-enhancement/PHASE-4"
+      ],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 3.5,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 2,
+      "id": "DA1",
+      "tag": "DA1",
+      "title": "Handoff \u2014 DA1: Build the `content-coverage-audit` skill (agnostic)",
+      "cluster": "_root",
+      "leverage_score": 2.5,
+      "effort_hours": 4.0,
+      "weighted_score": 0.604,
+      "unblocks": [
+        "DA2",
+        "DA3"
+      ],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 2.5,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 3,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 3,
+      "id": "RQ1",
+      "tag": "RQ1",
+      "title": "Handoff \u2014 RQ1: Value-correctness layer (ground-truth registry + hardcode-scanner + facts-completeness gate)",
+      "cluster": "_root",
+      "leverage_score": 2.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.547,
+      "unblocks": [
+        "RQ2",
+        "RQ3"
+      ],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 2.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 3,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 4,
+      "id": "seo-client-meeting-prep-skill",
+      "tag": null,
+      "title": "Handoff: `seo-client-meeting-prep` skill \u2014 repeatable meeting-prep pack (data pulls \u2192 measurement log \u2192 checklist)",
+      "cluster": "local-seo-growth",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.443,
+      "unblocks": [],
+      "substrate": "cowork",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 3,
+        "operator_priority": 4
+      }
+    },
+    {
+      "rank": 5,
+      "id": "MI-5",
+      "tag": "MI-5",
+      "title": "Handoff \u2014 [MI-5] Build the `market-intelligence-engine` orchestrator skill + register `G-market-intel`",
+      "cluster": "market-intelligence",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.443,
+      "unblocks": [],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 3,
+        "operator_priority": 4
+      }
+    },
+    {
+      "rank": 6,
+      "id": "custom-html-build-skill",
+      "tag": null,
+      "title": "Handoff: build the `custom-html-build` skill",
+      "cluster": "website-factory",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.443,
+      "unblocks": [],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 3,
+        "operator_priority": 4
+      }
+    },
+    {
+      "rank": 7,
+      "id": "wordpress-to-custom-html-migration-skill",
+      "tag": null,
+      "title": "Handoff: build the `wordpress-to-custom-html` migration skill",
+      "cluster": "website-factory",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.443,
+      "unblocks": [],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 3,
+        "operator_priority": 4
+      }
+    },
+    {
+      "rank": 8,
+      "id": "MI-3",
+      "tag": "MI-3",
+      "title": "Handoff \u2014 [MI-3] Multi-arena scoring run (electrician field, top 15 + deep 5)",
+      "cluster": "market-intelligence",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.406,
+      "unblocks": [],
+      "substrate": "cowork",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 2,
+        "operator_priority": 4
+      }
+    },
+    {
+      "rank": 9,
+      "id": "MI-4",
+      "tag": "MI-4",
+      "title": "Handoff \u2014 [MI-4] Perfect-company-profile synthesis + page ideas + per-client gap plans",
+      "cluster": "market-intelligence",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.406,
+      "unblocks": [],
+      "substrate": "cowork",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 2,
+        "operator_priority": 4
+      }
+    },
+    {
+      "rank": 10,
+      "id": "skill-quality-integration-audit",
+      "tag": null,
+      "title": "Handoff \u2014 Toolkit-wide quality-tool integration audit (output-quality-loop + gate-peer-reviewer)",
+      "cluster": "complete",
+      "leverage_score": 1.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.395,
+      "unblocks": [
+        "LEVEL-4"
+      ],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 1.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 2,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 11,
+      "id": "gate-peer-reviewer-build-wave-2-calibration",
+      "tag": null,
+      "title": "Handoff \u2014 gate-peer-reviewer Build wave 2 (apply D-01\u2013D-06 calibration fixes)",
+      "cluster": "_root",
+      "leverage_score": 1.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.395,
+      "unblocks": [
+        "LEVEL-4"
+      ],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 1.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 2,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 12,
+      "id": "WF10",
+      "tag": "WF10",
+      "title": "Handoff [WF-10] \u2014 Phase 4: page generators for all 7 tiers",
+      "cluster": "website-factory",
+      "leverage_score": 1.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.395,
+      "unblocks": [
+        "WF11"
+      ],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 1.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 2,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 13,
+      "id": "WF9",
+      "tag": "WF9",
+      "title": "Handoff [WF-9] \u2014 Phase 3: per-city research fan-out (~40 EV cities)",
+      "cluster": "website-factory",
+      "leverage_score": 1.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.395,
+      "unblocks": [
+        "WF11"
+      ],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 1.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 2,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 14,
+      "id": "handoff-skool-download-tooling",
+      "tag": null,
+      "title": "Handoff \u2014 Skool download + transcript path into VIS (Phase A)",
+      "cluster": "skool-extraction",
+      "leverage_score": 1.0,
+      "effort_hours": 2.5,
+      "weighted_score": 0.377,
+      "unblocks": [
+        "handoff-visual-extraction-rnd"
+      ],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 1.0,
+        "effort_hours": 2.5,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 15,
+      "id": "review-engine-build",
+      "tag": null,
+      "title": "Handoff: Review-generation engine \u2014 build + per-client install",
+      "cluster": "local-seo-growth",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.368,
+      "unblocks": [],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 4
+      }
+    },
+    {
+      "rank": 16,
+      "id": "gbp-api-automation-toolbuild",
+      "tag": null,
+      "title": "Handoff: GBP automation tool-build \u2014 Auditor/Corrector + Review-Response engine (official API)",
+      "cluster": "local-seo-growth",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.368,
+      "unblocks": [],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 4
+      }
+    },
+    {
+      "rank": 17,
+      "id": "MI-6",
+      "tag": "MI-6",
+      "title": "Handoff \u2014 [MI-6] Extend `seo-tooling-landscape-research` (discovery mode + operator intake pipeline)",
+      "cluster": "market-intelligence",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.368,
+      "unblocks": [],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 4
+      }
+    },
+    {
+      "rank": 18,
+      "id": "MI-7",
+      "tag": "MI-7",
+      "title": "Handoff \u2014 [MI-7] Extend `competitor-deep-research` to multi-arena breadth (+ light `site-capture-engine`)",
+      "cluster": "market-intelligence",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.368,
+      "unblocks": [],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 4
+      }
+    },
+    {
+      "rank": 19,
+      "id": "RGH-6",
+      "tag": "RGH-6",
+      "title": "Phase 6 [RGH-6] \u2014 Build the `G-chat-close` omission-audit gate (mechanize \"are you sure we completed everything?\")",
+      "cluster": "review-gate-hardening",
+      "leverage_score": 1.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.357,
+      "unblocks": [
+        "review-gate-hardening/PHASE-5"
+      ],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 1.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 20,
+      "id": "MI-8",
+      "tag": "MI-8",
+      "title": "Handoff \u2014 [MI-8] Duplicability proof (2nd field) + scheduled discovery cadence",
+      "cluster": "market-intelligence",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.343,
+      "unblocks": [],
+      "substrate": "cowork",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 2,
+        "operator_priority": 3
+      }
+    },
+    {
+      "rank": 21,
+      "id": "research-substrate-comparison-skill",
+      "tag": null,
+      "title": "Handoff \u2014 research-substrate-comparison skill (substrate-agnostic, re-scoped 2026-06-03)",
+      "cluster": "_root",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.318,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 3,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 22,
+      "id": "RQ4",
+      "tag": "RQ4",
+      "title": "Handoff \u2014 RQ4: Auto-chooser + orchestrator polish (lower priority)",
+      "cluster": "_root",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.318,
+      "unblocks": [],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 3,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 23,
+      "id": "keelworks-growth-ventures-scoping",
+      "tag": null,
+      "title": "Handoff \u2014 Keelworks growth-ventures scoping (new revenue streams beyond client services)",
+      "cluster": "_root",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.306,
+      "unblocks": [],
+      "substrate": "cowork-attended",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 3
+      }
+    },
+    {
+      "rank": 24,
+      "id": "OR-2",
+      "tag": "OR-2",
+      "title": "Handoff \u2014 Startup-&-Funding-Intelligence Engine: scoping + discussion chat ([OR-2])",
+      "cluster": "opportunity-radar",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.306,
+      "unblocks": [],
+      "substrate": "cowork",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 3
+      }
+    },
+    {
+      "rank": 25,
+      "id": "OR-3",
+      "tag": "OR-3",
+      "title": "Handoff \u2014 Publishing / Audience / Subscriber Layer: scoping + discussion chat ([OR-3])",
+      "cluster": "opportunity-radar",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.306,
+      "unblocks": [],
+      "substrate": "cowork",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 3
+      }
+    },
+    {
+      "rank": 26,
+      "id": "page-factory-reusability-hardening",
+      "tag": null,
+      "title": "Handoff \u2014 Page-factory reusability hardening (zero-hardcoded audit + 3rd-client proof + WP-vs-substrate split)",
+      "cluster": "_root",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.281,
+      "unblocks": [],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 2,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 27,
+      "id": "DA4",
+      "tag": "DA4",
+      "title": "Handoff \u2014 DA4: Consolidate pre-publish verification into ONE runnable tool",
+      "cluster": "_root",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.281,
+      "unblocks": [],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 2,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 28,
+      "id": "DA6",
+      "tag": "DA6",
+      "title": "Handoff \u2014 DA6: EV-run micro carry-forwards (fast cleanup)",
+      "cluster": "_root",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.281,
+      "unblocks": [],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 2,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 29,
+      "id": "dad-businesses-bilingual-sites-build",
+      "tag": null,
+      "title": "Handoff \u2014 Build dad's two bilingual (EN/ES) info-source websites",
+      "cluster": "_root",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.281,
+      "unblocks": [],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 2,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 30,
+      "id": "dealership-app-scoping",
+      "tag": null,
+      "title": "Handoff \u2014 Scope dad's car-dealership app (inventory + social posting + inquiry inbox)",
+      "cluster": "_root",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.281,
+      "unblocks": [],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 2,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 31,
+      "id": "WF12",
+      "tag": "WF12",
+      "title": "Handoff [WF-12] \u2014 Phase 6: S&H build + productization extract",
+      "cluster": "website-factory",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.281,
+      "unblocks": [],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 2,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 32,
+      "id": "WF13",
+      "tag": "WF13",
+      "title": "Handoff [WF-13] \u2014 Voice-agent track (ElevenLabs + GPT on the data layer)",
+      "cluster": "website-factory",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.281,
+      "unblocks": [],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 2,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 33,
+      "id": "WF8",
+      "tag": "WF8",
+      "title": "Handoff [WF-8] \u2014 Phase 2: render-layer factory features",
+      "cluster": "website-factory",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.281,
+      "unblocks": [],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 2,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 34,
+      "id": "TIER-3",
+      "tag": "TIER-3",
+      "title": "Handoff \u2014 Mercury read-only reconciliation tool (Phase 1)",
+      "cluster": "_root",
+      "leverage_score": 0.0,
+      "effort_hours": 2.5,
+      "weighted_score": 0.263,
+      "unblocks": [],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 2.5,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 35,
+      "id": "vault-orchestrator/PHASE-6",
+      "tag": "PHASE-6",
+      "title": "Handoff \u2014 Phase 6 \u2014 Skill-needs analyzer",
+      "cluster": "vault-orchestrator",
+      "leverage_score": 0.0,
+      "effort_hours": 2.5,
+      "weighted_score": 0.263,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 2.5,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 36,
+      "id": "vault-orchestrator/PHASE-5",
+      "tag": "PHASE-5",
+      "title": "Handoff \u2014 Phase 5 \u2014 Per-project orchestrator decomposition",
+      "cluster": "vault-orchestrator",
+      "leverage_score": 0.0,
+      "effort_hours": 3.5,
+      "weighted_score": 0.25,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 3.5,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 37,
+      "id": "ads-and-marketing/PHASE-2",
+      "tag": "PHASE-2",
+      "title": "Handoff \u2014 Phase 2 \u2014 VIS sprint across ~50 URLs",
+      "cluster": "ads-and-marketing",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 38,
+      "id": "ads-and-marketing/PHASE-3",
+      "tag": "PHASE-3",
+      "title": "Handoff \u2014 Phase 3 \u2014 First cluster synthesis",
+      "cluster": "ads-and-marketing",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 39,
+      "id": "ads-and-marketing/PHASE-4",
+      "tag": "PHASE-4",
+      "title": "Handoff \u2014 Phase 4 \u2014 Tool stack lock + integration",
+      "cluster": "ads-and-marketing",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 40,
+      "id": "ads-and-marketing/PHASE-5",
+      "tag": "PHASE-5",
+      "title": "Handoff \u2014 Phase 5 \u2014 Per-campaign tracking template refinement + first instance",
+      "cluster": "ads-and-marketing",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 41,
+      "id": "ads-and-marketing/PHASE-6",
+      "tag": "PHASE-6",
+      "title": "Handoff \u2014 Phase 6 \u2014 Creative production pipeline + audience template library",
+      "cluster": "ads-and-marketing",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 42,
+      "id": "ads-and-marketing/PHASE-7",
+      "tag": "PHASE-7",
+      "title": "Handoff \u2014 Phase 7 \u2014 ROI dashboard view",
+      "cluster": "ads-and-marketing",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 43,
+      "id": "ads-and-marketing/PHASE-8",
+      "tag": "PHASE-8",
+      "title": "Handoff \u2014 Phase 8 \u2014 Lead routing + follow-up automation",
+      "cluster": "ads-and-marketing",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 44,
+      "id": "ads-and-marketing/PHASE-9",
+      "tag": "PHASE-9",
+      "title": "Handoff \u2014 Phase 9 \u2014 First real campaign launched + ROI measured",
+      "cluster": "ads-and-marketing",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 45,
+      "id": "client-onboarding-automation/PHASE-1",
+      "tag": "PHASE-1",
+      "title": "Handoff \u2014 Phase 1 \u2014 Intake tooling VIS-batch",
+      "cluster": "client-onboarding-automation",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 46,
+      "id": "client-onboarding-automation/PHASE-2",
+      "tag": "PHASE-2",
+      "title": "Handoff \u2014 Phase 2 \u2014 Discovery + intake system",
+      "cluster": "client-onboarding-automation",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 47,
+      "id": "client-onboarding-automation/PHASE-3",
+      "tag": "PHASE-3",
+      "title": "Handoff \u2014 Phase 3 \u2014 Contract + payment automation",
+      "cluster": "client-onboarding-automation",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 48,
+      "id": "client-onboarding-automation/PHASE-4",
+      "tag": "PHASE-4",
+      "title": "Handoff \u2014 Phase 4 \u2014 Credential capture + tier-3 handoff",
+      "cluster": "client-onboarding-automation",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 49,
+      "id": "client-onboarding-automation/PHASE-5",
+      "tag": "PHASE-5",
+      "title": "Handoff \u2014 Phase 5 \u2014 Orchestrator skill build",
+      "cluster": "client-onboarding-automation",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 50,
+      "id": "client-onboarding-automation/PHASE-7",
+      "tag": "PHASE-7",
+      "title": "Handoff \u2014 Phase 7 \u2014 Operator onboarding dashboard view",
+      "cluster": "client-onboarding-automation",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 51,
+      "id": "client-onboarding-automation/PHASE-7B",
+      "tag": "PHASE-7B",
+      "title": "Handoff \u2014 Phase 7b \u2014 Client portal at client.keelworks.ai",
+      "cluster": "client-onboarding-automation",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 52,
+      "id": "client-onboarding-automation/PHASE-8",
+      "tag": "PHASE-8",
+      "title": "Handoff \u2014 Phase 8 \u2014 Handoff event + downstream routing",
+      "cluster": "client-onboarding-automation",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 53,
+      "id": "client-onboarding-automation/PHASE-9",
+      "tag": "PHASE-9",
+      "title": "Handoff \u2014 Phase 9 \u2014 End-to-end real-client test",
+      "cluster": "client-onboarding-automation",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 54,
+      "id": "gate-peer-reviewer-wave4-client-seo-onboarding-autonomous",
+      "tag": null,
+      "title": "Handoff \u2014 gate-peer-reviewer Build wave 4: autonomous client-seo-onboarding page-build review",
+      "cluster": "complete",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 55,
+      "id": "roadmap-client-seo-onboarding-automation/PHASE-5",
+      "tag": "PHASE-5",
+      "title": "Handoff \u2014 Phase 5 \u2014 client-seo-onboarding skill",
+      "cluster": "roadmap-client-seo-onboarding-automation",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 56,
+      "id": "CORE-30",
+      "tag": "CORE-30",
+      "title": "Wave 1 \u2014 Research gap-close + city data scaffold",
+      "cluster": "ev-electric-pages-06-12",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 57,
+      "id": "CORE-30",
+      "tag": "CORE-30",
+      "title": "Wave 2 \u2014 Page scaffold + draft (7 Core 30 pages)",
+      "cluster": "ev-electric-pages-06-12",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 58,
+      "id": "CORE-30",
+      "tag": "CORE-30",
+      "title": "Wave 3 \u2014 Internal-link pass + publish prep",
+      "cluster": "ev-electric-pages-06-12",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 59,
+      "id": "CORE-30",
+      "tag": "CORE-30",
+      "title": "Wave 4 \u2014 WordPress publish + GSC submit",
+      "cluster": "ev-electric-pages-06-12",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "either",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 60,
+      "id": "PHASE-2",
+      "tag": "PHASE-2",
+      "title": "Handoff \u2014 Phase 2 page uniqueness pivot (50/50 \u2192 70/30) execution",
+      "cluster": "_root",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 61,
+      "id": "anthropic-api-caching-discipline",
+      "tag": null,
+      "title": "Handoff \u2014 Anthropic API caching discipline (gated on first direct-API workload)",
+      "cluster": "_root",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 62,
+      "id": "dataforseo-local-seo-defaults-hardening",
+      "tag": null,
+      "title": "Handoff \u2014 DataForSEO local-SEO defaults hardening",
+      "cluster": "_root",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 63,
+      "id": "provision-gap-detection-automation",
+      "tag": null,
+      "title": "Handoff \u2014 Automate PROVISION gap-detection (disk-verify at source + peer-reviewer coverage)",
+      "cluster": "_root",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 64,
+      "id": "topic-subfolder-status-standardization",
+      "tag": null,
+      "title": "Handoff \u2014 Topic subfolder `_status.md` standardization",
+      "cluster": "_root",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 65,
+      "id": "vault-orchestrator-dispatch-prompt-skeleton-template",
+      "tag": null,
+      "title": "Handoff \u2014 `vault-orchestrator` Mode 6 EXECUTE: dispatch prompt skeleton template",
+      "cluster": "_root",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 66,
+      "id": "frictionless-imagery-inbox-ingest",
+      "tag": null,
+      "title": "Handoff \u2014 frictionless Higgsfield inbox ingest (slug-free auto-route)",
+      "cluster": "_root",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 67,
+      "id": "imagery-automation-pivot-higgsfield-mcp",
+      "tag": null,
+      "title": "Handoff \u2014 Imagery automation pivot: Higgsfield MCP/CLI + Soul Character + auto-chooser",
+      "cluster": "_root",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 68,
+      "id": "phase-5-social-short-form-extraction",
+      "tag": null,
+      "title": "Handoff \u2014 Extend VIS to ingest short-form social video (FB / IG / TikTok reels)",
+      "cluster": "vis-system-enhancement",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 69,
+      "id": "wf4-r2-ev-clean-migration-redo",
+      "tag": null,
+      "title": "Handoff \u2014 [WF-4-R2] EV custom-site clean migration (REDO of WF-4 run 1)",
+      "cluster": "website-factory",
+      "leverage_score": 0.0,
+      "effort_hours": 4.0,
+      "weighted_score": 0.243,
+      "unblocks": [],
+      "substrate": "claude-code",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 4.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    },
+    {
+      "rank": 70,
+      "id": "client-onboarding-automation/PHASE-6",
+      "tag": "PHASE-6",
+      "title": "Handoff \u2014 Phase 6 \u2014 Kickoff process + comms templates",
+      "cluster": "client-onboarding-automation",
+      "leverage_score": 0.0,
+      "effort_hours": 18.0,
+      "weighted_score": 0.062,
+      "unblocks": [],
+      "substrate": "unknown",
+      "scores": {
+        "gate_opening_leverage": 0.0,
+        "effort_hours": 18.0,
+        "reuse_multiplier": 1,
+        "operator_priority": 2
+      }
+    }
+  ],
+  "parallel_sets": [
+    [
+      {
+        "id": "vis-system-enhancement/PHASE-0",
+        "tag": "PHASE-0"
+      },
+      {
+        "id": "DA1",
+        "tag": "DA1"
+      },
+      {
+        "id": "RQ1",
+        "tag": "RQ1"
+      },
+      {
+        "id": "seo-client-meeting-prep-skill",
+        "tag": null
+      },
+      {
+        "id": "MI-5",
+        "tag": "MI-5"
+      },
+      {
+        "id": "MI-3",
+        "tag": "MI-3"
+      },
+      {
+        "id": "MI-4",
+        "tag": "MI-4"
+      },
+      {
+        "id": "WF10",
+        "tag": "WF10"
+      },
+      {
+        "id": "WF9",
+        "tag": "WF9"
+      },
+      {
+        "id": "MI-6",
+        "tag": "MI-6"
+      },
+      {
+        "id": "MI-7",
+        "tag": "MI-7"
+      },
+      {
+        "id": "RGH-6",
+        "tag": "RGH-6"
+      },
+      {
+        "id": "MI-8",
+        "tag": "MI-8"
+      },
+      {
+        "id": "RQ4",
+        "tag": "RQ4"
+      },
+      {
+        "id": "OR-2",
+        "tag": "OR-2"
+      },
+      {
+        "id": "OR-3",
+        "tag": "OR-3"
+      },
+      {
+        "id": "DA4",
+        "tag": "DA4"
+      },
+      {
+        "id": "DA6",
+        "tag": "DA6"
+      },
+      {
+        "id": "WF12",
+        "tag": "WF12"
+      },
+      {
+        "id": "WF13",
+        "tag": "WF13"
+      },
+      {
+        "id": "WF8",
+        "tag": "WF8"
+      },
+      {
+        "id": "TIER-3",
+        "tag": "TIER-3"
+      },
+      {
+        "id": "vault-orchestrator/PHASE-6",
+        "tag": "PHASE-6"
+      },
+      {
+        "id": "vault-orchestrator/PHASE-5",
+        "tag": "PHASE-5"
+      },
+      {
+        "id": "ads-and-marketing/PHASE-2",
+        "tag": "PHASE-2"
+      },
+      {
+        "id": "ads-and-marketing/PHASE-3",
+        "tag": "PHASE-3"
+      },
+      {
+        "id": "ads-and-marketing/PHASE-4",
+        "tag": "PHASE-4"
+      },
+      {
+        "id": "ads-and-marketing/PHASE-7",
+        "tag": "PHASE-7"
+      },
+      {
+        "id": "ads-and-marketing/PHASE-8",
+        "tag": "PHASE-8"
+      },
+      {
+        "id": "ads-and-marketing/PHASE-9",
+        "tag": "PHASE-9"
+      },
+      {
+        "id": "client-onboarding-automation/PHASE-1",
+        "tag": "PHASE-1"
+      },
+      {
+        "id": "client-onboarding-automation/PHASE-7B",
+        "tag": "PHASE-7B"
+      },
+      {
+        "id": "CORE-30",
+        "tag": "CORE-30"
+      }
+    ]
+  ],
+  "waiting_on": {
+    "DI-1": {
+      "title": "Handoff \u2014 [DI-1] site-capture-engine: design-capture context (amendment)",
+      "blocked_by": [
+        "PHASE-4B (in_flight)"
+      ]
+    },
+    "DI-2": {
+      "title": "Handoff \u2014 [DI-2] build the `design-fingerprint` skill (new) + dedup competitor-deep-research",
+      "blocked_by": [
+        "DI-1 (next)"
+      ]
+    },
+    "DI-3": {
+      "title": "Handoff \u2014 [DI-3] `reference-library` skill + stand up & populate the inspiration library",
+      "blocked_by": [
+        "DI-1 (next)",
+        "DI-2 (queued)"
+      ]
+    },
+    "DI-4": {
+      "title": "Handoff \u2014 [DI-4] implement `design-emulation-verify` (currently spec-only)",
+      "blocked_by": [
+        "DI-2 (queued)"
+      ]
+    },
+    "DI-5": {
+      "title": "Handoff \u2014 [DI-5] integration + reusability capstone",
+      "blocked_by": [
+        "DI-1 (next)",
+        "DI-2 (queued)",
+        "DI-3 (queued)",
+        "DI-4 (queued)",
+        "DI-6 (queued)",
+        "DI-7 (queued)"
+      ]
+    },
+    "DI-6": {
+      "title": "Handoff \u2014 [DI-6] cross-site design-pattern synthesis & ranking engine (new skill)",
+      "blocked_by": [
+        "DI-2 (queued)",
+        "DI-3 (queued)"
+      ]
+    },
+    "DI-7": {
+      "title": "Handoff \u2014 [DI-7] reference discovery & vetting engine (the \"website finder\")",
+      "blocked_by": [
+        "DI-1 (next)",
+        "DI-2 (queued)",
+        "DI-3 (queued)"
+      ]
+    },
+    "LEVEL-4": {
+      "title": "Handoff \u2014 Extend gate-peer-reviewer toward an autonomous decision layer (DIRECTION \u2014 confirm before build)",
+      "blocked_by": [
+        "None (next)",
+        "None (next)"
+      ]
+    },
+    "RQ2": {
+      "title": "Handoff \u2014 RQ2: Reviewer live-gate self-sufficiency (own live fetch + all-fields sweep)",
+      "blocked_by": [
+        "RQ1 (next)"
+      ]
+    },
+    "RQ3": {
+      "title": "Handoff \u2014 RQ3: Reviewer cross-project reusability + robustness",
+      "blocked_by": [
+        "RQ1 (next)"
+      ]
+    },
+    "DA2": {
+      "title": "Handoff \u2014 DA2: Research-depth parity (kill the per-service silent-degrade)",
+      "blocked_by": [
+        "DA1 (next)"
+      ]
+    },
+    "DA3": {
+      "title": "Handoff \u2014 DA3: Mine the competitor teardown into an expansion backlog",
+      "blocked_by": [
+        "DA1 (next)"
+      ]
+    },
+    "handoff-2026-06-07-indexing-and-deployment-completeness": {
+      "title": "Handoff \u2014 Indexing + deployment completeness (make it automatic, never silent-skip)",
+      "blocked_by": [
+        "None (in_flight)"
+      ]
+    },
+    "OP-2": {
+      "title": "Handoff \u2014 [OP-2] kanban board + superset data contract (dashboard view)",
+      "blocked_by": [
+        "OP-1 (in_flight)"
+      ]
+    },
+    "OP-3": {
+      "title": "Handoff \u2014 [OP-3] scheduled operations loop (the cadence)",
+      "blocked_by": [
+        "OP-1 (in_flight)",
+        "OP-2 (queued)"
+      ]
+    },
+    "OP-4": {
+      "title": "Handoff \u2014 [OP-4] hermes + dashboard bridge (capstone)",
+      "blocked_by": [
+        "OP-1 (in_flight)",
+        "OP-2 (queued)",
+        "OP-3 (queued)"
+      ]
+    },
+    "PHASE-2": {
+      "title": "Handoff \u2014 Phase 2 \u2014 Fire-and-forget autonomy (STUB)",
+      "blocked_by": [
+        "PHASE-0 (next)",
+        "PHASE-1 (next)"
+      ]
+    },
+    "PHASE-3": {
+      "title": "Handoff \u2014 Phase 3 \u2014 Transcript robustness at scale (STUB)",
+      "blocked_by": [
+        "PHASE-0 (next)"
+      ]
+    },
+    "PHASE-4": {
+      "title": "Handoff \u2014 Phase 4 \u2014 Best-data extraction (STUB)",
+      "blocked_by": [
+        "PHASE-0 (next)"
+      ]
+    },
+    "PHASE-5": {
+      "title": "Phase 5 \u2014 Automatic independent reviewer dispatch on every chat",
+      "blocked_by": [
+        "PHASE-1 (in_flight)",
+        "PHASE-2 (queued)",
+        "RGH-6 (next)"
+      ]
+    },
+    "RGH-1B": {
+      "title": "Handoff: RGH-1b \u2014 Gate Polish",
+      "blocked_by": [
+        "PHASE-1 (in_flight)"
+      ]
+    },
+    "handoff-visual-extraction-rnd": {
+      "title": "Handoff \u2014 Visual / procedural extraction for VIS (Phase B)",
+      "blocked_by": [
+        "None (next)"
+      ]
+    },
+    "PHASE-1": {
+      "title": "Handoff \u2014 Phase 1 \u2014 gate-peer-reviewer VIS integration",
+      "blocked_by": [
+        "PHASE-0 (next)"
+      ]
+    },
+    "WF11": {
+      "title": "Handoff [WF-11] \u2014 Phase 5: EV ~1,000-page scale-out",
+      "blocked_by": [
+        "WF9 (queued)",
+        "WF10 (queued)"
+      ]
+    }
+  },
+  "critical_path": [
+    "client-onboarding-automation/PHASE-4B",
+    "DI-1",
+    "DI-2",
+    "DI-3",
+    "DI-6",
+    "DI-5"
+  ],
+  "critical_path_length": 6,
+  "session_budget_hours": 289.0,
+  "fatigue_flag": true,
+  "cluster_next_up": {
+    "vis-system-enhancement": {
+      "id": "vis-system-enhancement/PHASE-0",
+      "tag": "PHASE-0",
+      "title": "Handoff \u2014 Phase 0 \u2014 VIS weaknesses audit",
+      "leverage_score": 3.5,
+      "weighted_score": 0.643
+    },
+    "_root": {
+      "id": "DA1",
+      "tag": "DA1",
+      "title": "Handoff \u2014 DA1: Build the `content-coverage-audit` skill (agnostic)",
+      "leverage_score": 2.5,
+      "weighted_score": 0.604
+    },
+    "local-seo-growth": {
+      "id": "seo-client-meeting-prep-skill",
+      "tag": null,
+      "title": "Handoff: `seo-client-meeting-prep` skill \u2014 repeatable meeting-prep pack (data pulls \u2192 measurement log \u2192 checklist)",
+      "leverage_score": 0.0,
+      "weighted_score": 0.443
+    },
+    "market-intelligence": {
+      "id": "MI-5",
+      "tag": "MI-5",
+      "title": "Handoff \u2014 [MI-5] Build the `market-intelligence-engine` orchestrator skill + register `G-market-intel`",
+      "leverage_score": 0.0,
+      "weighted_score": 0.443
+    },
+    "website-factory": {
+      "id": "custom-html-build-skill",
+      "tag": null,
+      "title": "Handoff: build the `custom-html-build` skill",
+      "leverage_score": 0.0,
+      "weighted_score": 0.443
+    },
+    "complete": {
+      "id": "skill-quality-integration-audit",
+      "tag": null,
+      "title": "Handoff \u2014 Toolkit-wide quality-tool integration audit (output-quality-loop + gate-peer-reviewer)",
+      "leverage_score": 1.0,
+      "weighted_score": 0.395
+    },
+    "skool-extraction": {
+      "id": "handoff-skool-download-tooling",
+      "tag": null,
+      "title": "Handoff \u2014 Skool download + transcript path into VIS (Phase A)",
+      "leverage_score": 1.0,
+      "weighted_score": 0.377
+    },
+    "review-gate-hardening": {
+      "id": "RGH-6",
+      "tag": "RGH-6",
+      "title": "Phase 6 [RGH-6] \u2014 Build the `G-chat-close` omission-audit gate (mechanize \"are you sure we completed everything?\")",
+      "leverage_score": 1.0,
+      "weighted_score": 0.357
+    },
+    "opportunity-radar": {
+      "id": "OR-2",
+      "tag": "OR-2",
+      "title": "Handoff \u2014 Startup-&-Funding-Intelligence Engine: scoping + discussion chat ([OR-2])",
+      "leverage_score": 0.0,
+      "weighted_score": 0.306
+    },
+    "vault-orchestrator": {
+      "id": "vault-orchestrator/PHASE-6",
+      "tag": "PHASE-6",
+      "title": "Handoff \u2014 Phase 6 \u2014 Skill-needs analyzer",
+      "leverage_score": 0.0,
+      "weighted_score": 0.263
+    },
+    "ads-and-marketing": {
+      "id": "ads-and-marketing/PHASE-2",
+      "tag": "PHASE-2",
+      "title": "Handoff \u2014 Phase 2 \u2014 VIS sprint across ~50 URLs",
+      "leverage_score": 0.0,
+      "weighted_score": 0.243
+    },
+    "client-onboarding-automation": {
+      "id": "client-onboarding-automation/PHASE-1",
+      "tag": "PHASE-1",
+      "title": "Handoff \u2014 Phase 1 \u2014 Intake tooling VIS-batch",
+      "leverage_score": 0.0,
+      "weighted_score": 0.243
+    },
+    "roadmap-client-seo-onboarding-automation": {
+      "id": "roadmap-client-seo-onboarding-automation/PHASE-5",
+      "tag": "PHASE-5",
+      "title": "Handoff \u2014 Phase 5 \u2014 client-seo-onboarding skill",
+      "leverage_score": 0.0,
+      "weighted_score": 0.243
+    },
+    "ev-electric-pages-06-12": {
+      "id": "CORE-30",
+      "tag": "CORE-30",
+      "title": "Wave 1 \u2014 Research gap-close + city data scaffold",
+      "leverage_score": 0.0,
+      "weighted_score": 0.243
+    }
+  },
+  "in_flight": [
+    {
+      "id": "client-onboarding-automation/PHASE-4B",
+      "tag": "PHASE-4B",
+      "title": "Handoff \u2014 Phase 4b \u2014 Amend site-capture-engine build"
+    },
+    {
+      "id": "credential-loading-and-preflight",
+      "tag": "credential-loading-and-preflight",
+      "title": "Handoff \u2014 Credential loading + one-shot secrets pre-flight (kill the per-run friction)"
+    },
+    {
+      "id": "MI-1",
+      "tag": "MI-1",
+      "title": "Handoff \u2014 Market-Intelligence Engine: scoping + discussion chat ([MI-1])"
+    },
+    {
+      "id": "MI-2",
+      "tag": "MI-2",
+      "title": "Handoff \u2014 [MI-2] Data-inventory + gap-discovery + tool-gap pass (foundation)"
+    },
+    {
+      "id": "OP-1",
+      "tag": "OP-1",
+      "title": "Handoff \u2014 [OP-1] reverse-dependency gate-opening leverage scorer"
+    },
+    {
+      "id": "OR-1",
+      "tag": "OR-1",
+      "title": "Handoff \u2014 Product-Intelligence Engine: scoping + discussion chat ([OR-1])"
+    },
+    {
+      "id": "WAVE-2",
+      "tag": "WAVE-2",
+      "title": "Handoff \u2014 Wave 2 \u2014 perplexity-blueprint-research (FLAGSHIP)"
+    },
+    {
+      "id": "WAVE-3",
+      "tag": "WAVE-3",
+      "title": "Handoff \u2014 Wave 3A \u2014 perplexity-topic-gaps"
+    },
+    {
+      "id": "WAVE-3",
+      "tag": "WAVE-3",
+      "title": "Handoff \u2014 Wave 3B \u2014 perplexity-client-discovery"
+    },
+    {
+      "id": "WAVE-4",
+      "tag": "WAVE-4",
+      "title": "Handoff \u2014 Wave 4A \u2014 perplexity-niche-validation"
+    },
+    {
+      "id": "WAVE-4",
+      "tag": "WAVE-4",
+      "title": "Handoff \u2014 Wave 4B \u2014 perplexity-competitor-move-detection"
+    },
+    {
+      "id": "WAVE-4",
+      "tag": "WAVE-4",
+      "title": "Handoff \u2014 Wave 4C \u2014 perplexity-ai-overview-hardening"
+    },
+    {
+      "id": "WAVE-5",
+      "tag": "WAVE-5",
+      "title": "Handoff \u2014 Wave 5 \u2014 perplexity-acquisition-signal"
+    },
+    {
+      "id": "review-gate-hardening/PHASE-1",
+      "tag": "PHASE-1",
+      "title": "Phase 1 \u2014 Review-gate integrity + coverage hardening"
+    }
+  ],
+  "cycles": [],
+  "unmapped_statuses": [],
+  "unresolved_dependencies": [
+    {
+      "node": "handoff-2026-06-01-vault-orchestrator-mid-project-resume-capability",
+      "tag": null,
+      "unresolved_ref": "vault-orchestrator-phase-4-shipped (already cleared 2026-06-01)"
+    },
+    {
+      "node": "phase-5b-schema-auto-bump-on-additive-write",
+      "tag": null,
+      "unresolved_ref": "client-seo-onboarding-v1.1-state-schema"
+    },
+    {
+      "node": "handoff-2026-06-11-seo-client-meeting-prep-skill",
+      "tag": null,
+      "unresolved_ref": "none"
+    },
+    {
+      "node": "handoff-2026-06-04-website-factory-program",
+      "tag": null,
+      "unresolved_ref": "core-30-completion-ev"
+    },
+    {
+      "node": "handoff-2026-06-04-website-factory-program",
+      "tag": null,
+      "unresolved_ref": "core-30-completion-s-and-h"
+    },
+    {
+      "node": "handoff-2026-06-11-wf11-ev-thousand-page-scaleout",
+      "tag": "WF11",
+      "unresolved_ref": "wf4-cutover-complete"
+    },
+    {
+      "node": "handoff-2026-06-11-wf11-ev-thousand-page-scaleout",
+      "tag": "WF11",
+      "unresolved_ref": "wf8-render-factory-features"
+    },
+    {
+      "node": "handoff-2026-06-11-wf12-sh-build-productization",
+      "tag": "WF12",
+      "unresolved_ref": "wf11-ev-scaleout"
+    },
+    {
+      "node": "handoff-2026-06-11-wf12-sh-build-productization",
+      "tag": "WF12",
+      "unresolved_ref": "sh-rebuild-scope-agreed"
+    },
+    {
+      "node": "handoff-2026-06-11-wf13-voice-agent-track",
+      "tag": "WF13",
+      "unresolved_ref": "wf4-cutover-complete"
+    },
+    {
+      "node": "handoff-2026-06-11-wf13-voice-agent-track",
+      "tag": "WF13",
+      "unresolved_ref": "wf7-price-layer-populated"
+    },
+    {
+      "node": "handoff-2026-06-11-wf8-render-layer-factory-features",
+      "tag": "WF8",
+      "unresolved_ref": "wf4-ev-app-scaffolded"
+    }
+  ]
+}

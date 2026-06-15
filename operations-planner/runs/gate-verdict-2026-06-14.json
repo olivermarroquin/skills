@@ -1,0 +1,46 @@
+{
+  "verdict": "PASS",
+  "gate_id": "G-default",
+  "tier": "full",
+  "session": "op1-reverse-dep-leverage-scorer-202606141500",
+  "generated_at": "2026-06-14T18:45:00Z",
+  "checks_run": [
+    {
+      "name": "full-placeholder-family-sweep",
+      "result": "pass",
+      "detail": "grep for TODO/FIXME/PLACEHOLDER/TBD/XXX/FILL/lorem/example.com across all skill files — zero hits"
+    },
+    {
+      "name": "source-client-leak-audit",
+      "result": "pass",
+      "detail": "grep for EV Electric/S&H/Ahmad/evelectric.pro/sandhcontracting across skill engine files (SKILL.md, analyze.py, references/) — zero hits. Client names appear ONLY in proof-run output (op-plan-*.json/.md) which reads live handoff titles — correct behavior, not a leak."
+    },
+    {
+      "name": "internal-link-resolution",
+      "result": "pass",
+      "detail": "SKILL.md wikilinks: operations-planner/_README exists, reference-operations-data-contract exists, prototype-kanban-mission-control.html exists. All resolve."
+    },
+    {
+      "name": "ground-truth-cross-check",
+      "result": "pass",
+      "detail": "Sum check: 81+5+82+28=196 total handoffs (matches). Critical path COA/PHASE-4B→DI-1→DI-2→DI-3→DI-6→DI-5 (6 nodes, valid chain). Top-5 leverage scores: PHASE-1=3.50 (unblocks 3), PHASE-0=3.50 (unblocks 4), DA1=2.50 (unblocks 2), RQ1=2.00 (unblocks 2), credential-loading=2.00 (unblocks 2) — all plausible. Zero cycles. Zero unmapped statuses."
+    },
+    {
+      "name": "yaml-frontmatter-validation",
+      "result": "pass",
+      "detail": "All 4 .md files (SKILL.md, status-normalization-map.md, operations-planner-profile.md, op-plan-2026-06-14.md) parse as valid YAML with required fields (type, status, created, tags)."
+    },
+    {
+      "name": "functional-correctness",
+      "result": "pass",
+      "detail": "analyze.py handles: missing depends-on (defaults to []), unmapped statuses (surfaces them, safe-defaults to queued), cycles (DFS detection, none found in real tree), tracker override of frontmatter status, parenthetical annotation stripping in depends-on refs."
+    },
+    {
+      "name": "contract-alignment",
+      "result": "pass",
+      "detail": "operations_plan JSON contains all required fields per data contract: generated_at, ready_now, ordered_ready_to_spawn (82 items, each with rank/id/leverage_score/effort_hours/weighted_score/unblocks/substrate/scores), parallel_sets, waiting_on, critical_path, session_budget_hours, fatigue_flag. No missing fields."
+    }
+  ],
+  "catches": [],
+  "cost_usd": 0.0
+}
