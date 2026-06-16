@@ -784,3 +784,64 @@ Build wave 4 expanded this registry to cover client-seo-onboarding's 5 page-buil
 **Architecture:** The 6-check engine remained untouched. Page-build gates are a registered instance — the same registry shape v1 designed for vault-orchestrator Mode 6 gates. Named verification procedures are project-agnostic reusable check blocks referenced by `check_1_satisfaction_targets`. Future orchestrators self-register at their build time using the same shape + referencing the same (or new) named procedures.
 
 **Acceptance:** The registered gate types + named procedures independently reproduce catches PR-01 (slug-prefix mismatch), PR-07 (source-client related_cards leak), PR-15 (TBD Q&A bodies), PR-16 (unrendered {phone_display}), PR-17 (duplicate theme title), PR-19a (competitor brand in imagery prompts), PR-19b (wrong face reference) — unprompted, from Check 1 satisfaction targets alone.
+
+## v4.0 — market-intelligence-engine gate (2026-06-16)
+
+Registered by [MI-5] build. `G-market-intel` is the closing gate for `market-intelligence-engine` runs. Eight distinctive market-intelligence checks (MI-1 through MI-8) plus G-default's surface sweep inherited as MI-9 — nine checks total. Distilled from the [MI-3]/[MI-3b]/[MI-3c]/[MI-4] proven run. Precipitating events documented inline.
+
+```yaml
+- orchestrator: market-intelligence-engine
+  mode: run
+  gate_id: G-market-intel
+  fires_at: after Output A + Output B production, before declaring run complete (SKILL.md Phase 13)
+  emits: G-market-intel verdict covering composite scorecard + perfect-company-profile + per-client gap plans + completeness artifacts
+  contract_source: skills/market-intelligence-engine/SKILL.md § 5
+  is_closing_gate: true
+  expects:
+    check_1_satisfaction_targets:
+      # --- 9 distinctive checks (spec §7) ---
+      # Check MI-1: Every arena score traces to a cited source/pull — no unsourced "they're strong at X".
+      - every cell in the composite scorecard shows an inline metric + the source that produced it
+      # Check MI-2: Every perfect-profile attribute names the competitor that demonstrated it.
+      - every winning-attribute in Output A names the competitor + real number (e.g., "Root Electric: 916 ranked keywords")
+      # Check MI-3: Data-gap + tool-gap sections are non-empty — engine may never claim full coverage.
+      - Output A limitations section is non-empty (data gaps + tool gaps listed)
+      - Output B new-gaps-surfaced section is non-empty or explicitly states "no new gaps beyond Output A"
+      # Check MI-4: No undefended zeros (precipitating event: MI-3 scored V4 "empty" from one tool on 8 desktop queries; PRO Electric was running Search ads).
+      - every 0/absent cell is defended per mi-arena-source-checklist three completeness rules (>=2 independent sources + breadth across arena dimensions)
+      - any undefended 0 reads "unknown / under-sampled", not 0
+      # Check MI-5: Per-arena source checklist filled (precipitating event: MI-3 silent single-sourcing on V4).
+      - filled arena-source-enumeration artifact present as run output
+      - every arena lists sources marked used-with-evidence or skipped-with-reason
+      - free public registries checked (Google Ads Transparency Center for V4, Knowledge Panel for A1, Meta Ad Library for V4/V5, HubSpot AEO Grader for V3)
+      # Check MI-6: Adversarial completeness pass run (precipitating event: MI-3 gap-finder never challenged drawn conclusions).
+      - for every weak/zero/low cell (score 0-1), adversarial probe documented ("if strong here, where would it show — did I look there?")
+      # Check MI-7: Completion-vs-plan (precipitating event: MI-3b marked DG-9 done at ~17% and DG-7 "closed" after 10/17 competitors).
+      - completion ledger present: every collection task diffs planned units vs collected units (verified against RAW artifact, not prose)
+      - reports "X of Y collected" per arena per source
+      - no arena marked "closed" below coverage threshold without naming the gap
+      # Check MI-8: No self-gating (precipitating event: MI-3b run graded its own work; blind spots invisible).
+      - independent review must actually run (isolated agent or operator dispatch)
+      - self-attested "PASS" = "unreviewed", not closed
+      # Check MI-9: G-default surface sweep (inherited).
+      - named procedure: full-placeholder-family-sweep
+      - named procedure: source-client-leak-audit
+      - body-level internal-link resolution
+    check_2_calibration_metrics:
+      - cost_usd_actual (DataForSEO + Sonar API calls)
+      - competitor_count_scored (target: top_n_light from config)
+      - arenas_covered (target: arenas_in_scope from config)
+    check_3_domain_probe_classes:
+      - brand-currency-specific (competitor brand accuracy, tool pricing)
+      - time-specific (review counts, ad presence, ranking data — all ephemeral signals with timestamp)
+    check_4_cross_wave_artifact_type: market-intel-scorecard
+    check_4_within_wave_prior_gate: null
+  registered_by: mi5-engine-skill-202606161900
+  registered_at: 2026-06-16
+```
+
+**Calibration source.** [MI-3] V4 ads miss (single-source zero → 7 competitors running 10+ ads); [MI-3b] silent partial completion (DG-9 at 17%, DG-7 at 10/17); [MI-3b] self-gating (run graded its own work); [MI-3] gap-finder never challenged drawn conclusions. All from the NoVA residential-electrician proven run (2026-06-14 → 2026-06-16).
+
+**Relationship to G-default.** G-market-intel extends G-default with 8 market-intelligence-specific checks (MI-1 through MI-8). When a task runs under `market-intelligence-engine`, G-market-intel takes precedence. G-default's named procedures (placeholder sweep, client-leak audit, link resolution) are inherited as check MI-9.
+
+**Relationship to G-chat-close.** G-chat-close fires at chat close (omission audit). G-market-intel fires at run completion (commission + completeness). Both may fire on the same chat — complementary, not competing.
