@@ -1,9 +1,9 @@
 ---
 name: gate-peer-reviewer
-version: 3.6
+version: 3.7
 status: active
 created: 2026-06-03
-updated: 2026-06-15
+updated: 2026-06-16
 description: Automated peer-review layer that sits between any orchestrator skill's gate emission and operator review. Fires 6 structured checks + severity tiers + standing regression harness. 21 registered gate types across 13 orchestrators — incl. G-default universal catch-all gate (v3.4) for ad-hoc/non-orchestrated tasks + G-chat-close omission-audit gate (v3.6) for chat-completeness verification at every close. All 9 non-Core-30 skills dispatch the reviewer at their gates (GPR-9). Reviewer performs its own live cache-busted fetch (GPR-11). All sweeps enumerate meta/og/schema surfaces (GPR-12). Verdicts carry blocking/advisory severity (GPR-13). Planted-defect regression suite prevents silent regression (GPR-14). Substrate-agnostic. Project-agnostic. Output-agnostic.
 triggers:
   - any orchestrator emits a gate decision for operator review
@@ -25,7 +25,7 @@ composes-with:
 tags: [skill, peer-review, gate-review, process-quality, orchestrator-coaching, substrate-agnostic, v2, page-build, autonomous-dispatch, deliberate-evolution-vs-silent-drift]
 ---
 
-# `gate-peer-reviewer` skill v3.6
+# `gate-peer-reviewer` skill v3.7
 
 Automated peer-review layer that fires on every orchestrated output across every project across every skill. v1 replaced the parallel-Cowork coaching layer Oliver ran by hand through waves A2-A6 of S&H Core 30 research. v2 extends to page-build gates (replacing the manual peer-review transport from the S&H Core 30 page-build run, PR-01..PR-40) and adds autonomous dispatch so the operator stops being the paste-transport layer.
 
@@ -290,8 +290,8 @@ The peer-reviewer is normally dispatched by a parent orchestrator. Operator-driv
 - `references/check-spec.md` — Full verbatim 6-check spec with worked-example anchors. **Load-bearing.**
 - `references/gate-type-registry.md` — Substrate-agnostic registry of gate types + registration shape + 4 named verification procedures (full-placeholder-family-sweep, source-client-leak-audit, live-rendered-cache-busted-verification, ground-truth-value-cross-check). 21 gate types across 13 orchestrators.
 - `references/omission-check-registry.md` — G-chat-close omission-audit gate: 16 checks (OC-1..OC-16), 6 per-chat-type profiles, severity mapping, per-check verification procedures, honest limits. The omission half of the review stack (v3.6).
-- `references/regression-harness.md` — Standing planted-defect regression suite. 7 declared fixtures, run at every version bump. Prevents silent regression of known-caught defect classes.
-- `references/regression-fixtures/` — Synthetic test fixtures with planted defects + expected outcomes.
+- `references/regression-harness.md` — Standing planted-defect regression suite. 25 fixtures (7 v3.2 seed + 2 v3.6 G-chat-close + 16 v3.7 COA-4b corpus), run at every version bump. Prevents silent regression of known-caught defect classes.
+- `references/regression-fixtures/` — Synthetic test fixtures with planted defects + expected outcomes. 25 fixtures: 7 v3.2 seed + 2 v3.6 G-chat-close + 16 v3.7 COA-4b corpus.
 - `references/return-contract.md` — Full field-by-field JSON return contract + write-authority detail.
 - `references/facts-registry-spec.md` — Ground-truth value-correctness layer: generic facts profile shape, cross-check algorithm, boundary (output-matches-source, not source-matches-reality), non-SEO proof architecture.
 - `references/facts-profiles/` — Registered facts profiles (declarative YAML). `core-30-page-build.yaml` + `research-brief.yaml`.
@@ -302,6 +302,7 @@ The peer-reviewer is normally dispatched by a parent orchestrator. Operator-driv
 
 ## Version history
 
+- **v3.7 (2026-06-16)** — COA-4b regression-fixture corpus + OC-12↔dod-check reconnect (RGH-FIN). 16 committed regression fixtures (12 runnable + 4 design-verified) under `regression-fixtures/coa4b-*/` — synthetic defect/clean state pairs for the 15 deterministic COA-4b catches (C-02..C-24). Suite: 32/32 expectations met, 0 false positives. `.wf-tmp` good-states snapshotted as committed evidence (5.1 MB manifests + structural JSONs). OC-12 reconnected to `dod-check.py` (stale "fall back to OC-9" note removed — RGH-7 shipped). `source_type` parser gap closed: markdown DoD tables auto-dispatch mechanizable assertions; non-mechanizable deferred to independent reviewer (documented in `spec-definition-of-done-manifest.md`). OC-16 git-integration conformance test handed to [RGH-2] (deliverable #6). Fixture count 9→25. Harness version synced. Composes with [RGH-5] (consumes the committed corpus for its replay acceptance test).
 - **v3.6 (2026-06-15)** — G-chat-close omission-audit gate (RGH-6). New gate type `G-chat-close` registered in `references/gate-type-registry.md` — the omission half of the review stack. Every existing gate inspects artifacts that exist (commission); G-chat-close diffs expected-artifact-and-follow-through set against disk reality (omission). 16 checks (OC-1..OC-16) in an append-only registry, 6 per-chat-type profiles (planning/decision, build, research/extraction, production-fire, skill-build, micro), severity mapping, per-check ls/grep verification procedures — all $0/no-LLM, <5 min wall-clock. Wired as Closing Protocol step 0 in `_active-chats-tracker.md` (manual dispatch until RGH-5 auto-dispatches). OC-12..16 cite [RGH-7]'s deterministic Layer-A procedures (per-deliverable existence, count-reconciliation, rename-propagation, frontmatter-freshness, commit-staging-audit). Mapping-validated on WF-1 corpus (OC-1/2/3/4 map to the 4 known gaps) + COA-4b corpus (OC-12..16 map to 22/25 deterministic catches); true regression replay requires preserved pre-fix fixtures (RGH-5/RGH-7 scope). Gate count 20→21 (orchestrator count stays 13 — G-chat-close shares the gate-peer-reviewer orchestrator namespace). New reference file: `references/omission-check-registry.md`. Composes with RGH-5 (independent dispatch) + RGH-7 (DoD manifest + Layer-A scripts). Honest limits: known-gap-classes only (compounding rule), OC-4 Cowork-only, self-dispatch until RGH-5.
 - **v3.5 (2026-06-11)** — Verdict-file emission (RGH-1). When running under the mandatory pre-land review gate, the peer-reviewer now emits its structured return contract to a verdict file (`.review-gate/state/verdict-<gate_id>-<timestamp>.json`) that `log-review-pass.py` consumes. Verdict mapping: APPROVE/APPROVE-WITH-NOTES→PASS, REJECT-AND-REDO/ESCALATE-AMBIGUOUS→BLOCKING. checks_run mapped to named procedures (placeholder-sweep, leak-audit, ground-truth-cross-check, etc.). Full-tier requires ground-truth-cross-check or value-cross-check. Write-authority updated: verdict file is the ONE file the reviewer writes directly (enforcement infrastructure, not a vault artifact). Composes with the hardened mandatory-review-gate scripts (verdict-file-backed markers, tier enforcement, scoped aggregation).
 - **v3.4 (2026-06-08)** — G-default universal catch-all gate. New gate type `G-default` registered in `references/gate-type-registry.md` for ad-hoc/non-orchestrated tasks. When the mandatory pre-land review gate (Stop hook) fires and no registered orchestrator gate applies, G-default provides the gate contract: full-placeholder-family-sweep + source-client-leak-audit + body-level link-resolution + ground-truth-value-cross-check + live-rendered-cache-busted-verification Phase C (when live state touched). Tiered: fast-path (grep-based, single trivial edit) vs full (multi-file/new-artifact/state-change). Gate count 19→20, orchestrator count 12→13. Composes with the mandatory-review-gate Stop/SubagentStop hook in `.claude/settings.json`. Addresses GAP-01/02/06 from `lesson-review-layer-misses-indexing-cache-run-2026-06-08`.

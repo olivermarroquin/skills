@@ -1,0 +1,9 @@
+[
+  {
+    "name": "wp-export manifest consistency",
+    "path": "wp-export/*",
+    "assertion": "manifest matches disk",
+    "source": "capture-manifest.json::wp_export.file_count",
+    "source_type": "json_field"
+  }
+]

@@ -1,0 +1,21 @@
+{
+  "A": [
+    "217.196.54.236"
+  ],
+  "AAAA": [
+    "2a02:4780:b:1346:0:35cd:cc4:2"
+  ],
+  "CNAME": [],
+  "MX": [
+    "10 mx2.hostinger.com.",
+    "5 mx1.hostinger.com."
+  ],
+  "TXT": [
+    "\"v=spf1 include:_spf.mail.hostinger.com ~all\"",
+    "\"google-site-verification=6ZsDpwaqSa7DJmXH4EM-Xuph3xQwHp5yKstF0NuLyNY\""
+  ],
+  "NS": [
+    "horizon.dns-parking.com.",
+    "orbit.dns-parking.com."
+  ]
+}

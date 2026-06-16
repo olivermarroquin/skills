@@ -1,9 +1,9 @@
 ---
 type: reference
 skill: gate-peer-reviewer
-skill-version: 3.3
+skill-version: 3.7
 created: 2026-06-07
-updated: 2026-06-07
+updated: 2026-06-16
 tags: [reference, regression-harness, testing, planted-defects, GPR-14]
 ---
 
@@ -58,7 +58,7 @@ regression_for: <D-row or PR number this prevents regressing>
 
 ---
 
-## Standing fixtures (v3.2 seed suite)
+## Standing fixtures (v3.2 seed suite + v3.6 G-chat-close + v3.7 COA-4b corpus)
 
 ### Fixture 1: `meta-only-placeholder`
 
@@ -133,6 +133,155 @@ regression_for: <D-row or PR number this prevents regressing>
 **Planted defect:** SKILL.md edited (new reference added) but: version field not bumped, no changelog entry, no event-log row. All three paperwork elements missing.
 **Expected:** OC-10 fires → BLOCKING. Gate prevents close until all three paperwork elements present.
 **Regression for:** competitor-deep-research v1.1 close (missing version paperwork, 06-03). Also proves the skill-build profile works independently of the WF-1/COA-4b seed corpora (acceptance criterion A2).
+
+---
+
+## COA-4b replay corpus (v3.7 — 16 fixtures, 12 runnable + 4 design-verified)
+
+> Added by [RGH-FIN] (`rgh-fin-coa4b-fixtures-reconnect-202606151430`). Source:
+> `[[../../second-brain/_meta/handoffs/review-gate-hardening/evidence-2026-06-15-coa4b-25-catch-replay-corpus|COA-4b evidence]]`.
+> These are the **deterministic** catches from the COA-4b site-capture-engine build
+> (25 total, 15 deterministic) — each reconstructed as a synthetic fixture with
+> `defect/` (pre-fix condition) and `clean/` (post-fix condition) states.
+> Suite result: **32/32 expectations met, 0 failures, 0 false positives.**
+
+### OC-12 fixtures (per-deliverable existence)
+
+#### Fixture 10: `coa4b-c11` — Fabricated SingleFile (OC-12)
+
+**Tests:** OC-12 — deliverable reported as produced but absent on disk.
+**Bound check:** OC-12 (`oc-12-per-deliverable-existence.py`)
+**Planted defect:** `deliverables.json` lists `singlefile/*.html` as non-stub; `defect/` has no `singlefile/` directory. Manifest claims 43 captured.
+**Expected:** OC-12 FAIL on defect (path does not exist); PASS on clean (real SingleFile HTML present).
+**Regression for:** COA-4b C-11 — fabricated 9.9MB SingleFile artifact; self-verdict PASS'd ground-truth-cross-check.
+
+#### Fixture 11: `coa4b-c18` — Missing deliverable (OC-12)
+
+**Tests:** OC-12 — deliverable required by spec but never produced.
+**Bound check:** OC-12
+**Planted defect:** `deliverables.json` lists `tracker/v1.1-row.md`; `defect/` has no `tracker/` directory.
+**Expected:** OC-12 FAIL on defect; PASS on clean (tracker row present).
+**Regression for:** COA-4b C-18 — v1.1 Tier-3 tracker row criterion unmet, unflagged.
+
+### OC-13 fixtures (count-reconciliation vs source)
+
+#### Fixture 12: `coa4b-c12` — Font completeness 0/9 (OC-13)
+
+**Tests:** OC-13 — count assertion fails when 0 of 9 required fonts downloaded.
+**Bound check:** OC-13 (`oc-13-count-reconciliation.py`)
+**Planted defect:** `assertions.json` requires `count == 9` for `assets/font/*`; `defect/` has empty font dir.
+**Expected:** OC-13 FAIL on defect (0 != 9); PASS on clean (9 woff2 files).
+**Regression for:** COA-4b C-12 — "60 downloaded" (true, incomplete framing).
+
+#### Fixture 13: `coa4b-c13` — Sampled denominator 10/43 (OC-13)
+
+**Tests:** OC-13 — count assertion fails when only 10 of 43 pages checked.
+**Bound check:** OC-13
+**Planted defect:** `count == 43` for `broken-links/*.json`; `defect/` has only 10 files.
+**Expected:** OC-13 FAIL on defect (10 != 43); PASS on clean (43 files).
+**Regression for:** COA-4b C-13 — `broken_links: 0` implies full coverage; actually sampled 10/43.
+
+#### Fixture 14: `coa4b-c15` — Manifest/disk contradiction (OC-13)
+
+**Tests:** OC-13 manifest-matches-disk — manifest says wp_export skipped but export files exist on disk.
+**Bound check:** OC-13
+**Planted defect:** `capture-manifest.json` records `file_count: 0` + status `skipped`; 2 wp-export files present.
+**Expected:** OC-13 FAIL on defect (manifest 0 != disk 2); PASS on clean (manifest 2 == disk 2).
+**Regression for:** COA-4b C-15 — manifest says skipped, export exists.
+
+#### Fixture 15: `coa4b-c16` — Incomplete presented complete 35/43 (OC-13)
+
+**Tests:** OC-13 — count assertion fails when only 35 of 43 pages present.
+**Bound check:** OC-13
+**Planted defect:** `count == 43` for `pages/*.html`; `defect/` has only 35 files.
+**Expected:** OC-13 FAIL on defect (35 != 43); PASS on clean (43 files).
+**Regression for:** COA-4b C-16 — completeness 35/43, presented complete.
+
+#### Fixture 16: `coa4b-c17` — Count exceeds source 84/43 (OC-13)
+
+**Tests:** OC-13 — count assertion fails when captured exceeds source (duplication).
+**Bound check:** OC-13
+**Planted defect:** `count <= source_count` with source 43; `defect/` has 84 files.
+**Expected:** OC-13 FAIL on defect (84 > 43); PASS on clean (43 files).
+**Regression for:** COA-4b C-17 — 84 of 43 pages, "cosmetic" mislabel.
+
+### OC-14 fixtures (rename-propagation completeness)
+
+#### Fixture 17: `coa4b-c03` — Dead path after rename (OC-14)
+
+**Tests:** OC-14 — live handoff still references old skill path after rename.
+**Bound check:** OC-14 (`oc-14-rename-propagation.py`)
+**Planted defect:** `live/program-handoff.md` references `seo-site-teardown` (old name).
+**Expected:** OC-14 FAIL on defect (1 live straggler); PASS on clean (updated to `site-capture-engine`).
+**Regression for:** COA-4b C-03 — dead path in program handoff, BLOCKING.
+
+#### Fixture 18: `coa4b-c04` — Stale registry entry (OC-14)
+
+**Tests:** OC-14 — coverage matrix still lists old skill name after rename.
+**Bound check:** OC-14
+**Planted defect:** `live/coverage-matrix.md` lists `seo-site-teardown 1.0`.
+**Expected:** OC-14 FAIL on defect; PASS on clean.
+**Regression for:** COA-4b C-04 — stale registry entry.
+
+#### Fixture 19: `coa4b-c05` — Stale live forward-refs batch (OC-14)
+
+**Tests:** OC-14 — multiple live docs name old skill in compose lists / future-spawn instructions.
+**Bound check:** OC-14
+**Planted defect:** 3 live files reference `seo-site-teardown`; 1 historical file (exempt).
+**Expected:** OC-14 FAIL on defect (3 live stragglers); PASS on clean (all updated).
+**Regression for:** COA-4b C-05/C-08/C-09/C-10 — stale live forward-refs.
+
+#### Fixture 20: `coa4b-c02` — Version-string inconsistency (OC-14)
+
+**Tests:** OC-14 — UA strings still reference old version after bump.
+**Bound check:** OC-14
+**Planted defect:** 3 occurrences of `site-capture-engine/1.0` in `capture_site.py` (should be 2.0).
+**Expected:** OC-14 FAIL on defect (3 live stragglers); PASS on clean (all 2.0).
+**Regression for:** COA-4b C-02 — "fixed (2 places)" but 3 remained.
+
+### OC-15 fixtures (frontmatter freshness)
+
+#### Fixture 21: `coa4b-c24` — Stale updated: frontmatter (OC-15)
+
+**Tests:** OC-15 — files edited on 2026-06-15 still carry stale `updated:` dates.
+**Bound check:** OC-15 (`oc-15-frontmatter-freshness.py`)
+**Planted defect:** 3 files with `updated: 2026-06-04` / `2026-06-06` (stale).
+**Expected:** OC-15 FAIL on defect (3 stale); PASS on clean (all `2026-06-15`).
+**Regression for:** COA-4b C-24 — incomplete staleness sweep (QC fixed 2/5, missed 3).
+
+### OC-16 fixtures (commit-staging audit — design-verified, deferred to RGH-2)
+
+> OC-16 requires a real git repository to test `git status` vs dirty-ledger reconciliation.
+> These fixtures contain the dirty-ledger JSONL and expected-finding descriptions.
+> True execution testing deferred to [RGH-2]'s conformance suite (git-hook integration).
+
+#### Fixture 22: `coa4b-c07` — Build artifact committed (OC-16)
+
+**Tests:** OC-16 — `__pycache__/` staged for commit.
+**Bound check:** OC-16 (`oc-16-commit-staging-audit.py`)
+**Design-verified:** dirty-ledger + expected finding documented; needs git repo to execute.
+**Regression for:** COA-4b C-07.
+
+#### Fixture 23: `coa4b-c21` — Foreign files staged (OC-16)
+
+**Tests:** OC-16 — another chat's deliverables staged in this chat's commit.
+**Bound check:** OC-16
+**Design-verified:** dirty-ledger + expected finding documented; needs git repo to execute.
+**Regression for:** COA-4b C-21 — staged MI-1's deliverables.
+
+#### Fixture 24: `coa4b-c22` — Artifact omitted from commit (OC-16)
+
+**Tests:** OC-16 — peer-review log produced but not staged.
+**Bound check:** OC-16
+**Design-verified:** dirty-ledger + expected finding documented; needs git repo to execute.
+**Regression for:** COA-4b C-22 — omitted review log.
+
+#### Fixture 25: `coa4b-c23` — Rename deletions unstaged (OC-16)
+
+**Tests:** OC-16 — old directory deletions not staged after rename.
+**Bound check:** OC-16
+**Design-verified:** dirty-ledger + expected finding documented; needs git repo to execute.
+**Regression for:** COA-4b C-23 — rename deletions unstaged.
 
 ---
 

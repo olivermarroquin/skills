@@ -1,0 +1,11 @@
+fixture_id: coa4b-c03
+description: Dead path after rename — program handoff still references old skill name
+  + path
+bound_check: OC-14
+defect_class: rename-stale-live-ref
+coa4b_catch: C-03
+coa4b_reference: 'C-03: dead path in program handoff'
+expected_defect_verdict: FAIL
+expected_clean_verdict: PASS
+introduced_at_version: '3.7'
+regression_for: COA-4b C-03

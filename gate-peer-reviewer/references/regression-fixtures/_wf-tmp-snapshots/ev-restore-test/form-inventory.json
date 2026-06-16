@@ -1,0 +1,58 @@
+[
+  {
+    "url": "https://evelectric.pro/",
+    "slug": "homepage",
+    "forms": [
+      {
+        "action": "/#wpcf7-f5816-p8-o1",
+        "method": "POST",
+        "fields": [],
+        "field_count": 0,
+        "form_plugin": "WordPress Contact Form 7",
+        "fields_note": "Fields are JS-rendered by WordPress Contact Form 7; raw HTML capture gets the form tag but not the inputs. Use Playwright/SingleFile for full field extraction."
+      }
+    ]
+  },
+  {
+    "url": "https://evelectric.pro/about/",
+    "slug": "about",
+    "forms": [
+      {
+        "action": "/wp-json/wp/v2/pages/95#wpcf7-f5816-o1",
+        "method": "POST",
+        "fields": [],
+        "field_count": 0,
+        "form_plugin": "WordPress Contact Form 7",
+        "fields_note": "Fields are JS-rendered by WordPress Contact Form 7; raw HTML capture gets the form tag but not the inputs. Use Playwright/SingleFile for full field extraction."
+      }
+    ]
+  },
+  {
+    "url": "https://evelectric.pro/contact/",
+    "slug": "contact",
+    "forms": [
+      {
+        "action": "/contact/#wpcf7-f5816-p103-o1",
+        "method": "POST",
+        "fields": [],
+        "field_count": 0,
+        "form_plugin": "WordPress Contact Form 7",
+        "fields_note": "Fields are JS-rendered by WordPress Contact Form 7; raw HTML capture gets the form tag but not the inputs. Use Playwright/SingleFile for full field extraction."
+      }
+    ]
+  },
+  {
+    "url": "https://evelectric.pro/services/",
+    "slug": "services",
+    "forms": [
+      {
+        "action": "/services/#wpcf7-f5816-p97-o1",
+        "method": "POST",
+        "fields": [],
+        "field_count": 0,
+        "form_plugin": "WordPress Contact Form 7",
+        "fields_note": "Fields are JS-rendered by WordPress Contact Form 7; raw HTML capture gets the form tag but not the inputs. Use Playwright/SingleFile for full field extraction."
+      }
+    ]
+  }
+]

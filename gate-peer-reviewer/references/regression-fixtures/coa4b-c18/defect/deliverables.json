@@ -1,0 +1,12 @@
+[
+  {
+    "name": "v1.1 tracker row",
+    "path": "tracker/v1.1-row.md",
+    "assertion": "exists"
+  },
+  {
+    "name": "v1.1 handoff",
+    "path": "handoff-v1.1.md",
+    "assertion": "non-stub"
+  }
+]

@@ -1,0 +1,10 @@
+fixture_id: coa4b-c12
+description: Font completeness 0/9 — asset loop downloaded 0 of 9 required fonts
+bound_check: OC-13
+defect_class: count-mismatch-vs-source
+coa4b_catch: C-12
+coa4b_reference: 'C-12: fonts 0/9'
+expected_defect_verdict: FAIL
+expected_clean_verdict: PASS
+introduced_at_version: '3.7'
+regression_for: COA-4b C-12

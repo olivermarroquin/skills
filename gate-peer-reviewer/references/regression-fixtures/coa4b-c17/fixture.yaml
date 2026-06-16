@@ -1,0 +1,10 @@
+fixture_id: coa4b-c17
+description: Count exceeds source — 84 SingleFile captures from 43 source pages (duplication)
+bound_check: OC-13
+defect_class: count-exceeds-source
+coa4b_catch: C-17
+coa4b_reference: 'C-17: 84 of 43 dupes'
+expected_defect_verdict: FAIL
+expected_clean_verdict: PASS
+introduced_at_version: '3.7'
+regression_for: COA-4b C-17

@@ -1,0 +1,43 @@
+{
+  "engine": "site-capture-engine",
+  "version": "2.0",
+  "domain": "https://evelectric.pro",
+  "context": "restoration",
+  "timestamp": "2026-06-15T15:49:16Z",
+  "pages_discovered": 43,
+  "pages_captured": 43,
+  "singlefile_captured": 39,
+  "singlefile_skipped": false,
+  "broken_links_found": 0,
+  "broken_links_pages_checked": 43,
+  "redirects_found": 0,
+  "forms_found": 4,
+  "forms_note": "CF7 shortcode-rendered fields may not be captured from raw HTML; JS rendering needed for complete field extraction",
+  "embeds_found": 37,
+  "trackers_found": 1,
+  "assets_total": 171,
+  "assets_downloaded": 159,
+  "assets_skipped_large": 0,
+  "assets_failed": 12,
+  "wp_export": {
+    "method": "wp-rest-api",
+    "exports": {
+      "pages": 41,
+      "media": 37,
+      "plugins": 19,
+      "site_info": 1
+    },
+    "errors": [],
+    "method_note": "WP REST API export (pages/media/plugins/site-info). Does NOT include wp_options, postmeta, custom tables, or full DB structure. For complete database-level backup, use wp-cli with SSH or a MySQL/phpMyAdmin export from the hosting provider."
+  },
+  "v1_1_hooks_skipped": [
+    "lighthouse",
+    "axe-accessibility",
+    "ga4-traffic",
+    "gsc-indexed-pages",
+    "gbp-listing",
+    "dataforseo-backlinks",
+    "cookie-inventory"
+  ],
+  "restoration_package": "/Users/olivermarroquin/workspace/.wf-tmp/ev-restore-test/restoration-package-2026-06-15.zip"
+}

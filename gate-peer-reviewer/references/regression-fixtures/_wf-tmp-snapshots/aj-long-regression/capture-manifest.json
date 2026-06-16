@@ -1,0 +1,35 @@
+{
+  "engine": "site-capture-engine",
+  "version": "2.0",
+  "domain": "https://ajlongelectric.com",
+  "context": "teardown",
+  "timestamp": "2026-06-15T16:22:54Z",
+  "pages_discovered": 1015,
+  "pages_captured": 1015,
+  "singlefile_captured": 0,
+  "singlefile_skipped": true,
+  "broken_links_found": 0,
+  "broken_links_pages_checked": 1015,
+  "redirects_found": 3,
+  "forms_found": 2,
+  "forms_note": "CF7 shortcode-rendered fields may not be captured from raw HTML; JS rendering needed for complete field extraction",
+  "embeds_found": 45,
+  "trackers_found": 0,
+  "assets_total": 2183,
+  "assets_downloaded": 305,
+  "assets_skipped_large": 0,
+  "assets_failed": 1878,
+  "wp_export": {
+    "status": "skipped",
+    "reason": "no credentials provided (pass --wp-user and --wp-pass to export)"
+  },
+  "v1_1_hooks_skipped": [
+    "lighthouse",
+    "axe-accessibility",
+    "ga4-traffic",
+    "gsc-indexed-pages",
+    "gbp-listing",
+    "dataforseo-backlinks",
+    "cookie-inventory"
+  ]
+}

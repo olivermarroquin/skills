@@ -1,0 +1,10 @@
+fixture_id: coa4b-c22
+description: Artifact omitted from commit — peer-review log produced but not staged
+bound_check: OC-16
+defect_class: touched-not-staged
+coa4b_catch: C-22
+coa4b_reference: 'C-22: omitted review log'
+expected_defect_verdict: FAIL
+expected_clean_verdict: PASS
+introduced_at_version: '3.7'
+regression_for: COA-4b C-22

@@ -1,0 +1,18 @@
+{
+  "subject": {
+    "commonName": "ajlongelectric.com"
+  },
+  "issuer": {
+    "countryName": "US",
+    "organizationName": "Let's Encrypt",
+    "commonName": "E8"
+  },
+  "notBefore": "May 12 20:23:54 2026 GMT",
+  "notAfter": "Aug 10 20:23:53 2026 GMT",
+  "serialNumber": "05C15AB7274F70F5A702329E8BD6D2E69EFA",
+  "version": 3,
+  "subjectAltName": [
+    "ajlongelectric.com",
+    "www.ajlongelectric.com"
+  ]
+}

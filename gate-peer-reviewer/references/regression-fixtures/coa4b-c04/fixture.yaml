@@ -1,0 +1,10 @@
+fixture_id: coa4b-c04
+description: Stale registry entry — coverage matrix still lists old skill name + version
+bound_check: OC-14
+defect_class: rename-stale-registry
+coa4b_catch: C-04
+coa4b_reference: 'C-04: stale registry entry'
+expected_defect_verdict: FAIL
+expected_clean_verdict: PASS
+introduced_at_version: '3.7'
+regression_for: COA-4b C-04

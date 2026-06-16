@@ -1,0 +1,11 @@
+fixture_id: coa4b-c24
+description: 'Stale updated: frontmatter — 3 files edited on 06-15 still carry 06-04/06-06
+  dates'
+bound_check: OC-15
+defect_class: stale-frontmatter-updated
+coa4b_catch: C-24
+coa4b_reference: 'C-24: stale updated: after edit'
+expected_defect_verdict: FAIL
+expected_clean_verdict: PASS
+introduced_at_version: '3.7'
+regression_for: COA-4b C-24

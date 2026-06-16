@@ -1,0 +1,10 @@
+fixture_id: coa4b-c07
+description: Build artifact committed — __pycache__ directory staged for commit
+bound_check: OC-16
+defect_class: build-artifact-committed
+coa4b_catch: C-07
+coa4b_reference: 'C-07: __pycache__ committed'
+expected_defect_verdict: FAIL
+expected_clean_verdict: PASS
+introduced_at_version: '3.7'
+regression_for: COA-4b C-07

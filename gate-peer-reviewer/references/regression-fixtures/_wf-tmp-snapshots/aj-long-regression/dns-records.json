@@ -1,0 +1,24 @@
+{
+  "A": [
+    "75.2.60.5"
+  ],
+  "AAAA": [],
+  "CNAME": [],
+  "MX": [
+    "5 alt1.aspmx.l.google.com.",
+    "5 alt2.aspmx.l.google.com.",
+    "10 alt3.aspmx.l.google.com.",
+    "10 alt4.aspmx.l.google.com.",
+    "1 aspmx.l.google.com."
+  ],
+  "TXT": [
+    "\"v=spf1 include:dc-8e814c8572._spfm.ajlongelectric.com ~all\"",
+    "\"anthropic-domain-verification-v6yr59=QFHqHOfqoxmMjjpXSa2PveMvF\"",
+    "\"google-site-verification=jG7o9PG4y2EiESS24DtxudebPfeh0pM0cPmCeHw-idw\"",
+    "\"google-site-verification=fIZiRYMW7vv4RVmQhmlkbcubNbBtuFIVBFERda_DIgg\""
+  ],
+  "NS": [
+    "ns22.domaincontrol.com.",
+    "ns21.domaincontrol.com."
+  ]
+}

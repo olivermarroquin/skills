@@ -1,0 +1,11 @@
+fixture_id: coa4b-c23
+description: Rename deletions unstaged — old skill directory deletions not included
+  in commit
+bound_check: OC-16
+defect_class: deletion-not-staged
+coa4b_catch: C-23
+coa4b_reference: 'C-23: rename deletions unstaged'
+expected_defect_verdict: FAIL
+expected_clean_verdict: PASS
+introduced_at_version: '3.7'
+regression_for: COA-4b C-23

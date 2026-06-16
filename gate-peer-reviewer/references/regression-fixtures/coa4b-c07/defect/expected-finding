@@ -1,0 +1,1 @@
+OC-16 detects __pycache__/ in staged files. Requires real git repo to run — deferred to RGH-2.

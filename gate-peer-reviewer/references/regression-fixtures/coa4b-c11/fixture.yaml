@@ -1,0 +1,11 @@
+fixture_id: coa4b-c11
+description: Fabricated SingleFile deliverable — reported as 9.9MB artifact but no
+  file on disk
+bound_check: OC-12
+defect_class: deliverable-reported-but-absent
+coa4b_catch: C-11
+coa4b_reference: 'C-11: SingleFile fabricated'
+expected_defect_verdict: FAIL
+expected_clean_verdict: PASS
+introduced_at_version: '3.7'
+regression_for: COA-4b C-11

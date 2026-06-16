@@ -1,0 +1,133 @@
+# AJ Long Electric — Site Index for AI Crawlers
+
+> Licensed master electricians in Fairfax, VA since 1996. Family-owned
+> residential and commercial electrical services across Northern Virginia,
+> Washington DC, and Maryland. 1,400+ five-star reviews across four verified
+> Google Business Profiles.
+
+## Core
+
+- [Home](https://ajlongelectric.com/): Overview of services and service areas
+- [About](https://ajlongelectric.com/about/): Family-owned electrical contractor since 1996
+- [Locations](https://ajlongelectric.com/locations): Our Fairfax HQ, Bowie Maryland dispatch, and Burke long-standing local presence
+- [Service Areas](https://ajlongelectric.com/service-areas/): All 29 cities and counties we serve in the DMV
+- [Problems](https://ajlongelectric.com/problems/): Common electrical issues and what to do
+- [Guides](https://ajlongelectric.com/guides/): Long-form planning, buying, and maintenance guides
+- [Blog](https://ajlongelectric.com/blog/): Articles on electrical topics, code, and Northern Virginia specifics
+- [Reviews](https://ajlongelectric.com/reviews/): 1,400+ five-star Google reviews
+- [FAQ](https://ajlongelectric.com/faq/): Common questions about pricing, scheduling, and our services
+
+## Services — Power & Panels
+
+- [Panel Upgrades](https://ajlongelectric.com/services/panel-upgrades/): 200A / 400A service upgrades for modern homes; FPE and Zinsco panel replacements
+- [Service Upgrades](https://ajlongelectric.com/services/service-upgrades/): Upgrade electrical service from the utility meter to the main panel
+- [Dedicated Circuits](https://ajlongelectric.com/services/dedicated-circuits/): New circuits for high-draw appliances, workshops, and home offices
+- [Circuit Breaker Replacement](https://ajlongelectric.com/services/circuit-breaker-replacement/): Replace faulty, tripping, or outdated breakers
+- [Surge Protection](https://ajlongelectric.com/services/surge-protection/): Whole-home protection against damaging power spikes
+
+## Services — EV & Smart Home
+
+- [EV Charger Installation](https://ajlongelectric.com/services/ev-charging/): Certified installation for Tesla, ChargePoint, and major EV charger brands
+- [Smart Home Wiring](https://ajlongelectric.com/services/smart-home/): Smart switches, thermostats, and video doorbell integration
+- [USB Outlets](https://ajlongelectric.com/services/usb-outlets/): Outlets with built-in USB-A and USB-C charging ports
+- [Kitchen Electrical](https://ajlongelectric.com/services/kitchen-electrical/): Specialized wiring for kitchen remodels and appliances
+- [Energy Efficiency](https://ajlongelectric.com/services/energy-efficiency/): Reduce energy consumption with smart electrical upgrades
+
+## Services — Lighting
+
+- [Recessed Lighting](https://ajlongelectric.com/services/recessed-lighting/): Energy-efficient LED recessed lighting installation
+- [Outdoor Lighting](https://ajlongelectric.com/services/outdoor-lighting/): Landscape, security, and patio lighting
+- [Chandelier Installation](https://ajlongelectric.com/services/chandelier-installation/): Expert mounting for chandeliers of all sizes
+- [Dimmer Switches](https://ajlongelectric.com/services/dimmer-switches/): Smooth, flicker-free dimmers for LED and incandescent lighting
+- [Motion Sensor Lighting](https://ajlongelectric.com/services/motion-sensor-lighting/): Automated motion-activated lighting
+- [Ceiling Fans](https://ajlongelectric.com/services/ceiling-fans/): Ceiling and exhaust fan installation
+- [Bathroom Exhaust Fans](https://ajlongelectric.com/services/bathroom-exhaust-fans/): Quiet exhaust fans for moisture and odor removal
+
+## Services — Safety & Code
+
+- [Electrical Inspections](https://ajlongelectric.com/services/inspections/): Safety audits for home buyers and maintenance
+- [GFCI Outlets](https://ajlongelectric.com/services/gfci-outlets/): Code-required ground-fault protection
+- [Smoke Detectors](https://ajlongelectric.com/services/smoke-detectors/): Hardwired, interconnected smoke and CO detectors
+- [Code Updates](https://ajlongelectric.com/services/code-updates/): Bring electrical systems up to current NEC standards
+- [Aluminum Wiring Remediation](https://ajlongelectric.com/services/aluminum-wiring/): Fix the fire hazard of aluminum branch wiring
+- [Knob-and-Tube Replacement](https://ajlongelectric.com/services/knob-tube-replacement/): Replace outdated knob-and-tube wiring
+
+## Services — Specialty & Repair
+
+- [Generator Installation](https://ajlongelectric.com/services/generators/): Portable generator hookups (transfer switches, interlock kits, inlet boxes) and battery backup power stations (EcoFlow, Bluetti, Anker SOLIX)
+- [Pool & Hot Tub Wiring](https://ajlongelectric.com/services/pool-hot-tub-wiring/): Code-compliant wiring for pools, hot tubs, and spas
+- [Home Theater Wiring](https://ajlongelectric.com/services/home-theater-wiring/): In-wall wiring for media rooms
+- [Electrical Repair](https://ajlongelectric.com/services/repair/): Diagnosis and repair of flickering lights, dead outlets, and faults
+- [Emergency Repairs](https://ajlongelectric.com/services/emergency-repairs/): 24/7 emergency electrical service for dangerous situations
+- [Commercial Electrical](https://ajlongelectric.com/services/commercial/): Reliable electrical for offices, retail, and commercial properties
+
+## Problems (high-intent diagnostic content)
+
+- [Burning Smell from Outlet](https://ajlongelectric.com/problems/burning-smell-from-outlet/): Emergency warning sign of overheating; turn off the breaker and call immediately
+- [Sparking Outlet](https://ajlongelectric.com/problems/sparking-outlet/): Large or persistent sparks indicate a serious electrical problem
+- [Hot Outlet](https://ajlongelectric.com/problems/hot-outlet/): An outlet warm to the touch indicates electrical resistance and overheating
+- [Tripping Breakers](https://ajlongelectric.com/problems/tripping-breakers/): Repeated breaker trips point to an underlying overload or fault
+- [Flickering Lights](https://ajlongelectric.com/problems/flickering-lights/): When persistent flickering indicates an electrical problem
+- [Dead Outlet](https://ajlongelectric.com/problems/dead-outlet/): GFCI / breaker reset checklist, then when to call a professional
+- [Buzzing Switches](https://ajlongelectric.com/problems/buzzing-switches/): LED-dimmer buzz vs. faulty switches that need replacement
+- [Not Enough Outlets](https://ajlongelectric.com/problems/not-enough-outlets/): Add outlets to eliminate extension cords and reduce overload risk
+- [Outdated Two-Prong Outlets](https://ajlongelectric.com/problems/outdated-two-prong-outlets/): Upgrade paths from ungrounded outlets in older homes
+- [Frequent Bulb Burnout](https://ajlongelectric.com/problems/frequent-bulb-burnout/): Patterns that indicate voltage issues or fixture problems
+
+## Guides
+
+- [Complete Guide to Electrical Panel Upgrades](https://ajlongelectric.com/guides/electrical-panel-upgrade-guide/): When to upgrade, cost factors, the upgrade process, and choosing an electrician
+- [How to Prepare for EV Charger Installation](https://ajlongelectric.com/guides/how-to-prepare-for-ev-charger-installation/): Panel assessment, location selection, permits, installation day
+- [Backup Power Installation Guide](https://ajlongelectric.com/guides/whole-home-generator-installation-guide/): Portable generator hookups, battery backup power stations, transfer switches, sizing, costs, and installation
+- [Home Electrical Safety Inspection Checklist](https://ajlongelectric.com/guides/home-electrical-safety-inspection-checklist/): Room-by-room hazard identification
+- [Electrical Panel Maintenance Guide](https://ajlongelectric.com/guides/electrical-panel-maintenance-guide/): Safe homeowner inspection vs. when to call a professional
+- [Understanding Electrical Permits in Northern Virginia](https://ajlongelectric.com/guides/understanding-electrical-permits-northern-virginia/): Permit rules in Fairfax County, Arlington, Alexandria, and Loudoun
+- [Choosing the Right EV Charger](https://ajlongelectric.com/guides/choosing-the-right-ev-charger/): Tesla Wall Connector vs. ChargePoint vs. JuiceBox comparison
+- [Planning Home Electrical Renovation](https://ajlongelectric.com/guides/planning-home-electrical-renovation/): Permits, costs, timelines, working with electricians
+
+## Locations (Google Business Profile entity pages)
+
+- [Fairfax HQ — 2724 Dorr Ave, Suite 102](https://ajlongelectric.com/locations/fairfax-va/): Our headquarters since 1996; open 24 hours; (703) 997-0026
+- [Bowie, MD Maryland Dispatch — 15518 Orchard Run Dr](https://ajlongelectric.com/locations/bowie-md/): Maryland-side coordination for Bowie and Prince George's County; (301) 679-7447
+- [Burke, VA Long-Standing Local Presence — 5244 Lyngate Ct](https://ajlongelectric.com/locations/burke-va/): Decades of Burke-area service; (571) 616-9996
+- [Annandale Service Area](https://ajlongelectric.com/service-areas/annandale/): Long-standing local coverage; service-area page only
+
+## Service Areas (cities we serve)
+
+### Virginia
+
+- [Fairfax, VA](https://ajlongelectric.com/service-areas/fairfax/)
+- [Arlington, VA](https://ajlongelectric.com/service-areas/arlington/)
+- [Alexandria, VA](https://ajlongelectric.com/service-areas/alexandria/)
+- [McLean, VA](https://ajlongelectric.com/service-areas/mclean/)
+- [Great Falls, VA](https://ajlongelectric.com/service-areas/great-falls/)
+- [Vienna, VA](https://ajlongelectric.com/service-areas/vienna/)
+- [Falls Church, VA](https://ajlongelectric.com/service-areas/falls-church/)
+- [Reston, VA](https://ajlongelectric.com/service-areas/reston/)
+- [Herndon, VA](https://ajlongelectric.com/service-areas/herndon/)
+- [Tysons, VA](https://ajlongelectric.com/service-areas/tysons/)
+- [Burke, VA](https://ajlongelectric.com/service-areas/burke/)
+- [Springfield, VA](https://ajlongelectric.com/service-areas/springfield/)
+- [Annandale, VA](https://ajlongelectric.com/service-areas/annandale/)
+- [Centreville, VA](https://ajlongelectric.com/service-areas/centreville/)
+- [Chantilly, VA](https://ajlongelectric.com/service-areas/chantilly/)
+- [Lorton, VA](https://ajlongelectric.com/service-areas/lorton/)
+- [Sterling, VA](https://ajlongelectric.com/service-areas/sterling/)
+- [Ashburn, VA](https://ajlongelectric.com/service-areas/ashburn/)
+- [Leesburg, VA](https://ajlongelectric.com/service-areas/leesburg/)
+- [Woodbridge, VA](https://ajlongelectric.com/service-areas/woodbridge/)
+- [Gainesville, VA](https://ajlongelectric.com/service-areas/gainesville/)
+- [Manassas, VA](https://ajlongelectric.com/service-areas/manassas/)
+- [Manassas Park, VA](https://ajlongelectric.com/service-areas/manassas-park/)
+
+### Washington, DC
+
+- [Washington, DC](https://ajlongelectric.com/service-areas/washington-dc/)
+
+### Maryland
+
+- [Bethesda, MD](https://ajlongelectric.com/service-areas/bethesda/)
+- [Silver Spring, MD](https://ajlongelectric.com/service-areas/silver-spring/)
+- [Rockville, MD](https://ajlongelectric.com/service-areas/rockville/)
+- [Potomac, MD](https://ajlongelectric.com/service-areas/potomac/)
+- [Gaithersburg, MD](https://ajlongelectric.com/service-areas/gaithersburg/)

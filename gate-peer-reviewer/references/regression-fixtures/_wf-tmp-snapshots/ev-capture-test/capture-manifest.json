@@ -1,0 +1,31 @@
+{
+  "engine": "site-capture-engine",
+  "version": "2.0",
+  "domain": "https://evelectric.pro",
+  "context": "teardown",
+  "timestamp": "2026-06-14T18:19:22Z",
+  "pages_discovered": 43,
+  "pages_captured": 43,
+  "singlefile_captured": 43,
+  "singlefile_skipped": false,
+  "broken_links_found": 0,
+  "broken_links_pages_checked": 43,
+  "redirects_found": 0,
+  "forms_found": 4,
+  "forms_note": "CF7 shortcode-rendered fields may not be captured from raw HTML; JS rendering needed for complete field extraction",
+  "embeds_found": 37,
+  "trackers_found": 1,
+  "assets_total": 171,
+  "assets_downloaded": 160,
+  "assets_skipped_large": 0,
+  "assets_failed": 11,
+  "v1_1_hooks_skipped": [
+    "lighthouse",
+    "axe-accessibility",
+    "ga4-traffic",
+    "gsc-indexed-pages",
+    "gbp-listing",
+    "dataforseo-backlinks",
+    "cookie-inventory"
+  ]
+}

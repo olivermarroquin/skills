@@ -1,0 +1,11 @@
+fixture_id: coa4b-c16
+description: Incomplete count presented as complete — 35/43 restoration pages, presented
+  as complete set
+bound_check: OC-13
+defect_class: count-mismatch-vs-source
+coa4b_catch: C-16
+coa4b_reference: 'C-16: 35/43 presented complete'
+expected_defect_verdict: FAIL
+expected_clean_verdict: PASS
+introduced_at_version: '3.7'
+regression_for: COA-4b C-16

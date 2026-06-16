@@ -1,0 +1,26 @@
+[
+  {
+    "url": "https://ajlongelectric.com/careers",
+    "slug": "careers",
+    "forms": [
+      {
+        "action": "",
+        "method": "GET",
+        "fields": [],
+        "field_count": 0
+      }
+    ]
+  },
+  {
+    "url": "https://ajlongelectric.com/contact",
+    "slug": "contact",
+    "forms": [
+      {
+        "action": "",
+        "method": "GET",
+        "fields": [],
+        "field_count": 0
+      }
+    ]
+  }
+]

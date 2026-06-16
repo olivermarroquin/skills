@@ -1,0 +1,9 @@
+[
+  {
+    "name": "restoration pages",
+    "path": "pages/*.html",
+    "assertion": "count == 43",
+    "source": "43",
+    "source_type": "literal"
+  }
+]

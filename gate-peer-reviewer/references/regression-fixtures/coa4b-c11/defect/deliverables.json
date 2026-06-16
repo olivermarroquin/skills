@@ -1,0 +1,12 @@
+[
+  {
+    "name": "SingleFile per page",
+    "path": "singlefile/*.html",
+    "assertion": "non-stub"
+  },
+  {
+    "name": "capture-manifest",
+    "path": "capture-manifest.json",
+    "assertion": "exists"
+  }
+]

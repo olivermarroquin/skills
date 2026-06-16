@@ -1,0 +1,629 @@
+[
+  {
+    "plugin": "all-in-one-wp-security-and-firewall/wp-security",
+    "status": "active",
+    "name": "All-In-One Security (AIOS)",
+    "plugin_uri": "https://wordpress.org/plugins/all-in-one-wp-security-and-firewall/",
+    "author": "TeamUpdraft, DavidAnderson",
+    "author_uri": "https://teamupdraft.com/all-in-one-security/?utm_source=aios-plugin&#038;utm_medium=referral&#038;utm_campaign=paac&#038;utm_content=plugin-author-info&#038;utm_creative_format=text",
+    "description": {
+      "raw": "All round best WordPress security plugin!",
+      "rendered": "All round best WordPress security plugin! <cite>By <a href=\"https://teamupdraft.com/all-in-one-security/?utm_source=aios-plugin&#038;utm_medium=referral&#038;utm_campaign=paac&#038;utm_content=plugin-author-info&#038;utm_creative_format=text\">TeamUpdraft, DavidAnderson</a>.</cite>"
+    },
+    "version": "5.4.7",
+    "network_only": true,
+    "requires_wp": "5.0",
+    "requires_php": "5.6",
+    "textdomain": "all-in-one-wp-security-and-firewall",
+    "_links": {
+      "self": [
+        {
+          "href": "https://evelectric.pro/wp-json/wp/v2/plugins/all-in-one-wp-security-and-firewall/wp-security",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "plugin": "all-in-one-seo-pack/all_in_one_seo_pack",
+    "status": "active",
+    "name": "All in One SEO",
+    "plugin_uri": "https://aioseo.com/",
+    "author": "All in One SEO Team",
+    "author_uri": "https://aioseo.com/",
+    "description": {
+      "raw": "SEO for WordPress. Features like XML Sitemaps, SEO for custom post types, SEO for blogs, business sites, ecommerce sites, and much more. More than 100 million downloads since 2007.",
+      "rendered": "SEO for WordPress. Features like XML Sitemaps, SEO for custom post types, SEO for blogs, business sites, ecommerce sites, and much more. More than 100 million downloads since 2007. <cite>By <a href=\"https://aioseo.com/\">All in One SEO Team</a>.</cite>"
+    },
+    "version": "4.9.7.2",
+    "network_only": false,
+    "requires_wp": "",
+    "requires_php": "",
+    "textdomain": "all-in-one-seo-pack",
+    "_links": {
+      "self": [
+        {
+          "href": "https://evelectric.pro/wp-json/wp/v2/plugins/all-in-one-seo-pack/all_in_one_seo_pack",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "plugin": "dtr-ambery-core/dtr-ambery-core",
+    "status": "active",
+    "name": "Ambery Core",
+    "plugin_uri": "",
+    "author": "Tansh",
+    "author_uri": "http://themeforest.net/user/tansh",
+    "description": {
+      "raw": "Creates Shortcodes and Custom Post Types",
+      "rendered": "Creates Shortcodes and Custom Post Types <cite>By <a href=\"http://themeforest.net/user/tansh\">Tansh</a>.</cite>"
+    },
+    "version": "1.1.0",
+    "network_only": false,
+    "requires_wp": "",
+    "requires_php": "",
+    "textdomain": "ambery",
+    "_links": {
+      "self": [
+        {
+          "href": "https://evelectric.pro/wp-json/wp/v2/plugins/dtr-ambery-core/dtr-ambery-core",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "plugin": "dtr-ambery-elementor-addon/dtr-ambery-elementor",
+    "status": "active",
+    "name": "Ambery Elementor Addons",
+    "plugin_uri": "",
+    "author": "Tansh",
+    "author_uri": "http://themeforest.net/user/tansh",
+    "description": {
+      "raw": "Adds custom elements for Ambery Theme via Elementor plugin.",
+      "rendered": "Adds custom elements for Ambery Theme via Elementor plugin. <cite>By <a href=\"http://themeforest.net/user/tansh\">Tansh</a>.</cite>"
+    },
+    "version": "1.1.2",
+    "network_only": false,
+    "requires_wp": "",
+    "requires_php": "",
+    "textdomain": "ambery",
+    "_links": {
+      "self": [
+        {
+          "href": "https://evelectric.pro/wp-json/wp/v2/plugins/dtr-ambery-elementor-addon/dtr-ambery-elementor",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "plugin": "better-search-replace/better-search-replace",
+    "status": "active",
+    "name": "Better Search Replace",
+    "plugin_uri": "https://bettersearchreplace.com",
+    "author": "WP Engine",
+    "author_uri": "https://bettersearchreplace.com",
+    "description": {
+      "raw": "A small plugin for running a search/replace on your WordPress database.",
+      "rendered": "A small plugin for running a search/replace on your WordPress database. <cite>By <a href=\"https://bettersearchreplace.com\">WP Engine</a>.</cite>"
+    },
+    "version": "1.4.10",
+    "network_only": true,
+    "requires_wp": "",
+    "requires_php": "",
+    "textdomain": "better-search-replace",
+    "_links": {
+      "self": [
+        {
+          "href": "https://evelectric.pro/wp-json/wp/v2/plugins/better-search-replace/better-search-replace",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "plugin": "contact-form-7/wp-contact-form-7",
+    "status": "active",
+    "name": "Contact Form 7",
+    "plugin_uri": "https://contactform7.com/",
+    "author": "Rock Lobster Inc.",
+    "author_uri": "https://github.com/rocklobster-in/",
+    "description": {
+      "raw": "Just another contact form plugin. Simple but flexible.",
+      "rendered": "Just another contact form plugin. Simple but flexible. <cite>By <a href=\"https://github.com/rocklobster-in/\">Rock Lobster Inc.</a>.</cite>"
+    },
+    "version": "6.1.5",
+    "network_only": false,
+    "requires_wp": "6.7",
+    "requires_php": "7.4",
+    "textdomain": "contact-form-7",
+    "_links": {
+      "self": [
+        {
+          "href": "https://evelectric.pro/wp-json/wp/v2/plugins/contact-form-7/wp-contact-form-7",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "plugin": "elementor/elementor",
+    "status": "active",
+    "name": "Elementor",
+    "plugin_uri": "https://elementor.com/?utm_source=wp-plugins&#038;utm_campaign=plugin-uri&#038;utm_medium=wp-dash",
+    "author": "Elementor.com",
+    "author_uri": "https://elementor.com/?utm_source=wp-plugins&#038;utm_campaign=author-uri&#038;utm_medium=wp-dash",
+    "description": {
+      "raw": "The Elementor Website Builder has it all: drag and drop page builder, Atomic Editor, pixel perfect design, global and reusable style systems, mobile responsive editing, and more. Get started now!",
+      "rendered": "The Elementor Website Builder has it all: drag and drop page builder, Atomic Editor, pixel perfect design, global and reusable style systems, mobile responsive editing, and more. Get started now! <cite>By <a href=\"https://elementor.com/?utm_source=wp-plugins&#038;utm_campaign=author-uri&#038;utm_medium=wp-dash\">Elementor.com</a>.</cite>"
+    },
+    "version": "4.1.1",
+    "network_only": false,
+    "requires_wp": "6.6",
+    "requires_php": "7.4",
+    "textdomain": "elementor",
+    "_links": {
+      "self": [
+        {
+          "href": "https://evelectric.pro/wp-json/wp/v2/plugins/elementor/elementor",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "plugin": "elementskit-lite/elementskit-lite",
+    "status": "active",
+    "name": "ElementsKit Lite",
+    "plugin_uri": "https://wpmet.com/plugin/elementskit/",
+    "author": "Wpmet",
+    "author_uri": "https://wpmet.com/",
+    "description": {
+      "raw": "The most advanced addons for Elementor with tons of widgets, Header builder, Footer builder, Mega menu builder, layout pack and powerful custom controls.",
+      "rendered": "The most advanced addons for Elementor with tons of widgets, Header builder, Footer builder, Mega menu builder, layout pack and powerful custom controls. <cite>By <a href=\"https://wpmet.com/\">Wpmet</a>.</cite>"
+    },
+    "version": "3.9.7",
+    "network_only": false,
+    "requires_wp": "",
+    "requires_php": "",
+    "textdomain": "elementskit-lite",
+    "_links": {
+      "self": [
+        {
+          "href": "https://evelectric.pro/wp-json/wp/v2/plugins/elementskit-lite/elementskit-lite",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "plugin": "envato-elements/envato-elements",
+    "status": "active",
+    "name": "Envato Elements",
+    "plugin_uri": "",
+    "author": "Envato",
+    "author_uri": "https://elements.envato.com/extensions/wordpress/?utm_source=extensions&#038;utm_medium=referral&#038;utm_campaign=elements_extensions_wpplugins",
+    "description": {
+      "raw": "Access beautifully designed Template Kits + Photos from Envato Elements.",
+      "rendered": "Access beautifully designed Template Kits + Photos from Envato Elements. <cite>By <a href=\"https://elements.envato.com/extensions/wordpress/?utm_source=extensions&#038;utm_medium=referral&#038;utm_campaign=elements_extensions_wpplugins\">Envato</a>.</cite>"
+    },
+    "version": "2.0.15",
+    "network_only": false,
+    "requires_wp": "",
+    "requires_php": "",
+    "textdomain": "envato-elements",
+    "_links": {
+      "self": [
+        {
+          "href": "https://evelectric.pro/wp-json/wp/v2/plugins/envato-elements/envato-elements",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "plugin": "google-analytics-for-wordpress/googleanalytics",
+    "status": "active",
+    "name": "Google Analytics for WordPress by MonsterInsights",
+    "plugin_uri": "https://www.monsterinsights.com/?utm_source=liteplugin&#038;utm_medium=pluginheader&#038;utm_campaign=pluginurl&#038;utm_content=7%2E0%2E0",
+    "author": "MonsterInsights",
+    "author_uri": "https://www.monsterinsights.com/lite/?utm_source=liteplugin&#038;utm_medium=pluginheader&#038;utm_campaign=authoruri&#038;utm_content=7%2E0%2E0",
+    "description": {
+      "raw": "The best Google Analytics plugin for WordPress. See how visitors find and use your website, so you can keep them coming back.",
+      "rendered": "The best Google Analytics plugin for WordPress. See how visitors find and use your website, so you can keep them coming back. <cite>By <a href=\"https://www.monsterinsights.com/lite/?utm_source=liteplugin&#038;utm_medium=pluginheader&#038;utm_campaign=authoruri&#038;utm_content=7%2E0%2E0\">MonsterInsights</a>.</cite>"
+    },
+    "version": "10.1.3",
+    "network_only": false,
+    "requires_wp": "5.6.0",
+    "requires_php": "7.2",
+    "textdomain": "google-analytics-for-wordpress",
+    "_links": {
+      "self": [
+        {
+          "href": "https://evelectric.pro/wp-json/wp/v2/plugins/google-analytics-for-wordpress/googleanalytics",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "plugin": "imagify/imagify",
+    "status": "active",
+    "name": "Imagify",
+    "plugin_uri": "https://wordpress.org/plugins/imagify/",
+    "author": "Imagify Image Optimizer – Optimize Images &amp; Convert WebP &amp; Avif",
+    "author_uri": "https://imagify.io",
+    "description": {
+      "raw": "Dramatically reduce image file sizes without losing quality, make your website load faster, boost your SEO and save money on your bandwidth using Imagify, the new most advanced image optimization tool.",
+      "rendered": "Dramatically reduce image file sizes without losing quality, make your website load faster, boost your SEO and save money on your bandwidth using Imagify, the new most advanced image optimization tool. <cite>By <a href=\"https://imagify.io\">Imagify Image Optimizer – Optimize Images &amp; Convert WebP &amp; Avif</a>.</cite>"
+    },
+    "version": "2.2.7",
+    "network_only": false,
+    "requires_wp": "5.3",
+    "requires_php": "7.3",
+    "textdomain": "imagify",
+    "_links": {
+      "self": [
+        {
+          "href": "https://evelectric.pro/wp-json/wp/v2/plugins/imagify/imagify",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "plugin": "keelworks-aioseo-bridge/keelworks-aioseo-bridge",
+    "status": "active",
+    "name": "Keelworks AIOSEO Bridge",
+    "plugin_uri": "https://keelworks.ai/",
+    "author": "Keelworks",
+    "author_uri": "https://keelworks.ai/",
+    "description": {
+      "raw": "Adds a Basic-Auth REST endpoint so an external publish script can write AIOSEO meta (title, description, focus keyword, additional keywords) for a page or post. Bridges the gap between WordPress application passwords and AIOSEO's cookie-only admin save path. Only Editors and Administrators can call the endpoint.",
+      "rendered": "Adds a Basic-Auth REST endpoint so an external publish script can write AIOSEO meta (title, description, focus keyword, additional keywords) for a page or post. Bridges the gap between WordPress application passwords and AIOSEO&#8217;s cookie-only admin save path. Only Editors and Administrators can call the endpoint. <cite>By <a href=\"https://keelworks.ai/\">Keelworks</a>.</cite>"
+    },
+    "version": "1.0.0",
+    "network_only": false,
+    "requires_wp": "5.7",
+    "requires_php": "7.4",
+    "textdomain": "keelworks-aioseo-bridge",
+    "_links": {
+      "self": [
+        {
+          "href": "https://evelectric.pro/wp-json/wp/v2/plugins/keelworks-aioseo-bridge/keelworks-aioseo-bridge",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "plugin": "kirki/kirki",
+    "status": "active",
+    "name": "Kirki",
+    "plugin_uri": "https://kirki.com",
+    "author": "Kirki",
+    "author_uri": "https://kirki.com",
+    "description": {
+      "raw": "Kirki is an all-in-one no-code builder that empowers users to build professional-grade WordPress sites without writing any code. It’s a promising glimpse into the future of website development.",
+      "rendered": "Kirki is an all-in-one no-code builder that empowers users to build professional-grade WordPress sites without writing any code. It’s a promising glimpse into the future of website development. <cite>By <a href=\"https://kirki.com\">Kirki</a>.</cite>"
+    },
+    "version": "6.0.9",
+    "network_only": false,
+    "requires_wp": "5.0",
+    "requires_php": "7.0",
+    "textdomain": "kirki",
+    "_links": {
+      "self": [
+        {
+          "href": "https://evelectric.pro/wp-json/wp/v2/plugins/kirki/kirki",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "plugin": "litespeed-cache/litespeed-cache",
+    "status": "active",
+    "name": "LiteSpeed Cache",
+    "plugin_uri": "https://www.litespeedtech.com/products/cache-plugins/wordpress-acceleration",
+    "author": "LiteSpeed Technologies",
+    "author_uri": "https://www.litespeedtech.com",
+    "description": {
+      "raw": "High-performance page caching and site optimization from LiteSpeed",
+      "rendered": "High-performance page caching and site optimization from LiteSpeed <cite>By <a href=\"https://www.litespeedtech.com\">LiteSpeed Technologies</a>.</cite>"
+    },
+    "version": "7.8.1",
+    "network_only": false,
+    "requires_wp": "",
+    "requires_php": "",
+    "textdomain": "litespeed-cache",
+    "_links": {
+      "self": [
+        {
+          "href": "https://evelectric.pro/wp-json/wp/v2/plugins/litespeed-cache/litespeed-cache",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "plugin": "microsoft-clarity/clarity",
+    "status": "active",
+    "name": "Microsoft Clarity",
+    "plugin_uri": "https://clarity.microsoft.com/",
+    "author": "Microsoft",
+    "author_uri": "https://www.microsoft.com/en-us/",
+    "description": {
+      "raw": "With data and session replay from Clarity, you'll see how people are using your site — where they get stuck and what they love.",
+      "rendered": "With data and session replay from Clarity, you&#8217;ll see how people are using your site — where they get stuck and what they love. <cite>By <a href=\"https://www.microsoft.com/en-us/\">Microsoft</a>.</cite>"
+    },
+    "version": "0.10.24",
+    "network_only": false,
+    "requires_wp": "",
+    "requires_php": "",
+    "textdomain": "microsoft-clarity",
+    "_links": {
+      "self": [
+        {
+          "href": "https://evelectric.pro/wp-json/wp/v2/plugins/microsoft-clarity/clarity",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "plugin": "optinmonster/optin-monster-wp-api",
+    "status": "active",
+    "name": "OptinMonster",
+    "plugin_uri": "https://optinmonster.com",
+    "author": "OptinMonster Popup Builder Team",
+    "author_uri": "https://optinmonster.com",
+    "description": {
+      "raw": "OptinMonster is the best WordPress popup builder plugin that helps you grow your email newsletter list and sales with email popups, exit intent popups, floating bars and more!",
+      "rendered": "OptinMonster is the best WordPress popup builder plugin that helps you grow your email newsletter list and sales with email popups, exit intent popups, floating bars and more! <cite>By <a href=\"https://optinmonster.com\">OptinMonster Popup Builder Team</a>.</cite>"
+    },
+    "version": "2.16.22",
+    "network_only": false,
+    "requires_wp": "5.0",
+    "requires_php": "7.2",
+    "textdomain": "optin-monster-api",
+    "_links": {
+      "self": [
+        {
+          "href": "https://evelectric.pro/wp-json/wp/v2/plugins/optinmonster/optin-monster-wp-api",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "plugin": "google-site-kit/google-site-kit",
+    "status": "active",
+    "name": "Site Kit by Google",
+    "plugin_uri": "https://sitekit.withgoogle.com",
+    "author": "Google",
+    "author_uri": "https://opensource.google.com",
+    "description": {
+      "raw": "Site Kit is a one-stop solution for WordPress users to use everything Google has to offer to make them successful on the web.",
+      "rendered": "Site Kit is a one-stop solution for WordPress users to use everything Google has to offer to make them successful on the web. <cite>By <a href=\"https://opensource.google.com\">Google</a>.</cite>"
+    },
+    "version": "1.179.0",
+    "network_only": false,
+    "requires_wp": "5.2",
+    "requires_php": "7.4",
+    "textdomain": "google-site-kit",
+    "_links": {
+      "self": [
+        {
+          "href": "https://evelectric.pro/wp-json/wp/v2/plugins/google-site-kit/google-site-kit",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "plugin": "insert-headers-and-footers/ihaf",
+    "status": "active",
+    "name": "WPCode Lite",
+    "plugin_uri": "https://www.wpcode.com/",
+    "author": "WPCode",
+    "author_uri": "https://www.wpcode.com/",
+    "description": {
+      "raw": "Easily add code snippets in WordPress. Insert scripts to the header and footer, add PHP code snippets with conditional logic, insert ads pixel, custom content, and more.",
+      "rendered": "Easily add code snippets in WordPress. Insert scripts to the header and footer, add PHP code snippets with conditional logic, insert ads pixel, custom content, and more. <cite>By <a href=\"https://www.wpcode.com/\">WPCode</a>.</cite>"
+    },
+    "version": "2.3.6",
+    "network_only": false,
+    "requires_wp": "5.0",
+    "requires_php": "7.0",
+    "textdomain": "insert-headers-and-footers",
+    "_links": {
+      "self": [
+        {
+          "href": "https://evelectric.pro/wp-json/wp/v2/plugins/insert-headers-and-footers/ihaf",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "plugin": "wpvivid-backuprestore/wpvivid-backuprestore",
+    "status": "active",
+    "name": "WPvivid Backup Plugin",
+    "plugin_uri": "",
+    "author": "WPvivid Backup &amp; Migration",
+    "author_uri": "https://wpvivid.com",
+    "description": {
+      "raw": "Clone or copy WP sites then move or migrate them to new host (new domain), schedule backups, transfer backups to leading remote storage. All in one.",
+      "rendered": "Clone or copy WP sites then move or migrate them to new host (new domain), schedule backups, transfer backups to leading remote storage. All in one. <cite>By <a href=\"https://wpvivid.com\">WPvivid Backup &amp; Migration</a>.</cite>"
+    },
+    "version": "0.9.126",
+    "network_only": false,
+    "requires_wp": "",
+    "requires_php": "",
+    "textdomain": "wpvivid-backuprestore",
+    "_links": {
+      "self": [
+        {
+          "href": "https://evelectric.pro/wp-json/wp/v2/plugins/wpvivid-backuprestore/wpvivid-backuprestore",
+          "targetHints": {
+            "allow": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE"
+            ]
+          }
+        }
+      ]
+    }
+  }
+]

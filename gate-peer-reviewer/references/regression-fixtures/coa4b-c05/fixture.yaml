@@ -1,0 +1,11 @@
+fixture_id: coa4b-c05
+description: Stale live forward-refs — multiple live docs still name old skill in
+  compose lists and future-spawn instructions
+bound_check: OC-14
+defect_class: rename-stale-live-forward-refs
+coa4b_catch: C-05/C-08/C-09/C-10
+coa4b_reference: 'C-05/C-08/C-09/C-10: stale live forward-refs'
+expected_defect_verdict: FAIL
+expected_clean_verdict: PASS
+introduced_at_version: '3.7'
+regression_for: COA-4b C-05/C-08/C-09/C-10

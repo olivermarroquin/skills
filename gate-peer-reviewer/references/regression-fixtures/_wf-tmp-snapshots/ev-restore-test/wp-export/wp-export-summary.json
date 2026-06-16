@@ -1,0 +1,10 @@
+{
+  "method": "wp-rest-api",
+  "exports": {
+    "pages": 41,
+    "media": 37,
+    "plugins": 19,
+    "site_info": 1
+  },
+  "errors": []
+}

@@ -1,9 +1,9 @@
 ---
 type: reference
 skill: gate-peer-reviewer
-skill-version: 3.6
+skill-version: 3.7
 created: 2026-06-15
-updated: 2026-06-15
+updated: 2026-06-16
 gate-type: G-chat-close
 registry-discipline: append-only — every operator-caught gap becomes a new OC row, incident cited
 supersedes-drafts:
@@ -220,8 +220,10 @@ placeholder/FILL body, real values present.
 5. "X captured" count is NOT evidence for "deliverable Y exists" — each deliverable verified
    independently.
 
-**Note:** Until [RGH-7] ships the DoD manifest contract, fall back to OC-9 (handoff-deliverables
-diff) for the deliverable enumeration. OC-12 adds the non-stub + real-values assertion on top.
+**Automation:** [RGH-7] shipped `dod-check.py` + `oc-12-per-deliverable-existence.py` at
+`repos/ai-agency-core/scripts/mandatory-review-gate/`. `dod-check.py --handoff <path>` parses
+the DoD table, dispatches OC-12 (and OC-13 for count rows) automatically. For handoffs WITHOUT
+a DoD manifest, fall back to OC-9 (handoff-deliverables diff) for the deliverable enumeration.
 
 **Seed incident:** COA-4b C-11 (fabricated SingleFile), C-14 (empty form fields), C-18/C-19 (unshipped criteria).
 
@@ -432,10 +434,12 @@ Write verdict file to `.review-gate/state/verdict-G-chat-close-<timestamp>.json`
    omission checks. The verdict file + operator spot-checks are the integrity backstop.
    [RGH-5]'s mandate auto-dispatches G-chat-close under independent review.
 
-4. **OC-12..16 procedures are built by [RGH-7].** Until [RGH-7] ships, OC-12 falls back to
-   OC-9's deliverable enumeration (handoff body, not a DoD manifest); OC-13/14/15/16 run
-   their grep/ls procedures directly (the check logic is defined above; [RGH-7] wraps them
-   in scripts). The checks fire regardless — [RGH-7] makes them cheaper and scriptable.
+4. **OC-12..16 scripts shipped by [RGH-7].** `dod-check.py` + 5 Layer-A scripts
+   (`oc-12`..`oc-16`) live at `repos/ai-agency-core/scripts/mandatory-review-gate/`.
+   For handoffs with a DoD manifest, `dod-check.py --handoff <path>` auto-dispatches
+   OC-12 + OC-13; OC-14/15/16 require separate invocation with rename/ledger/repo args.
+   For handoffs WITHOUT a DoD manifest, fall back to OC-9. Regression corpus: 16
+   committed fixtures under `regression-fixtures/coa4b-*/` ([RGH-FIN]).
 
 5. **No API cost.** All checks are vault reads + greps. Target <5 min wall-clock per close.
    This gate must be affordable enough to run on literally every close ([RGH-5] cost constraint).

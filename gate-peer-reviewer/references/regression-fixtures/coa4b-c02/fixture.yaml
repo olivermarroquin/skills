@@ -1,0 +1,11 @@
+fixture_id: coa4b-c02
+description: Version-string inconsistency — 3 UA strings still say 1.0 after version
+  bump to 2.0
+bound_check: OC-14
+defect_class: version-string-inconsistency
+coa4b_catch: C-02
+coa4b_reference: 'C-02: 3 UA strings still 1.0'
+expected_defect_verdict: FAIL
+expected_clean_verdict: PASS
+introduced_at_version: '3.7'
+regression_for: COA-4b C-02

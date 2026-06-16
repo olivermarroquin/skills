@@ -1,0 +1,47 @@
+[
+  {
+    "url": "https://ajlongelectric.com/locations/bowie-md/",
+    "chain": [
+      {
+        "url": "https://ajlongelectric.com/locations/bowie-md/",
+        "status": 308,
+        "redirect_to": "/locations/bowie-md"
+      },
+      {
+        "url": "https://ajlongelectric.com/locations/bowie-md",
+        "status": 200,
+        "final": true
+      }
+    ]
+  },
+  {
+    "url": "https://ajlongelectric.com/locations/burke-va/",
+    "chain": [
+      {
+        "url": "https://ajlongelectric.com/locations/burke-va/",
+        "status": 308,
+        "redirect_to": "/locations/burke-va"
+      },
+      {
+        "url": "https://ajlongelectric.com/locations/burke-va",
+        "status": 200,
+        "final": true
+      }
+    ]
+  },
+  {
+    "url": "https://ajlongelectric.com/locations/fairfax-va/",
+    "chain": [
+      {
+        "url": "https://ajlongelectric.com/locations/fairfax-va/",
+        "status": 308,
+        "redirect_to": "/locations/fairfax-va"
+      },
+      {
+        "url": "https://ajlongelectric.com/locations/fairfax-va",
+        "status": 200,
+        "final": true
+      }
+    ]
+  }
+]

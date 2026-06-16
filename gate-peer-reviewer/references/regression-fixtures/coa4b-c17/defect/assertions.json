@@ -1,0 +1,9 @@
+[
+  {
+    "name": "singlefile count",
+    "path": "singlefile/*.html",
+    "assertion": "count <= source_count",
+    "source": "43",
+    "source_type": "literal"
+  }
+]

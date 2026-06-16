@@ -1,0 +1,16 @@
+{
+  "Creation Date": [
+    "2002-05-08"
+  ],
+  "Domain Status": [
+    "ACTIVE"
+  ],
+  "Name Server": [
+    "A0.PRO.AFILIAS-NST.INFO 199.182.0.1 2001:500:c0:0:0:0:0:1",
+    "A2.PRO.AFILIAS-NST.INFO 199.182.32.1 2001:500:e0:0:0:0:0:1",
+    "B0.PRO.AFILIAS-NST.ORG 199.182.1.1 2001:500:c1:0:0:0:0:1",
+    "B2.PRO.AFILIAS-NST.ORG 199.182.40.1 2001:500:e1:0:0:0:0:1",
+    "C0.PRO.AFILIAS-NST.INFO 199.182.16.1 2001:500:d0:0:0:0:0:1",
+    "D0.PRO.AFILIAS-NST.ORG 199.182.17.1 2001:500:d1:0:0:0:0:1"
+  ]
+}

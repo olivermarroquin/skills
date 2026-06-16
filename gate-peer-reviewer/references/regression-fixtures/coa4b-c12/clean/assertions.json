@@ -1,0 +1,9 @@
+[
+  {
+    "name": "font count",
+    "path": "assets/font/*",
+    "assertion": "count == 9",
+    "source": "9",
+    "source_type": "literal"
+  }
+]
