@@ -1,15 +1,33 @@
 ---
 name: seo-tooling-landscape-research
-description: Survey the SEO tool landscape comprehensively for a given agency context — free tools, paid tools, AEO/GEO bleeding-edge category, per-task tool recommendations, and tiered stack proposals. Triggers on phrases like "survey SEO tools," "research SEO tooling landscape," "what SEO tools should we use for [vertical]," "build an SEO tool stack for [agency size]," "compare SEO tools," "evaluate AEO/GEO tools," "do an SEO tool inventory," or any time the user wants a comprehensive landscape report on SEO tooling for a new agency, vertical, client engagement, or category. Also use when an existing tool stack needs refreshing, when entering a new vertical that needs its own tool calibration, or when assessing a new SEO tool category (AI-search tools, schema tools, citation tools, etc.). Produces a 5-file output set: free tools inventory, paid tools inventory, AEO/GEO survey, per-task recommendations, tiered stack proposal — written into a configurable folder with proper KOS frontmatter, plain-language framing, and honest hype-vs-substance assessment.
+description: Survey the SEO tool landscape comprehensively for a given agency context — free tools, paid tools, AEO/GEO bleeding-edge category, per-task tool recommendations, and tiered stack proposals. Three modes: (1) SURVEY mode — full landscape research producing a 5-file output set (free/paid/AEO-GEO/per-task/stack), (2) DISCOVERY mode — recurring scan for new/emerging/obscure high-leverage tools + free public data sources per arena, and (3) INTAKE mode — operator drops a tool link/name/video → eval rubric → tool-*.md + adopt/skip recommendation. Triggers on phrases like "survey SEO tools," "research SEO tooling landscape," "what SEO tools should we use for [vertical]," "build an SEO tool stack for [agency size]," "compare SEO tools," "evaluate AEO/GEO tools," "do an SEO tool inventory," "discover new SEO tools," "scan for emerging tools," "digest this tool," "evaluate this tool," or any time the user wants a comprehensive landscape report, emerging-tool scan, or single-tool evaluation. Also use when an existing tool stack needs refreshing, when entering a new vertical that needs its own tool calibration, or when assessing a new SEO tool category (AI-search tools, schema tools, citation tools, etc.).
 ---
 
-# SEO Tooling Landscape Research Skill (v1.0)
+# SEO Tooling Landscape Research Skill (v2.0)
 
-This skill packages the systematic SEO tool survey methodology Oliver used on 2026-05-23 to evaluate ~47 tools for Keelworks's residential-services SEO work. It produces five interlinked inventory and synthesis files for any agency context.
+This skill packages the systematic SEO tool survey methodology Oliver used on 2026-05-23 to evaluate ~47 tools for Keelworks's residential-services SEO work, **plus two self-expanding modes added in v2.0** (2026-06-15) that keep the tool landscape living and growing:
 
-The canonical exemplar lives at `~/workspace/second-brain/03_domains/seo/tools/`. The five files there are the reference output for this skill — read them before writing anything new.
+- **Survey mode** (v1.0, Phases 1–6) — full landscape research producing a 5-file output set
+- **Discovery mode** (v2.0) — recurring scan for new/emerging/obscure tools + free public data sources per arena
+- **Intake mode** (v2.0) — operator-initiated single-tool evaluation pipeline
+
+The canonical exemplar lives at `~/workspace/second-brain/03_domains/seo/tools/`. The five files there are the reference output for survey mode — read them before writing anything new.
+
+## Mode selection
+
+When the skill is invoked, determine the mode from the trigger phrase:
+
+| Trigger | Mode | Jump to |
+|---|---|---|
+| "survey SEO tools," "research SEO tooling landscape," "build an SEO tool stack," "do an SEO tool inventory," "refresh the tools landscape" | **Survey** | Phase 1 (existing) |
+| "discover new SEO tools," "scan for emerging tools," "what new tools are out there," "run a discovery scan," "monthly tool scan" | **Discovery** | Discovery mode section |
+| "digest this tool," "evaluate this tool [name/URL]," "I saw a tool called [X]," or a URL/name dropped with intake intent | **Intake** | Intake mode section |
+
+If ambiguous, ask the operator which mode. If the operator says "run the full thing," that means Survey mode.
 
 ## What this skill produces
+
+### Survey mode (Phases 1–6)
 
 Five Markdown files in the operator-specified output folder:
 
@@ -20,6 +38,20 @@ Five Markdown files in the operator-specified output folder:
 5. **per-task-tool-recommendations.md** — best tool by common SEO use case (keyword research, competitor content analysis, site audit, rank tracking, schema, backlinks, content briefs, citations, AI visibility, GBP audit)
 
 Plus an update to the destination folder's `_README.md` adding a navigation section to the new files.
+
+### Discovery mode (v2.0)
+
+- `tool-*.md` notes in `03_domains/seo/tools/` for candidates scoring Trial or above
+- Updated TG-rows in `_data-gap-register.md` (for Adopt/Trial candidates)
+- Updated `mi-arena-source-checklist.md` (for new public data sources/registries)
+- Discovery log summary in chat output
+
+### Intake mode (v2.0)
+
+- One `tool-*.md` note in `03_domains/seo/tools/` per evaluated tool (with filled eval rubric)
+- TG-row in `_data-gap-register.md` (if Adopt or Trial)
+- Updated `keelworks-standard-seo-stack.md` (if Adopt)
+- Processed source files moved to `00_inbox/tools-pending/_processed/`
 
 ## Inputs the skill needs
 
@@ -297,14 +329,269 @@ Required-element discipline per the convention spec: heading text matches verbat
 
 **Operator bypass.** Include `--bypass-quality-loop` (or "skip the quality loop") in the original research request to skip the block for that invocation. The bypass records to the closest folder's `_quality-log.md` under `### Bypassed (manual override)`.
 
+---
+
+# Discovery Mode (v2.0)
+
+**Purpose:** Recurring scan for new, emerging, or obscure high-leverage SEO tools that aren't in the
+current stack or inventories — plus free public data sources and registries per MI arena. This is the
+self-expanding mechanism from `spec-market-intelligence-engine.md` §6.3.
+
+**Cadence:** Monthly scan (operator-triggered or scheduled via [MI-8]). Can also run ad hoc ("what new
+tools are out there?").
+
+**Trigger phrases:** "discover new SEO tools," "scan for emerging tools," "what new tools are out there,"
+"run a discovery scan," "monthly tool scan."
+
+## Discovery — inputs
+
+Lighter than survey mode. Confirm with the operator:
+
+1. **Scope:** Full scan (all categories) or focused (e.g., "just AEO/GEO," "just local SEO tools,"
+   "just free data sources")?
+2. **Recency window:** Default is "last 90 days" (tools launched, repriced, or significantly updated).
+   Operator can narrow ("last 30 days") or widen ("last 6 months").
+3. **Known stack:** Read `~/workspace/second-brain/03_domains/seo/tools/keelworks-standard-seo-stack.md`
+   and existing `tool-*.md` files to know what's already tracked. Don't re-discover known tools.
+
+## Discovery — research phase
+
+Dispatch a `general-purpose` sub-agent with the following brief:
+
+> Scan for SEO tools that are new, recently launched, recently repriced, or recently gained significant
+> traction in the last [recency window]. Focus on tools that a small local-services SEO agency might
+> not know about yet. Sources to check:
+>
+> 1. **Product Hunt** — search "SEO," "local SEO," "AEO," "AI search optimization," "rank tracking,"
+>    "citation management" in the last [recency window]. Look for launches with 200+ upvotes or
+>    featured status.
+> 2. **SEO blogs and publications** — Search Engine Journal, Search Engine Land, Moz blog, Ahrefs blog,
+>    BrightLocal blog, Near Media, Sterling Sky, Local SEO Guide. Look for "new tool," "tool review,"
+>    "just launched," "beta" posts.
+> 3. **Practitioner YouTube channels** — @nicksaraev, @nateherk, @MattDiggity, @chasereiner,
+>    @JulianGoldie, @KyleRoof, plus any SEO tool review channels. Look for "I found this tool,"
+>    "new SEO tool," "tool nobody talks about" videos.
+> 4. **AEO/GEO-specific sources** — Lily Ray's content, Wil Reynolds, Rand Fishkin (SparkToro blog),
+>    Marie Haynes, plus AEO-focused newsletters. This category churns fastest.
+> 5. **Reddit r/SEO, r/bigseo, r/localseo** — practitioner discussions about tools they actually use
+>    (vs. what vendors market). Look for "what tool do you use for [X]" threads.
+> 6. **Free public data sources and registries** — government data portals, Google-operated tools
+>    (Ads Transparency Center, Knowledge Panel, PageSpeed Insights, Search Console, Merchant Center),
+>    Meta Ad Library, Yelp/BBB public profiles, Wikidata, industry directories. These are often
+>    missed because they're not "SEO tools" but they provide data that closes MI arena gaps.
+> 7. **Business viability signals** — for paid tools, check TrustMRR (`trustmrr.com`) for
+>    Stripe-verified revenue data (MRR, churn rate, growth trend, for-sale status). Also check
+>    Crunchbase for funding status and LinkedIn for team size/recent departures. A tool with
+>    impressive features but declining revenue is a risk signal worth surfacing.
+>
+> For each candidate found, return:
+> - Name and URL
+> - What it does (one sentence)
+> - Category (keyword research / rank tracking / local SEO / AEO-GEO / backlinks / content /
+>   schema / audit / citation / social / data-source)
+> - Pricing (free / freemium with limits / paid with entry tier price)
+> - Why it's interesting (what's new or different about it)
+> - Source where you found it (URL or channel name + video title)
+> - Whether it's a TOOL (software you use) or a DATA SOURCE (public registry you query)
+
+## Discovery — evaluation phase
+
+For each candidate the sub-agent returns:
+
+1. **Deduplicate** against existing `tool-*.md` notes and the five survey files. If the tool is already
+   tracked, skip unless there's a significant update (new pricing, new features, pivot).
+
+2. **Score against the tool-eval rubric** (`references/tool-eval-rubric.md`). Fill all five dimensions.
+
+3. **Write a `tool-*.md` note** for every candidate scoring Trial or above. Write a brief note for
+   Watch candidates. Skip-scored candidates get a one-line entry in the discovery log only.
+
+4. **Register tool-gap rows** in `~/workspace/second-brain/_meta/handoffs/market-intelligence/_data-gap-register.md`
+   for any candidate scoring Adopt or Trial (TG-row with status matching the recommendation).
+
+5. **For data sources / registries:** append new entries to `mi-arena-source-checklist.md` under the
+   relevant arena's "Public registries" column. This keeps the source checklist living — the same
+   way the data-gap register grows. Mark which arena each source serves.
+
+## Discovery — output
+
+- `tool-*.md` notes in `~/workspace/second-brain/03_domains/seo/tools/` (one per evaluated candidate)
+- Updated TG-rows in `_data-gap-register.md` (if any Adopt/Trial candidates)
+- Updated `mi-arena-source-checklist.md` (if any new data sources found)
+- A **discovery log entry** appended to the bottom of this invocation's chat summary:
+
+```markdown
+### Discovery scan — [YYYY-MM-DD]
+- **Recency window:** [X days]
+- **Candidates found:** [N]
+- **Evaluated:** [N] (after dedup)
+- **Adopt:** [list or "none"]
+- **Trial:** [list or "none"]
+- **Watch:** [list or "none"]
+- **Skip:** [list or "none"]
+- **Data sources added to checklist:** [list or "none"]
+- **Sources consulted:** [list]
+```
+
+## Discovery — closing
+
+Run `gate-peer-reviewer` on the `tool-*.md` notes produced. Then emit the auto-invoke
+output-quality-loop block (same convention as survey mode Phase 6b) listing the produced artifacts.
+
+Report back with a terse summary: number of candidates found, number evaluated, top surprises,
+any adopt/trial recommendations, data sources added.
+
+---
+
+# Intake Mode (v2.0)
+
+**Purpose:** The "I saw a tool" path. The operator finds a tool (browsing, a YouTube video, a blog
+post, a conference talk, a competitor's site) and wants it evaluated quickly against the current stack.
+This is the self-expanding mechanism from `spec-market-intelligence-engine.md` §6.4.
+
+**Trigger phrases:** "digest this tool," "evaluate this tool [name/URL]," "I saw a tool called [X],"
+or a URL/name dropped with evaluation intent. Also triggered by processing files in
+`~/workspace/second-brain/00_inbox/tools-pending/`.
+
+## Intake — two entry points
+
+### Entry point 1: In-chat trigger
+
+The operator says something like "digest this tool: [URL or name]" or "evaluate Otterly" or
+"I saw this tool in a video: [YouTube URL]."
+
+1. **If the input is a YouTube URL or article URL:** invoke `vis-extraction` (VIS — the structured
+   intelligence extraction skill for video/article sources) first to extract structured intelligence
+   from the source. The VIS output becomes the research input for the eval rubric — don't
+   re-research what VIS already extracted.
+
+2. **If the input is a tool name only:** dispatch a `general-purpose` sub-agent to research the tool:
+   vendor page, current pricing, features, reviews, founding team, funding status. Same depth as
+   Survey mode's per-tool research but for a single tool.
+
+3. **If the input is a tool name + context** ("I saw PRO Electric using this tool called X on their
+   site"): research the tool AND note the competitive-intelligence context in the `tool-*.md` note.
+
+### Entry point 2: Inbox queue
+
+The operator drops files (links, notes, screenshots) into `~/workspace/second-brain/00_inbox/tools-pending/`.
+When the skill is invoked with "process the tools inbox" or "digest pending tools":
+
+1. Read all files in `00_inbox/tools-pending/`.
+2. For each file, extract the tool name/URL and any context the operator included.
+3. Process each tool through the same pipeline as Entry point 1.
+4. After processing, move the source file to `00_inbox/tools-pending/_processed/` (create if needed)
+   with a date prefix: `YYYY-MM-DD-<original-filename>`.
+
+## Intake — evaluation
+
+Regardless of entry point:
+
+1. **Deduplicate** against existing `tool-*.md` notes. If the tool already has a note, update it
+   rather than creating a duplicate. Flag the update to the operator: "This tool already has a note
+   at [path]. Updating with new information."
+
+2. **Score against the tool-eval rubric** (`references/tool-eval-rubric.md`). Fill all five dimensions
+   with rationale.
+
+3. **Present the rubric + recommendation to the operator** before writing. Unlike discovery mode
+   (which batch-writes), intake mode is interactive — the operator confirms or overrides the
+   recommendation before it's committed.
+
+4. **Write the `tool-*.md` note** in `~/workspace/second-brain/03_domains/seo/tools/` with:
+   - Full KOS frontmatter (`type: tool`, `status: <adopted|evaluating|killed>`, `domains: [seo]`)
+   - Source attribution (where the operator found it, VIS extraction link if applicable)
+   - The filled eval rubric block
+   - The recommendation + operator's decision (if they overrode)
+
+5. **Register a TG-row** in `_data-gap-register.md` if the recommendation is Adopt or Trial.
+
+6. **Update `keelworks-standard-seo-stack.md`** if the recommendation is Adopt — add the tool to
+   the appropriate tier with a note on what it replaces or supplements.
+
+## Intake — tool-*.md template
+
+```markdown
+---
+type: tool
+status: <adopted|evaluating|killed>
+created: <YYYY-MM-DD>
+updated: <YYYY-MM-DD>
+domains: [seo]
+source: <where the operator found it — URL, video title, "discovery scan YYYY-MM-DD", etc.>
+tags: [tool, seo, <category>]
+---
+
+# tool-<vendor-or-product>
+
+**What it does:** <one sentence>
+**Category:** <keyword-research | rank-tracking | local-seo | aeo-geo | backlinks | content |
+schema | audit | citation | social | data-source>
+**Vendor:** <company name> · <year founded if known> · <funding status if known>
+**URL:** <vendor URL>
+**Pricing:** <current pricing tiers — entry tier highlighted>
+
+## Eval rubric
+
+| Dimension | Score | Rationale |
+|---|---|---|
+| Value | /3 | |
+| Time saved | /3 | |
+| Cost | /3 | |
+| Fit | /3 | |
+| Overlap | /3 | |
+
+**Composite:** X.X / 3.0
+**Recommendation:** Adopt / Trial / Watch / Skip
+**Override applied:** None / [describe]
+**Data gaps closed:** [DG-X if applicable]
+
+## What's interesting
+
+<2-3 paragraphs: what makes this tool notable, what problem it solves, how it compares to what's
+in the stack. Honest assessment — call out hype, lock-in, and gaps.>
+
+## Source
+
+<Where the operator found it. If VIS-extracted, link to the source note.>
+
+## See also
+
+- [[keelworks-standard-seo-stack]] · [[per-task-tool-recommendations]] · [[_data-gap-register]]
+- [[tool-eval-rubric]] · [[_README]]
+```
+
+## Intake — closing
+
+Run `gate-peer-reviewer` on the `tool-*.md` note. Then emit the auto-invoke output-quality-loop
+block listing the produced artifact(s).
+
+Report back: tool name, recommendation, composite score, any data gaps it closes, whether the
+standard stack was updated.
+
+---
+
 ## Reporting back to the operator
 
+### Survey mode
 End with a terse summary (per `feedback_terse_completion_reports.md`):
 
 - Number of tools surveyed
 - Top 3 surprises from the research
 - Top recommendation per category for this specific agency context
 - Blocked questions if any (e.g., "vendor pricing page was behind a sales-call gate")
+
+### Discovery mode
+- Candidates found / evaluated / adopt / trial / watch / skip counts
+- Top surprises (tools nobody talks about, significant repricing, new entrants)
+- Data sources added to the arena checklist
+- Any data gaps that could be closed by an adopt/trial candidate
+
+### Intake mode
+- Tool name + composite score + recommendation
+- Whether the operator confirmed or overrode
+- Stack / register updates made
+- Data gaps closed (if any)
 
 Use bullets, not paragraphs. Don't restate what was changed — Oliver can see the diff in the files.
 
@@ -329,6 +616,37 @@ In order of how often they happen:
 This skill assumes the canonical exemplar at `~/workspace/second-brain/03_domains/seo/tools/` is the most-recently-validated version. If the operator has updated those files (e.g., quarterly refresh), use the updated versions as the new template. The skill follows the exemplar; the exemplar doesn't follow the skill.
 
 When the AEO/GEO category churns (new funding rounds, new tools, pivots) the exemplar files should be refreshed quarterly. This skill should be invoked for that refresh too — "refresh the SEO tools landscape" is a valid trigger.
+
+## Changelog
+
+### v2.0 (2026-06-15) — Discovery mode + Intake mode + Tool-eval rubric
+
+**Added:**
+- **Discovery mode** — recurring scan for new/emerging/obscure tools + free public data sources per MI arena. Dispatches a sub-agent to check Product Hunt, SEO blogs, practitioner YouTube, Reddit, and public registries. Candidates scored against the tool-eval rubric. Produces `tool-*.md` notes + TG-rows + arena source checklist updates.
+- **Intake mode** — operator-initiated single-tool evaluation pipeline. Two entry points: in-chat ("digest this tool") and inbox queue (`00_inbox/tools-pending/`). Runs VIS extraction if source is a video/article URL. Scores against tool-eval rubric. Interactive — operator confirms recommendation before commit.
+- **Tool-eval rubric** (`references/tool-eval-rubric.md`) — 5-dimension scoring (Value / Time saved / Cost / Fit / Overlap) with weighted composite, adopt/trial/watch/skip thresholds, and override rules (data-gap closer, cost ceiling, enterprise-gated, stack consolidation).
+- **Mode selection table** — skill now routes to Survey, Discovery, or Intake based on trigger phrase.
+- **Maintenance notes M4, M5** — discovery source freshness + VIS-extraction dependency.
+- **See also** — cross-links to tool-eval rubric, mi-arena-source-checklist, _data-gap-register, vis-extraction skill.
+
+**Changed:**
+- Skill title → v2.0. Description updated to cover all three modes and new trigger phrases.
+- "Reporting back" section split by mode (survey / discovery / intake).
+
+**Unchanged:**
+- Survey mode (Phases 1–6) — fully preserved, no modifications.
+- All existing maintenance notes (M1–M3) — unchanged.
+- Canonical exemplar path and pre-flight recovery logic — unchanged.
+
+**Validated:**
+- Discovery mode: real scan on 2026-06-15 found 12 candidates, produced `tool-hubspot-aeo-grader.md` (Adopt), added HubSpot AEO Grader to V3 arena source checklist.
+- Intake mode: real evaluation of LocalRank.so on 2026-06-15, produced `tool-localrank-so.md` (Skip, overridden from Watch — business viability risk, declining MRR (monthly recurring revenue), unproven LLM Citations feature).
+
+### v1.0 (2026-05-23) — Initial release
+
+- Full survey mode: 5-file output set (free/paid/AEO-GEO/per-task/stack)
+- Canonical exemplar at `~/workspace/second-brain/03_domains/seo/tools/`
+- Maintenance notes M1–M3
 
 ## Maintenance notes
 
@@ -364,7 +682,7 @@ These are known issues that future-Claude or future-Oliver should be aware of wh
 
 ### M3: AEO/GEO category churn (added 2026-05-23, v1.0)
 
-**The issue:** The AEO/GEO category churns fast. Tools featured prominently in this skill's documentation (Profound at $1B valuation, Peec AI doubling ARR, Local Falcon as the local primary) may pivot, get acquired, shut down, or be displaced by new entrants on a quarterly cadence.
+**The issue:** The AEO/GEO category churns fast. Tools featured prominently in this skill's documentation (Profound at $1B valuation, Peec AI doubling ARR (annual recurring revenue), Local Falcon as the local primary) may pivot, get acquired, shut down, or be displaced by new entrants on a quarterly cadence.
 
 **How it surfaces:** Sub-agent research returns reports that "Profound was acquired by [X]" or "Local Falcon discontinued the AEO module" or similar. Or a new dominant tool emerges that the skill doesn't mention.
 
@@ -373,6 +691,44 @@ These are known issues that future-Claude or future-Oliver should be aware of wh
 1. The skill itself is fine — the sub-agent research phase is designed to surface current category state, not to assume the 2026-05 snapshot is current.
 2. Refresh the canonical exemplar quarterly (the skill's "Versioning" section above already documents this expectation).
 3. If a category-shaping event happens (e.g., Google launches its own AEO tracking product, or one of the funded names goes public), update this SKILL.md's "Sub-agent 2: AEO/GEO tools" default tool list so future research is anchored against current state.
+
+### M4: Discovery mode sub-agent source freshness (added 2026-06-15, v2.0)
+
+**The issue:** The discovery sub-agent's source list (Product Hunt, specific YouTube channels, specific blogs) will go stale as channels rename, blogs shut down, or new authoritative sources emerge.
+
+**How it surfaces:** Discovery scans return thin candidate lists despite the category being active, or miss tools that practitioners are discussing on platforms the sub-agent isn't checking.
+
+**How to fix:**
+1. After a thin discovery scan, manually check 2-3 of the listed sources to confirm they're still active and producing relevant content.
+2. Update the source list in the "Discovery — research phase" section. Add new sources; remove dead ones.
+3. Ask the operator: "Are there SEO communities or channels I should be scanning that aren't on my list?"
+
+**Why it wasn't designed away:** Hardcoding sources is the simplest design for v2.0. A dynamic source-discovery mechanism (scanning for "top SEO blogs 2026" each run) would add latency and complexity. The manual refresh at quarterly cadence is sufficient.
+
+### M5: Intake mode VIS-extraction dependency (added 2026-06-15, v2.0)
+
+**The issue:** Intake mode calls `vis-extraction` for YouTube/article URLs. If `vis-extraction` is unavailable, broken, or produces unexpected output format, the intake pipeline stalls.
+
+**How it surfaces:** Intake invocation with a YouTube URL fails or produces a `tool-*.md` note with empty "What's interesting" section because VIS output wasn't parsed correctly.
+
+**How to fix:**
+1. Fall back to direct sub-agent research (same as the "tool name only" path). The VIS extraction is a quality enhancer, not a hard dependency.
+2. Note in the `tool-*.md` that VIS extraction was skipped and the assessment is based on sub-agent research only.
+
+**Why it wasn't designed away:** VIS extraction adds significant value (structured intelligence from video/article sources) and is worth the dependency. The fallback path exists; it just needs to be exercised.
+
+### M6: Rubric-contract follow-through not gate-enforced (added 2026-06-15, v2.0)
+
+**The issue:** The tool-eval rubric defines explicit post-score actions per recommendation tier (Adopt → add to stack + register TG-row; Watch → status: evaluating; etc.). Nothing in the current gate infrastructure verifies that these actions were actually taken. In the MI-6 validation run, three rubric-contract violations survived the initial gate-peer-reviewer pass: (1) HubSpot AEO Grader scored Adopt but was never added to `keelworks-standard-seo-stack.md`, (2) same tool scored Adopt but no TG-row was registered in `_data-gap-register.md`, (3) LocalRank.so had `status: killed` in frontmatter but `Recommendation: Watch` in the rubric block — an undocumented override.
+
+**How it surfaces:** Tool notes pass the gate (frontmatter valid, no placeholders, links resolve) but the rubric's own action column is silently ignored. The stack and register drift from the tool notes.
+
+**How to fix (future work, not this session):**
+1. `G-chat-close` / omission-check-registry needs an OC-17 "rubric-contract-follow-through" check: for every `tool-*.md` written in the session, verify the recommendation tier's action column was executed (stack updated if Adopt, TG-row registered if Adopt/Trial, status matches recommendation or override is documented).
+2. `gate-type-registry` needs `seo-tooling-landscape-research` registered as a gate type so discovery/intake runs get a purpose-built gate instead of G-default.
+3. `output-quality-loop` spec-routing-table needs a `tool-*.md` entry that checks status/recommendation mapping consistency.
+
+**Why it wasn't designed away in v2.0:** The rubric and modes were the v2.0 deliverable. Gate integration is a separate handoff (it touches gate-peer-reviewer, omission-check-registry, and output-quality-loop — three different skills). Documented here so the gap is visible and trackable.
 
 ### How to add a new maintenance note
 
@@ -384,3 +740,7 @@ When the skill errors or produces a calibration miss in production, add a new en
 - `~/workspace/second-brain/_meta/plain-language-conventions.md` — plain-language rules
 - `~/workspace/skills/plain-language-translation/SKILL.md` — retroactive plain-language pass if needed
 - `~/workspace/skills/meta-document-primer/SKILL.md` — for generating a primer if the destination folder lacks one
+- `~/workspace/skills/seo-tooling-landscape-research/references/tool-eval-rubric.md` — the scoring rubric used by discovery and intake modes
+- `~/workspace/second-brain/_meta/handoffs/market-intelligence/mi-arena-source-checklist.md` — per-arena source checklist that discovery mode appends to
+- `~/workspace/second-brain/_meta/handoffs/market-intelligence/_data-gap-register.md` — tool-gap register that both modes feed
+- `~/workspace/skills/vis-extraction/SKILL.md` — VIS extraction used by intake mode for video/article sources
