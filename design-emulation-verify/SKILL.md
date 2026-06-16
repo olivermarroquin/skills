@@ -9,7 +9,7 @@ description: Diff a Keelworks client build against a reference site to verify th
 
 A reusable workflow for diffing a Keelworks client build against a reference site to verify that the design emulation actually matches. The third pillar of the [[strategy-custom-coded-nextjs-via-ai-with-competitor-inspiration|website-design strategy]] depends on this skill: emulation that hasn't been verified is just "looks close," which isn't the bar.
 
-This skill is a sister to `competitor-deep-research` (which captures the reference's design fingerprint) — it consumes the dossier the other skill produces and uses it as the comparison baseline.
+This skill is a sister to `design-fingerprint` (which turns a capture package into a structured design dossier) — it consumes the dossier that skill produces and uses it as the comparison baseline.
 
 ---
 
@@ -34,7 +34,7 @@ Do NOT use this skill for:
 
 Required:
 
-1. **Reference site URL** — the high-performing reference site being emulated. Must have a dossier in `second-brain/03_domains/website-design/inspiration/high-performing/`. If no dossier exists, run `competitor-deep-research` in design-fingerprint mode first.
+1. **Reference site URL** — the high-performing reference site being emulated. Must have a dossier in `second-brain/03_domains/website-design/inspiration/high-performing/`. If no dossier exists, run `site-capture-engine` (with `--design-capture`) then `design-fingerprint` first.
 2. **Client build URL** — `next dev` localhost, Vercel preview, Netlify preview, or production URL. Must be reachable from the verification environment.
 3. **Composition doc** — the per-client composition file written in Step 2 of the emulate tactic. This is what tells the verify skill what patterns were *intentionally* emulated vs what was carried over by accident.
 
@@ -114,7 +114,7 @@ Diff method: cross-reference the composition doc's pattern list against detected
 
 ### Step 1 — Load the reference dossier
 
-Read `second-brain/03_domains/website-design/inspiration/high-performing/dossier-<reference-slug>.md`. If it doesn't exist, error out with a message asking the operator to run `competitor-deep-research --mode design-fingerprint` first.
+Read `second-brain/03_domains/website-design/inspiration/high-performing/dossier-<reference-slug>.md`. If it doesn't exist, error out with a message asking the operator to run `site-capture-engine` (with `--design-capture`) then `design-fingerprint` first.
 
 Extract from the dossier:
 

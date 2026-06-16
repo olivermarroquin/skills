@@ -1,0 +1,130 @@
+# Trait record template (machine-readable sidecar)
+#
+# Produced by the design-fingerprint skill alongside each human dossier.
+# All keys come from trait-vocabulary.md — no free-form keys allowed.
+# [DI-6] design-pattern-synthesis parses these for cross-site counting.
+#
+# Output filename: _traits-<site-slug>.yaml
+# Shares the site-slug with the human dossier (two-file artifact split).
+
+# --- Identity (not traits — metadata for linking) ---
+site_slug: "{{site_slug}}"
+domain: "{{domain}}"
+dossier_file: "{{dossier_filename}}"  # e.g., dossier-aj-long-electric.md
+depth: "{{full|light}}"
+capture_date: "{{YYYY-MM-DD}}"
+analysis_date: "{{YYYY-MM-DD}}"
+engine_version: "{{engine_version}}"
+vocabulary_version: "1.0"
+
+# --- Classification tags (optional, for cross-sector slicing) ---
+sector: "{{sector}}"          # e.g., electrical-services, saas, fintech
+archetype: "{{archetype}}"    # e.g., dark-hero-cta, light-minimal
+niche: "{{niche}}"            # e.g., electrical-services (finer than sector)
+geography: "{{geography}}"    # e.g., Fairfax County, VA
+
+# --- Palette structure ---
+palette_structure:
+  theme: "{{dark|light|mixed}}"
+  brand_color_count: "{{single-accent|dual-accent|multi-accent}}"
+  brand_hue_family: "{{hue_family}}"
+  contrast_strategy: "{{high-contrast|medium-contrast|low-contrast}}"
+  semantic_colors: "{{present|absent}}"
+  palette_size: "{{minimal|standard|extended}}"
+  # Raw evidence (not normalized — for human cross-check)
+  _evidence:
+    brand_hex: "{{#hex}}"
+    background_hex: "{{#hex}}"
+    text_hex: "{{#hex}}"
+    all_colors:
+      - hex: "{{#hex}}"
+        uses: 0
+        role: "{{role}}"
+
+# --- Type family ---
+type_family:
+  font_system: "{{single-font|dual-font|multi-font}}"
+  primary_font_class: "{{classification}}"
+  heading_font_class: "{{classification}}"
+  font_loading: "{{self-hosted|google-fonts|typekit|system-stack}}"
+  weight_range: "{{narrow|standard|wide}}"
+  _evidence:
+    primary_font_name: "{{font_name}}"
+    heading_font_name: "{{font_name}}"
+    weights_used: []  # e.g., [400, 500, 700]
+
+# --- Type scale ---
+type_scale:
+  scale_spread: "{{tight|standard|generous|display-heavy}}"
+  h1_size_bucket: "{{small|medium|large|display}}"
+  body_size: "{{compact|standard|generous|large}}"
+  _evidence:
+    h1_px: 0
+    body_px: 0
+    scale_values: []  # e.g., [60, 48, 20, 16, 12]
+
+# --- Layout / grid ---
+layout_grid:
+  layout_type: "{{layout_type}}"
+  hero_style: "{{hero_style}}"
+  section_density: "{{sparse|standard|dense}}"
+  card_grid_columns: "{{column_count|none}}"
+  cta_placement: "{{cta_placement}}"
+  navigation_style: "{{nav_style}}"
+  footer_style: "{{footer_style}}"
+
+# --- Spacing system ---
+spacing_system:
+  spacing_base: "{{4px|8px|other}}"
+  spacing_personality: "{{tight|balanced|generous}}"
+  content_width: "{{narrow|standard|wide}}"
+
+# --- Shape and depth ---
+shape_and_depth:
+  radius_strategy: "{{radius_strategy}}"
+  shadow_strategy: "{{shadow_strategy}}"
+  _evidence:
+    dominant_radius_px: 0
+    shadow_sample: ""
+
+# --- Motion type ---
+motion_type:
+  motion_personality: "{{minimal|subtle-functional|expressive|cinematic}}"
+  animation_source: "{{animation_source}}"
+  transition_density: "{{sparse|moderate|rich}}"
+  scroll_animation: "{{scroll_animation}}"
+
+# --- CTA pattern ---
+cta_pattern:
+  primary_cta_style: "{{cta_style}}"
+  cta_urgency: "{{none|subtle|moderate|high}}"
+  cta_count_above_fold: "{{0|1|2|3+}}"
+  _evidence:
+    cta_texts: []  # e.g., ["Book Online", "Request Quote"]
+
+# --- Trust devices ---
+trust_device:
+  review_display: "{{review_display}}"
+  trust_badges: "{{trust_badges}}"
+  social_proof: "{{social_proof}}"
+
+# --- Schema types ---
+schema_type:
+  primary_schema: "{{schema_type}}"
+  schema_breadth: "{{none|basic|moderate|rich}}"
+
+# --- Tooling and libraries ---
+tooling_and_libraries:
+  framework: "{{framework}}"
+  css_framework: "{{css_framework}}"
+  image_optimization: "{{image_optimization}}"
+
+# --- Patterns (linked to dossier sections 5 and 6) ---
+patterns_worth_lifting:
+  - name: "{{pattern_name}}"
+    catalog_pointer: "catalog/{{category}}/{{pattern_slug}}"
+    tags: []  # free tags for pattern-level filtering
+
+patterns_to_skip:
+  - name: "{{pattern_name}}"
+    reason: "{{why_skip}}"
