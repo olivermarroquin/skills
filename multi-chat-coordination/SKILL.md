@@ -727,7 +727,7 @@ The operator reads, picks. If they pick something other than rank 1, that's a si
 - `references/handoff-frontmatter-spec.md` — the frontmatter shape for handoff files
 - `references/project-subfolder-template.md` — the `_README.md` shape for new project subfolders (DECOMPOSE)
 - `references/drift-report-template.md` — the drift report format (AUDIT)
-- `references/closing-protocol-template.md` — the seven-step protocol DECOMPOSE inserts into every generated handoff
+- `references/closing-protocol-template.md` — the closing protocol DECOMPOSE inserts into every generated handoff (Step 0 paired-peer-review gate + seven bookkeeping steps)
 
 Mode 1 uses all five. Mode 2 uses tracker-row-shapes, handoff-frontmatter-spec, drift-report-template. Mode 3 uses tracker-row-shapes plus the operator's `MEMORY.md` for priority signals.
 
@@ -822,6 +822,8 @@ These are observations seeded at skill creation. Promote to standalone notes if 
 **Gate type:** G-decompose (NOT a closing gate — Check 6 skipped).
 **Fires after:** Single comprehensive review gate (proposal before writes).
 **Dispatch shape:** Orchestrator spawns the peer-reviewer as a Task sub-agent after the decomposition proposal is ready and before writes.
+
+> **Independence precedence (gate-peer-reviewer v3.8).** The Task sub-agent dispatch below is the weaker-independence convenience mode. It is appropriate here because G-decompose reviews a *proposal before any writes* (low live-state risk) and the operator still approves the decomposition itself. But if a decomposition registers or changes shared vault state directly (e.g. it writes tracker rows or handoff files the operator does NOT separately approve), prefer a **separate-session, step-by-step running review** per `~/workspace/skills/gate-peer-reviewer/SKILL.md` § Independence precedence and `pattern-independent-peer-review-chat.md`. A sub-agent verdict is never full independent review.
 
 **Per-gate dispatch block (Claude Code substrate):**
 

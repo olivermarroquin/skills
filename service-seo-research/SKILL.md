@@ -1080,6 +1080,8 @@ re-hitting the same wall.
 
 ## Peer-reviewer dispatch (GPR-9, gate-peer-reviewer v3.3)
 
+> **Independence precedence (gate-peer-reviewer v3.8).** The Task sub-agent dispatch described here is the *weaker-independence convenience mode* — acceptable for high-volume, low-stakes gates. For any gate that changes vault/live state, registers a skill, or ships a client deliverable, the CANONICAL and MANDATORY mode is a **separate-session, step-by-step running review** (separate Claude Code or Cowork session; operator pastes each producer output; reviewer disk-verifies and hands back a paste-ready producer-reply block). See `~/workspace/skills/gate-peer-reviewer/SKILL.md` § Independence precedence and `~/workspace/second-brain/05_shared-intelligence/patterns/pattern-independent-peer-review-chat.md`. A sub-agent verdict is never full independent review.
+
 **Gate type:** G-service-brief (closing gate — Check 6 KCA applies).
 **Fires after:** Phase 8 knowledge-growth hooks + AI-citation checklist §4.5, before closing.
 **Dispatch shape:** Orchestrator spawns the peer-reviewer as a Task sub-agent after the brief is authored and before the closing protocol completes.

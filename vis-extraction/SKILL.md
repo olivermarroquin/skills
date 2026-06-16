@@ -1111,6 +1111,8 @@ Read these as needed. The extraction prompt is the authoritative spec; this SKIL
 
 ## Peer-reviewer dispatch (GPR-9, gate-peer-reviewer v3.3)
 
+> **Independence precedence (gate-peer-reviewer v3.8).** The Task sub-agent dispatch described here is the *weaker-independence convenience mode* — acceptable for high-volume, low-stakes gates. For any gate that changes vault/live state, registers a skill, or ships a client deliverable, the CANONICAL and MANDATORY mode is a **separate-session, step-by-step running review** (separate Claude Code or Cowork session; operator pastes each producer output; reviewer disk-verifies and hands back a paste-ready producer-reply block). See `~/workspace/skills/gate-peer-reviewer/SKILL.md` § Independence precedence and `~/workspace/second-brain/05_shared-intelligence/patterns/pattern-independent-peer-review-chat.md`. A sub-agent verdict is never full independent review.
+
 **Gate type:** G-extraction (NOT a closing gate — Check 6 skipped).
 **Fires after:** Phase 6 review gate (executor surfaces structured summary before writes).
 **Dispatch shape:** Orchestrator spawns the peer-reviewer as a Task sub-agent after the structured summary is ready and before the write-to-vault phase.

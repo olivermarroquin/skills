@@ -1,7 +1,7 @@
 ---
 type: reference
 skill: gate-peer-reviewer
-skill-version: 3.7
+skill-version: 3.8
 created: 2026-06-16
 updated: 2026-06-16
 purpose: fixed-mandate for the independent adversarial reviewer — loaded from disk by the dispatch, not authored by the producer
@@ -20,6 +20,14 @@ tags: [reference, independent-review, adversarial-reviewer, mandate, review-gate
 > by hand: disk-verify every claim, demand real execution evidence, verify against
 > live/shipped state, treat silent skips as defects, audit omissions at close, walk the
 > DoD manifest, and loop to convergence.
+>
+> **Default operation: running, per-paste-back verification — NOT end-of-session only.**
+> You verify the producer's output *as the producer produces it*, step by step (Phase R below),
+> so fabricated verdicts and described-as-demonstrated claims are caught mid-build before they
+> compound. The dirty-ledger close-out scan (Phases A–D) is the **final sweep** that runs after
+> the producer's last step — it backstops the running review, it does not replace it. A
+> close-out-only review is acceptable only on low-stakes, non-state-changing work where there is
+> no intermediate producer output worth verifying step-by-step.
 
 ---
 
@@ -34,6 +42,54 @@ Your job is to find what the producer missed, fabricated, or silently skipped.
 ---
 
 ## 2. Review protocol (execute in order)
+
+### Phase R — Running per-paste-back verification (DEFAULT — runs throughout the producer's session)
+
+This is the primary mode. You run **alongside** the producing chat, not after it. The operator
+relays each producer output to you as it is produced; you verify it before the producer is
+allowed to proceed.
+
+1. **Take a disk baseline BEFORE the first paste-back** — list what exists, file timestamps,
+   empty dirs, the last `_event-log.md` row, and the current dirty-ledger tail. Every later
+   claim is verified against this baseline. (This baseline is what makes a backdated/fabricated
+   verdict catchable — you recorded the true state before the producer could have written
+   anything.)
+
+2. **For each producer paste-back, verify the claim on disk immediately:**
+   - Run the relevant fast-path checks (`engine.run_fast_path_checks(file_path)`) on every file
+     the producer says it touched in that step.
+   - Confirm file existence ≠ registered, file existing ≠ rendered, "wired" ≠ demonstrated, a
+     PASS marker ≠ a review that ran. Demand the execution evidence for any "it works / tested /
+     validated" claim.
+   - Cross-check every value/count/fact against its canonical source — read the source yourself,
+     do not trust the producer's summary.
+   - Clock-check with `date -u`: any future or backdated timestamp against observed file mtimes
+     or event-log order is a BLOCKING catch.
+
+3. **End EVERY response to the operator with a paste-ready producer-reply block (MANDATORY —
+   never optional).** This is the operator's most-used output: they copy it verbatim into the
+   producer chat. Handing back a findings report WITHOUT this block is itself a defect. The block:
+   - is set off under a literal, unmissable header line — exactly:
+     `═══ PASTE THIS BACK TO THE PRODUCER ═══`
+   - is written addressed TO the producer ("Round N — fix the following," "Round N — clear,
+     proceed to X," or "PASS — close out and prepare commits"), not to the operator;
+   - names each catch with a severity (BLOCKING / MAJOR / minor / trivial) + exact file/line + fix;
+   - is self-contained and copy-pasteable as-is — no "see above," no references outside the block;
+   - states explicitly what the producer does next (fix and re-paste / proceed / close out);
+   - keeps any git commit block OUT of it — commits travel in their own separate message.
+
+   The producer fixes, re-pastes; you re-verify the changed files and again end with a fresh
+   paste-ready block. Expect the fix pass itself to reintroduce the same defect class.
+
+4. **The producer does NOT proceed to the next step until the current step's catches are
+   resolved or explicitly surfaced as a deferral with a tracking surface.** Surfaced deferral ≠
+   silent skip.
+
+5. **Do NOT author or accept a PASS while any step has unresolved blocking findings.** That is
+   the D-05 self-claim class this program exists to eliminate.
+
+When the producer signals its session is done, run the close-out sweep (Phases A–D) as the
+**final backstop** over the full dirty ledger, then the convergence loop (Phase E).
 
 ### Phase A — Orientation (do NOT skip)
 
@@ -160,7 +216,7 @@ Schema:
     "converged": true | false
   },
   "cost_usd": 0.0,
-  "mandate_version": "1.0",
+  "mandate_version": "1.1",
   "mandate_path": "skills/gate-peer-reviewer/references/independent-reviewer-mandate.md"
 }
 ```
@@ -187,6 +243,9 @@ python3 ~/workspace/repos/ai-agency-core/scripts/mandatory-review-gate/log-revie
 - **Do NOT let the producer tell you "that's expected" without proof.** Demand the
   justification on disk (a spec, a decision doc, a config).
 - **Do NOT clear the gate on a first pass with catches.** Re-run after fixes.
+- **Do NOT hand back a findings report without the paste-ready producer-reply block.** The
+  operator should never have to ask "so what do I tell the producer?" — that block is required
+  on every turn.
 - **Do NOT author a PASS with unresolved blocking findings.** That's the D-05 class
   this entire program exists to eliminate.
 
@@ -194,6 +253,12 @@ python3 ~/workspace/repos/ai-agency-core/scripts/mandatory-review-gate/log-revie
 
 ## 5. What you MUST do
 
+- **Run alongside the producer, not after it (Phase R).** Verify each paste-back as it is
+  produced; do not wait for the producer's session to end on state-changing work. The close-out
+  dirty-ledger sweep is your final backstop, not your only pass.
+- **End every response with a paste-ready producer-reply block** under the
+  `═══ PASTE THIS BACK TO THE PRODUCER ═══` header (Phase R step 3). The operator copies it
+  verbatim into the producer chat. A findings report without this block is incomplete.
 - **Read every dirty-ledger file yourself.** Not summaries. The files.
 - **Run the scripts.** dod-check.py, OC-12..16. Don't guess — execute.
 - **Cross-check values.** Open the source. Compare. Report discrepancies.
@@ -221,8 +286,15 @@ python3 ~/workspace/repos/ai-agency-core/scripts/mandatory-review-gate/log-revie
 
 ## 7. Version
 
-- **Mandate version:** 1.0
+- **Mandate version:** 1.1
 - **Created by:** [RGH-5] independent-reviewer-dispatch (2026-06-16)
+- **v1.1 (2026-06-16):** Added Phase R — running, per-paste-back verification as the default
+  operation; the dirty-ledger close-out scan (Phases A–D) is now framed as the final backstop,
+  not the whole protocol. Hard-wired the mandatory paste-ready producer-reply block (under the
+  `═══ PASTE THIS BACK TO THE PRODUCER ═══` header) as a required output of EVERY reviewer turn —
+  the reviewer must always tell the operator exactly what to send back to the producer; a
+  findings report without it is a defect. Operator-directed, to match the canonical
+  separate-session running review in `pattern-independent-peer-review-chat.md`.
 - **Codifies:** the human meta-reviewer discipline observed across 10+ operator QCs
   (WF-1 4-gap close, COA-4b 25-catch corpus, MI-3b silent-partial audit,
   DI-2 peer-review, RGH-FIN 3-round catch register)

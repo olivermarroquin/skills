@@ -1,6 +1,6 @@
 # Closing Protocol Template
 
-This is the **canonical seven-step closing protocol** that DECOMPOSE mode of the multi-chat-coordination skill appends verbatim to every generated handoff. It sits inside the prompt block of each handoff, between the Status section and the `--- end prompt ---` marker, so the chat consuming the handoff sees it as part of its own instructions.
+This is the **canonical closing protocol** (a Step 0 paired-peer-review gate plus seven bookkeeping steps) that DECOMPOSE mode of the multi-chat-coordination skill appends verbatim to every generated handoff. It sits inside the prompt block of each handoff, between the Status section and the `--- end prompt ---` marker, so the chat consuming the handoff sees it as part of its own instructions.
 
 The protocol exists because prior chats forgot to update the tracker, forgot to flip handoff `status:` to `consumed`, used `git add .` instead of staging files by name, mixed inline comments into command blocks the operator was supposed to copy-paste verbatim, or just declared "done" without doing the tracker and git work. Baking the protocol into every handoff closes those gaps automatically.
 
@@ -19,6 +19,10 @@ No other transformation. The protocol body is the source of truth; DECOMPOSE doe
 ## Closing protocol (run BEFORE telling the operator the chat is done)
 
 This protocol is **mandatory**. Do not declare the chat complete or hand control back to the operator until every step below has been executed. The operator has had to instruct prior chats to do this manually — that's the friction this section closes.
+
+**Step 0 — Confirm the paired independent peer-review returned a PASS.**
+
+If this chat wrote/edited files, changed live or external state, or produced a deliverable, it MUST be paired with an **independent peer-review chat running in a separate session** (per `~/workspace/second-brain/05_shared-intelligence/patterns/pattern-independent-peer-review-chat.md` and `~/workspace/second-brain/_meta/templates/template-peer-review-chat.md`). That reviewer verifies your outputs step-by-step as you produce them — not at the end — and hands the operator a paste-ready reply each turn. **You may NOT declare this chat done until the paired reviewer has returned an explicit PASS** (zero-new-catch round, tracker accurate, no unresolved blocking findings). You do not author or clear that verdict yourself — that is the reviewer's job (no self-gate). If the chat is genuinely exempt (pure planning / read-only / trivial single-line non-state edit), state the exemption explicitly here rather than skipping silently. An in-session Task sub-agent verdict does NOT satisfy this on state-changing work — it is at best the weaker convenience mode.
 
 **Step 1 — Verify scope completion.**
 
@@ -124,7 +128,7 @@ Example closings from real chats that landed well:
 
 > Skill shipped + 5 reference files + regression tests PASS. **Nothing immediately blocked on this** — Phase 2 of output-quality-loop already in flight (running in parallel). Tracker's Ready-to-spawn section is empty; Tier-2 has 4 outputquality-loop phases gated on the in-flight work landing.
 
-Only after all seven steps complete may you say the chat is done. The "what's next to spawn" line is what the operator actually reads and acts on — make it specific.
+Only after Step 0's paired-reviewer PASS (or stated exemption) AND all seven steps complete may you say the chat is done. The "what's next to spawn" line is what the operator actually reads and acts on — make it specific.
 ```
 
 ## Notes for the skill (not part of the inserted template)

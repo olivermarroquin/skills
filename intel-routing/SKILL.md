@@ -1360,6 +1360,8 @@ After Session 3 ships, the `_meta/specs/intel-routing-skill-spec.md` "Build outc
 
 ## Peer-reviewer dispatch (GPR-9, gate-peer-reviewer v3.3)
 
+> **Independence precedence (gate-peer-reviewer v3.8).** The Task sub-agent dispatch described here is the *weaker-independence convenience mode* — acceptable for high-volume, low-stakes gates. For any gate that changes vault/live state, registers a skill, or ships a client deliverable, the CANONICAL and MANDATORY mode is a **separate-session, step-by-step running review** (separate Claude Code or Cowork session; operator pastes each producer output; reviewer disk-verifies and hands back a paste-ready producer-reply block). See `~/workspace/skills/gate-peer-reviewer/SKILL.md` § Independence precedence and `~/workspace/second-brain/05_shared-intelligence/patterns/pattern-independent-peer-review-chat.md`. A sub-agent verdict is never full independent review.
+
 **Gate type:** G-routing (NOT a closing gate — Check 6 skipped).
 **Fires after:** Gate 1 (routing decision) + Gate 2 (bridge-note approval), per mode.
 **Dispatch shape:** Orchestrator spawns the peer-reviewer as a Task sub-agent at each gate, before operator review.

@@ -1,6 +1,6 @@
 ---
 name: gate-peer-reviewer
-version: 3.7
+version: 3.8
 status: active
 created: 2026-06-03
 updated: 2026-06-16
@@ -25,7 +25,7 @@ composes-with:
 tags: [skill, peer-review, gate-review, process-quality, orchestrator-coaching, substrate-agnostic, v2, page-build, autonomous-dispatch, deliberate-evolution-vs-silent-drift]
 ---
 
-# `gate-peer-reviewer` skill v3.7
+# `gate-peer-reviewer` skill v3.8
 
 Automated peer-review layer that fires on every orchestrated output across every project across every skill. v1 replaced the parallel-Cowork coaching layer Oliver ran by hand through waves A2-A6 of S&H Core 30 research. v2 extends to page-build gates (replacing the manual peer-review transport from the S&H Core 30 page-build run, PR-01..PR-40) and adds autonomous dispatch so the operator stops being the paste-transport layer.
 
@@ -202,7 +202,7 @@ See `vault-orchestrator/SKILL.md` § Step 7 "Peer-reviewer dispatch (v1.3)" for 
 
 ## Integration with client-seo-onboarding (v1.4) — autonomous dispatch
 
-Client-seo-onboarding v1.4 adds a peer-reviewer dispatch block after each artifact-producing step's quality-loop exit. **Autonomous dispatch** — the orchestrator spawns the peer-reviewer as a Claude Code Task sub-agent after each gate, inlines the verdict, and surfaces the combined result (gate output + peer-review verdict) to the operator as a single approve/notes surface. The operator no longer pastes gate outputs between two chats.
+Client-seo-onboarding v1.4 adds a peer-reviewer dispatch block after each artifact-producing step's quality-loop exit. **Autonomous dispatch** — the orchestrator spawns the peer-reviewer as a Claude Code Task sub-agent after each gate, inlines the verdict, and surfaces the combined result (gate output + peer-review verdict) to the operator as a single approve/notes surface. The operator no longer pastes gate outputs between two chats. This is the legitimate home of the convenience mode: per-page Core-30 builds are the high-volume, low-stakes tail described in the Independence precedence section — the sub-agent's weaker independence is an accepted trade for not hand-pasting dozens of page gates. For the wave-close gate (G-wave-close), which can register or change shared state, prefer a separate-session running review per the precedence rule.
 
 **5 page-build gates registered in `references/gate-type-registry.md`:**
 
@@ -220,9 +220,19 @@ Client-seo-onboarding v1.4 adds a peer-reviewer dispatch block after each artifa
 
 See `client-seo-onboarding/SKILL.md` § "Peer-reviewer dispatch (v1.4)" for the integration block.
 
-## Autonomous dispatch (v2.0)
+## Independence precedence (v3.8) — separate-session running review is canonical
 
-v1 required the operator to manually paste each gate output into a peer-review chat and paste the reply back. v2 removes the operator-as-transport:
+There are two dispatch shapes for the reviewer, and they are **not** equally independent. This section establishes which to use when. It governs every dispatch block in this skill and in every downstream skill that references it.
+
+**1. Separate-session, step-by-step running review (canonical — strongest independence).** The reviewer runs in its own session (a fresh Cowork window or a separate Claude Code session) with its own context and its own disk reads. The operator relays each producer output as it is produced; the reviewer disk-verifies it and hands back paste-ready text before the producer proceeds. This is the canonical form, defined in `~/workspace/second-brain/05_shared-intelligence/patterns/pattern-independent-peer-review-chat.md` and automated by the `references/independent-reviewer-mandate.md` (Phase R). **It is MANDATORY for skill registrations, vault state changes, client deliverables, and any live/external-state change.**
+
+**2. In-session Task sub-agent autonomous dispatch (weaker independence — convenience mode).** The orchestrator spawns the reviewer as a Task sub-agent inside the producer's own session (the v2.0 path below). This removes the operator-as-transport, but the sub-agent shares the producer's process and context — so its independence is structurally weaker (the mandate's own "Honest limits" §6 says as much: the strongest form of independence is a separate process). It is acceptable ONLY for **high-volume, low-stakes gates** — e.g. per-page Core-30 page builds (G-data / G-scaffold / G-imagery / G-publish) where the operator has opted into autonomy to avoid pasting dozens of gate outputs by hand. It is **never** a substitute for a separate-session running review on state-changing, skill-registration, or high-stakes work, and a sub-agent verdict must never be labelled as full independent review.
+
+**Precedence rule.** When a gate qualifies as state-changing / skill-registration / high-stakes, the separate-session running review wins even if an autonomous-dispatch path exists for that gate. Autonomous dispatch is an optimization for the low-stakes high-volume tail, not the default for everything.
+
+## Autonomous dispatch (v2.0) — convenience mode, see Independence precedence above
+
+v1 required the operator to manually paste each gate output into a peer-review chat and paste the reply back. v2 removes the operator-as-transport **for the low-stakes high-volume tail** (per the Independence precedence section above — this is the weaker-independence convenience mode, not the default for state-changing or skill-registration work):
 
 **Under Claude Code (current substrate):** the orchestrator spawns the peer-reviewer as a Task sub-agent after each gate emission. The Task receives: (1) the gate output text, (2) the gate type from the registry, (3) paths to the context sources (state file, lesson files, kickoff prompt). The Task returns the structured JSON verdict. The orchestrator inlines the verdict alongside the gate output in the operator's view.
 
@@ -302,6 +312,7 @@ The peer-reviewer is normally dispatched by a parent orchestrator. Operator-driv
 
 ## Version history
 
+- **v3.8 (2026-06-16)** — Independence precedence (operator-directed). New "Independence precedence" section establishes the separate-session, step-by-step running review as the canonical and MANDATORY form for skill registrations / vault state changes / client deliverables / live-state changes, and demotes in-session Task sub-agent autonomous dispatch to a weaker-independence convenience mode for the high-volume low-stakes tail only (e.g. per-page Core-30 builds). The v2.0 "Autonomous dispatch" section and the client-seo-onboarding v1.4 integration note are re-scoped accordingly (no machinery removed — subordinated). Pairs with `independent-reviewer-mandate.md` v1.1 (Phase R: per-paste-back running verification as default) and the updated `pattern-independent-peer-review-chat.md` (running review = default, close-out-only = narrow exception). No engine/check changes; gate + orchestrator counts unchanged.
 - **v3.7 (2026-06-16)** — COA-4b regression-fixture corpus + OC-12↔dod-check reconnect (RGH-FIN). 16 committed regression fixtures (12 runnable + 4 design-verified) under `regression-fixtures/coa4b-*/` — synthetic defect/clean state pairs for the 15 deterministic COA-4b catches (C-02..C-24). Suite: 32/32 expectations met, 0 false positives. `.wf-tmp` good-states snapshotted as committed evidence (5.1 MB manifests + structural JSONs). OC-12 reconnected to `dod-check.py` (stale "fall back to OC-9" note removed — RGH-7 shipped). `source_type` parser gap closed: markdown DoD tables auto-dispatch mechanizable assertions; non-mechanizable deferred to independent reviewer (documented in `spec-definition-of-done-manifest.md`). OC-16 git-integration conformance test handed to [RGH-2] (deliverable #6). Fixture count 9→25. Harness version synced. Composes with [RGH-5] (consumes the committed corpus for its replay acceptance test).
 - **v3.6 (2026-06-15)** — G-chat-close omission-audit gate (RGH-6). New gate type `G-chat-close` registered in `references/gate-type-registry.md` — the omission half of the review stack. Every existing gate inspects artifacts that exist (commission); G-chat-close diffs expected-artifact-and-follow-through set against disk reality (omission). 16 checks (OC-1..OC-16) in an append-only registry, 6 per-chat-type profiles (planning/decision, build, research/extraction, production-fire, skill-build, micro), severity mapping, per-check ls/grep verification procedures — all $0/no-LLM, <5 min wall-clock. Wired as Closing Protocol step 0 in `_active-chats-tracker.md` (manual dispatch until RGH-5 auto-dispatches). OC-12..16 cite [RGH-7]'s deterministic Layer-A procedures (per-deliverable existence, count-reconciliation, rename-propagation, frontmatter-freshness, commit-staging-audit). Mapping-validated on WF-1 corpus (OC-1/2/3/4 map to the 4 known gaps) + COA-4b corpus (OC-12..16 map to 22/25 deterministic catches); true regression replay requires preserved pre-fix fixtures (RGH-5/RGH-7 scope). Gate count 20→21 (orchestrator count stays 13 — G-chat-close shares the gate-peer-reviewer orchestrator namespace). New reference file: `references/omission-check-registry.md`. Composes with RGH-5 (independent dispatch) + RGH-7 (DoD manifest + Layer-A scripts). Honest limits: known-gap-classes only (compounding rule), OC-4 Cowork-only, self-dispatch until RGH-5.
 - **v3.5 (2026-06-11)** — Verdict-file emission (RGH-1). When running under the mandatory pre-land review gate, the peer-reviewer now emits its structured return contract to a verdict file (`.review-gate/state/verdict-<gate_id>-<timestamp>.json`) that `log-review-pass.py` consumes. Verdict mapping: APPROVE/APPROVE-WITH-NOTES→PASS, REJECT-AND-REDO/ESCALATE-AMBIGUOUS→BLOCKING. checks_run mapped to named procedures (placeholder-sweep, leak-audit, ground-truth-cross-check, etc.). Full-tier requires ground-truth-cross-check or value-cross-check. Write-authority updated: verdict file is the ONE file the reviewer writes directly (enforcement infrastructure, not a vault artifact). Composes with the hardened mandatory-review-gate scripts (verdict-file-backed markers, tier enforcement, scoped aggregation).
