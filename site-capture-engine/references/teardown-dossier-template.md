@@ -111,6 +111,12 @@ Service-category IA.]
 [Ranked keywords: total kw, est. visits/value, which URLs rank (new vs old?).
 Historical: 6-12mo trend, breadth vs position. THE most important finding.]
 
+## 17b. Local-pack presence (V2) — Pass 3
+
+[In Google 3-pack for head keyword at client's city centroid? Position, GBP rating +
+review count visible in pack, Google Guaranteed badge. Or "Not in 3-pack."
+Free path: incognito search screenshot. DataForSEO: parse `local_pack` from existing SERP call.]
+
 ## 18. Additional patterns worth stealing
 
 [Anything not captured in the main sections. Noteworthy design/content/UX choices.]
@@ -121,6 +127,22 @@ Historical: 6-12mo trend, breadth vs position. THE most important finding.]
 
 [Header CTAs, per-page conversion sidebar, symptom checklists, 24/7 booking, the full funnel
 map: organic/local-pack → hyper-local page → qualify → trust stack → multi-path CTAs → booking.]
+
+## 19b. Review velocity + reputation snapshot (M1) — Pass 4
+
+| Metric | Value | Source |
+|---|---|---|
+| Google reviews | [count] | [DataForSEO / Maps] |
+| Google rating | [x.x★] | |
+| Est. reviews/month | [N or "pending"] | [BrightLocal / snapshot delta] |
+| Yelp reviews | [count, x.x★] | |
+| BBB | [accredited? rating?] | |
+| Angi | [count, x.x★] | |
+| Owner response rate | [x%] | |
+| Review-gen tools | [Podium/Birdeye/NiceJob/None] | [footer scripts] |
+
+[Why it matters: authority and review-volume are decoupled (MI-3 finding). Velocity
+is the durable lever.]
 
 ## 20. Traffic history + the breadth-vs-position reality
 

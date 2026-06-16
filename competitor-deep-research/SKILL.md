@@ -1,10 +1,33 @@
 ---
 name: competitor-deep-research
-version: 1.2
+version: 1.4
 description: Deep competitive intelligence research on a client's direct competitors, producing structured per-competitor briefs AND a Tier-2 light scan AND a cross-competitor synthesis (with cross-competitor structural pattern table) that feeds page-build and SEO strategy. Use this skill whenever the user asks to research competitors, do a "competitive analysis," "competitive deep dive," "competitor landscape," "competitive intelligence," or "competitor audit" for a specific client — and any time the user names 2 or more competitors and wants them profiled side-by-side. Also use when the user mentions wanting to feed competitor findings into a Core 30 / page-build / SEO foundation strategy, or when they ask "who else is ranking for [keyword]" and wants more than a list. The 2026-06-03 v1.1 enhancements (Tier-2 light scan + per-page deep audit + cross-page top-5-trafficked-pages pattern detection) are default-on; they produce the "stalker-level" depth downstream service-research-engine and Phase 3a scaffolders consume. The skill writes per-competitor markdown briefs and a synthesis file into the client's vault folder under admin-extracts/competitor-research/.
 ---
 
-# Competitor Deep Research (v1.2)
+# Competitor Deep Research (v1.4)
+
+> **v1.4 changelog (2026-06-16, [MI-7] multi-arena breadth)** — Extended the Tier-2 light scan
+> from 10 organic/content columns to **15 columns** by adding 5 cross-arena signal columns
+> (default-on, dual-path): (11) AI-citation flag V3, (12) local-pack flag V2, (13) paid/LSA
+> flag V4, (14) review velocity M1, (15) social/video flag V5. Each column's definition and
+> method are distilled from the [MI-3]/[MI-3b] proven run (the first real market-intelligence
+> scoring). DataForSEO + free-toolkit paths documented side-by-side per the v1.1 dual-path
+> convention. **Boundary preserved:** these columns capture per-competitor arena-presence flags;
+> the multi-arena roll-up, composite scoring, and perfect-company-profile synthesis stays in
+> `market-intelligence-engine` ([MI-5]). Synthesis template §1.5 updated to include the 5 new
+> columns. Brief template unchanged (cross-arena columns are Tier-2-row-only; Tier-1 briefs
+> already capture these signals in prose within their existing sections). Validated on Root
+> Electric (rootelectric.com) from the MI-3 competitor set — all 15 columns populated + sourced.
+> Incremental Tier-2 scan cost: ~$0.10–0.20 per 10 competitors (Sonar + business_data; V4 + V5
+> are free). No behavior change to existing columns 1–10, Tier-1 briefs, link-map mode, or
+> Phase 6 closing step.
+
+> **v1.3 changelog (2026-06-16, [DI-2] dedup)** — Extracted the `--mode design-fingerprint`
+> refinement section (added 2026-05-23, never implemented) into a standalone `design-fingerprint`
+> skill at `~/workspace/skills/design-fingerprint/`. That skill is now the canonical owner of
+> capture-package → design-dossier analysis. This skill remains the **landscape** tier (who ranks,
+> side-by-side briefs + synthesis). Compose them: landscape first, then fingerprint the winner's
+> design. No behavior change to the base skill or link-map mode.
 
 > **v1.2 changelog (2026-06-12, [WF-2] close-out)** — Cross-link to the sibling `site-capture-engine` skill (v1.1, registered 2026-06-11). Boundary made explicit in "Do not use": this skill is the **landscape** tier (who ranks, side-by-side briefs + synthesis); for a full-build reproduction teardown of ONE site you intend to out-build, hand off to `site-capture-engine`. Compose them: landscape first, then teardown the winner. No behavior change.
 
@@ -101,7 +124,9 @@ Run the light scan BEFORE Tier-1 deep dives. Doing the broader-but-shallower pas
 
 ### Tier-2 row columns (one row per competitor)
 
-Capture these 10 columns. Each cell cites the source inline.
+Capture these 15 columns. Each cell cites the source inline. Columns 1–10 are the organic/content columns (v1.1). Columns 11–15 are the cross-arena signal columns (v1.4, distilled from the [MI-3]/[MI-3b] proven run). All 15 are default-on.
+
+#### Organic / content columns (1–10)
 
 1. **Domain** — canonical root domain.
 2. **Page count** — total URLs in `sitemap.xml`. Bash: `curl -s <domain>/sitemap.xml | grep -c "<loc>"`. Fall back to the parent sitemap index if the top-level lists sub-sitemaps.
@@ -114,7 +139,23 @@ Capture these 10 columns. Each cell cites the source inline.
 9. **FAQ count on the sampled page** — hard count of question-answer pairs in the page body. Often visible as `<details>` / `<summary>` or as accordion section headings ending in `?`.
 10. **Schema types on the sampled page** — list the `@type` values found in `application/ld+json` blocks (`LocalBusiness`, `Service`, `FAQPage`, `AggregateRating`, `BreadcrumbList`, etc.). Note "none visible in source" explicitly when absent.
 
-### Method (DataForSEO path)
+#### Cross-arena signal columns (11–15) — v1.4
+
+These 5 columns extend the Tier-2 scan beyond organic/content into the cross-arena visibility signals defined in the market-intelligence-engine spec §3. They are **light flags + one metric each** — enough for the landscape pass to surface which arenas each competitor is active in, without duplicating the deep scoring that lives in the `market-intelligence-engine` orchestrator ([MI-5]). The definitions below are distilled from how [MI-3]/[MI-3b] actually captured each signal.
+
+> **Boundary note:** These columns capture **per-competitor arena presence flags**. The multi-arena **roll-up, composite scoring, and perfect-company-profile synthesis** stays in `market-intelligence-engine` (spec §2 boundary). This skill surfaces the raw signal; the engine interprets it.
+
+11. **AI-citation flag (V3)** — Has this competitor been cited by AI answer engines (ChatGPT, Perplexity, Gemini, Google AI Overviews) for the head keyword or close variants? Values: `Cited (N engines)` | `Not cited` | `Unknown`. The flag captures *presence*, not depth — one citation across any engine = `Cited`.
+
+12. **Local-pack flag (V2)** — Does this competitor appear in Google's local 3-pack for the head keyword at the client's primary city centroid? Values: `In 3-pack (position N)` | `Not in 3-pack` | `N/A (no local intent)`. Captures presence at the centroid only — full geo-grid analysis is the `market-intelligence-engine`'s scope.
+
+13. **Paid/LSA flag (V4)** — Is this competitor running Google Ads (Search, Display, or LSA) for service-related terms? Values: `Active (N ads)` | `LSA only` | `None found`. The ad count is the number of unique ad creatives found, not impressions.
+
+14. **Review velocity (M1)** — Two sub-values: (a) total Google review count, (b) estimated reviews/month (trailing velocity). Reviews/month is the durable lever (per spec §3 M1). When exact velocity isn't calculable from available data, record the total count + the date and flag `[velocity pending]`.
+
+15. **Social/video flag (V5)** — Is this competitor active on social/video channels (YouTube, TikTok, Instagram, Facebook)? Values: `Active (channels: YT, IG, …)` | `Minimal (FB only)` | `None found`. "Active" = ≥1 post in the last 90 days on a non-Facebook channel. Facebook-only presence is common but low-signal in most niches — flag it distinctly.
+
+### Method (DataForSEO path) — columns 1–10
 
 For the keyword + backlink + rank columns, use the wrapper at `~/workspace/second-brain-tier3/automation/scripts/dataforseo_query.py`. Endpoint cheat-sheet:
 
@@ -127,7 +168,7 @@ For the keyword + backlink + rank columns, use the wrapper at `~/workspace/secon
 
 Run each as a batched call where possible (multiple targets per request). Budget for 10 competitors × the 4 paid endpoints lands around $0.30–$0.50. The wrapper reports `tasks[*].cost` on stderr so the methodology section can record actuals.
 
-### Method (free-toolkit fallback)
+### Method (free-toolkit fallback) — columns 1–10
 
 When DataForSEO is unavailable or the operator wants to defer cost:
 
@@ -138,6 +179,36 @@ When DataForSEO is unavailable or the operator wants to defer cost:
 - **Word count + FAQ count + schema types** — these are all derivable from `mcp__workspace__web_fetch` on the sampled page + `scripts/count_words.py`. No tool dependency.
 
 Annotate each row with the source path actually used. The synthesis methodology section names which path the run used.
+
+### Method (DataForSEO + paid-tool path) — columns 11–15 (cross-arena)
+
+| Column | Primary tool | Endpoint / method | Typical cost |
+|---|---|---|---|
+| AI-citation flag (V3) | Perplexity Sonar API | `chat/completions` with `web-search-focus` model, 3–6 service-city prompts | ~$0.01–0.03 total (per-query pricing) |
+| Local-pack flag (V2) | DataForSEO SERP | `serp/google/organic/live/regular` — parse `local_pack` items in response | ~$0.0006 per keyword (already pulled for col 7) |
+| Paid/LSA flag (V4) | Google Ads Transparency Center | `adstransparency.google.com` — search competitor business name, count ad creatives (JS-rendered, requires Chrome) | Free (public registry) |
+| Review velocity (M1) | DataForSEO Business Data | `business_data/google/my_business_info/live` — fresh GBP pull returns `rating`, `reviews_count` | ~$0.01 per target |
+| Social/video flag (V5) | Direct channel visit | Navigate to competitor's IG/YouTube/TikTok via Chrome or `web_fetch`; check last-post date + channel existence | Free |
+
+**Budget addition for 10 competitors:** ~$0.10–0.20 incremental over the organic columns (Sonar + business_data; V2 local-pack piggybacks on existing SERP call; V4 + V5 are free). Total Tier-2 scan budget with cross-arena: ~$0.40–0.70.
+
+**V3 Sonar probe shape (from MI-3):** Run 3–6 prompts of the form `"best <service> in <city>"` / `"emergency <service> <city>"` / `"<service> near <city>"` via the Perplexity Sonar API (`~/workspace/second-brain-tier3/automation/scripts/perplexity_sonar.py` or `mi3-data/scripts/mi3_sonar.py`). Parse citations in each response — if the competitor's domain appears in any citation URL, mark `Cited`. Record which engines + how many prompts cited the competitor.
+
+**V4 Transparency Center procedure (from MI-3b):** Navigate to `adstransparency.google.com` in Chrome. Search the competitor's business name. Count unique ad creatives. Note format (Text / Display / LSA-style), last-shown date, and any regional targeting visible. **Critical MI-3b lesson:** DataForSEO SERP `paid` results alone are insufficient — a single desktop query sample missed active advertisers (MI-3 scored PRO Electric as V4=0; Transparency Center showed 27 active ads). The Transparency Center is the definitive public registry. When Chrome is unavailable, use the SERP paid-results as a lower bound and flag `[Transparency Center not checked — SERP-only, may undercount]`.
+
+**M1 review-velocity calculation (from MI-3b):** When BrightLocal velocity tracking is available, use it directly (it tracks month-over-month review count changes). When only a snapshot count is available (DataForSEO `my_business_info`), calculate velocity as `(current_count - baseline_count) / months_between` if a prior snapshot exists (e.g., from a BrightLocal scan or previous run). If no baseline exists, record the total count + date and flag `[velocity pending — single snapshot]`. Do NOT estimate velocity from a single count.
+
+### Method (free-toolkit fallback) — columns 11–15 (cross-arena)
+
+When DataForSEO/Sonar are unavailable:
+
+- **AI-citation flag (V3)** — Manual probes: search `"best <service> in <city>"` in ChatGPT, Perplexity (web UI), and Gemini. Check if the competitor appears in the cited sources or named in the response. Record which engines cited the competitor. If Otterly (free tier, 1 snapshot/month) is set up for the client's field, use the latest snapshot as baseline. HubSpot AEO Grader (`hubspot.com/aeo-grader`) is a free no-account diagnostic for a single domain's AI-engine optimization posture — useful as a supplementary signal but doesn't answer "is this competitor cited."
+- **Local-pack flag (V2)** — Run a Google search for the head keyword from the target geography (incognito, location set). Check the local 3-pack: is the competitor listed? Record position. If Local Falcon is available (paid, ~$25/mo starter), it gives geo-grid coverage — but for the Tier-2 light scan, a single centroid check is sufficient.
+- **Paid/LSA flag (V4)** — Google Ads Transparency Center (free, public, no account needed — `adstransparency.google.com`). Search the business name. This IS the free path — it's the same source the paid path uses. Alternatively, inspect SERP paid results for the head keyword (lower bound only).
+- **Review velocity (M1)** — Check the competitor's Google Business Profile (search `"<business name> <city>" site:google.com/maps` or visit Google Maps directly). Record the review count + rating + date. If a prior count exists from any source, compute velocity. BrightLocal (paid, ~$35/mo) automates velocity tracking.
+- **Social/video flag (V5)** — Visit the competitor's homepage; check for social links in the footer or header. Visit each linked channel (IG, YouTube, TikTok, FB). Record: channel exists? Last post date? "Active" = ≥1 non-Facebook post in the last 90 days. Check for embedded social feeds (Smash Balloon, Podium widgets) on the homepage — their presence signals the competitor values social proof even if the actual reach is low.
+
+Annotate each row with the source path actually used per column. The synthesis methodology section names which path the run used for each column group.
 
 ### When to escalate a Tier-2 row to Tier-1
 
@@ -355,7 +426,7 @@ If the output folder is new, write a `_README.md` for it (template at `reference
 
 After Phases 1-5 complete (Tier-2 light-scan rows collected, per-competitor Tier-1 briefs written, cross-competitor synthesis landed including the Tier-2 table + cross-competitor structural pattern, folder `_README.md` shipped or updated), emit the standard auto-invoke block per `~/workspace/skills/output-quality-loop/references/auto-invoke-convention.md` and `~/workspace/second-brain/_meta/conventions.md` § "Output quality". This is the closing step every artifact-producing skill emits before declaring the chat done. Convention shipped Phase 5 of the output-quality-loop project (2026-05-28).
 
-**Artifact list for this skill.** Always include: the per-competitor briefs written this run + the cross-competitor synthesis. In design-fingerprint mode also include the design dossier file written into `second-brain/03_domains/website-design/inspiration/high-performing/<reference>/`. The folder `_README.md` is NOT included in the evaluation (it's hygiene metadata, not a content artifact the spec-routing table covers).
+**Artifact list for this skill.** Always include: the per-competitor briefs written this run + the cross-competitor synthesis. The folder `_README.md` is NOT included in the evaluation (it's hygiene metadata, not a content artifact the spec-routing table covers). Design dossiers are now produced by the standalone `design-fingerprint` skill — see the "Composes with" section above.
 
 **The block to emit (verbatim):**
 
@@ -366,7 +437,7 @@ This skill produced the following artifact(s):
 - `<per-competitor-brief-1-path>`
 - `<per-competitor-brief-2-path>`
 - `<cross-competitor-synthesis-path>`
-- `<design-dossier-path>`  ← only in design-fingerprint mode
+- (design dossiers are now produced by the standalone `design-fingerprint` skill)
 
 [output-quality-loop:eval] — for each artifact, run output-quality-loop in EVALUATE mode. If PASS, declare the chat done. If NEEDS REVISION or FAIL, ingest the revision prompt as if it were operator input and regenerate the artifact, then re-invoke output-quality-loop. Cap at 3 iterations; on the 3rd FAIL, escalate to the operator with the evaluation report.
 ````
@@ -430,159 +501,22 @@ When in doubt about format, voice, depth, or section structure, read the worked 
 
 ---
 
-## Refinement — design-fingerprint mode (added 2026-05-23)
+## Composes with: `design-fingerprint` skill (design dossiers)
 
-**Status:** spec only. Implementation TBD as a follow-up project.
-
-### Why this mode exists
-
-The base `competitor-deep-research` skill is shaped for SEO + content + positioning analysis. The output is a per-competitor brief and a cross-competitor synthesis useful for page-build strategy.
-
-After the 2026-05-23 pivot to custom-coded Next.js sites built by emulating proven high-performing reference sites (see [[decision-2026-05-23-pivot-to-custom-coded-websites-via-nextjs]]), the skill also needs to produce a **design dossier** suitable for filing in `second-brain/03_domains/website-design/inspiration/high-performing/`. The base skill captures most of what a design dossier needs but is missing four things:
-
-1. **Color palette extraction** — hex codes for primary, secondary, accent, neutral, text colors
-2. **Typography extraction** — font family names + weights + size scale + line-height patterns
-3. **Layout pattern detection** — hero composition, section conventions, FAQ shape, CTA style, footer pattern
-4. **Performance scores** — Core Web Vitals (LCP, INP, CLS) from PageSpeed Insights API; not just lab data but real-user data when available
-
-The refinement adds a `--mode design-fingerprint` flag (or equivalent invocation pattern in skill-speak) that produces a dossier in the format spec'd at `second-brain/03_domains/website-design/inspiration/high-performing/_README.md`.
-
-### Trigger phrases for design-fingerprint mode
-
-In addition to the base skill's triggers, also use this mode when:
-
-- "Fingerprint the design of [site]"
-- "Add [site] to the design catalog"
-- "Build a design dossier for [site]"
-- "Run a design-emulation prep on [site]"
-- "Capture the visual fingerprint of [site]"
-- Any time a site is being prepared for emulation by Claude Code per the [[tactic-emulate-competitor-design-patterns-with-ai|emulate competitor patterns tactic]]
-
-### Inputs (in addition to the base skill's inputs)
-
-- **Reference site URL** — required. Single URL, not a list.
-- **Output mode** — `design-dossier` (default for this mode), or `dossier-plus-brief` (also writes the standard competitor brief)
-- **Target catalog folder** — defaults to `second-brain/03_domains/website-design/inspiration/high-performing/`
-- **Performance data source** — `lab` (Lighthouse), `field` (real-user CrUX), or `both` (preferred)
-
-### Output contract — the design dossier format
-
-Spec'd at `second-brain/03_domains/website-design/inspiration/high-performing/_README.md`. Reproduced here for skill-spec purposes:
-
-```
-dossier-<site-slug>.md
-
-Frontmatter:
-- type: design-dossier
-- status: verified | provisional
-- created, updated, domain, niche, geography
-- performance-verified-date
-- tags
-
-Content sections (in order):
-1. Business identity
-2. Why it performs (rankings + CWV + content + conversion proxies)
-3. Tools / code / framework fingerprint  ← base skill already covers this
-4. Visual design fingerprint            ← NEW; the refinement's main addition
-5. Patterns worth emulating
-6. Patterns to skip
-7. How we emulate without copying assets
-8. Verification notes
-```
-
-### New procedure for the visual design fingerprint section
-
-Beyond the base skill's tech-stack fingerprinting:
-
-#### A. Color palette extraction
-
-Procedure:
-
-1. Pull all CSS files referenced from the page via `web_fetch`
-2. Extract all hex codes via regex (`#[0-9a-fA-F]{3,6}`)
-3. Also extract rgb()/rgba() values and convert to hex
-4. Count frequency of each color; the top 5-7 most-used colors are usually the palette
-5. Cross-check against any explicit CSS custom properties (`--color-primary`, `--brand-blue`, etc.)
-6. Group by role: primary brand, secondary, accent, neutral background, neutral text
-7. Write the palette as a code block with each role + hex value
-
-Edge case: if the site uses Tailwind, palette colors often appear inline in the HTML as `bg-blue-500` etc. — convert to hex equivalents using a Tailwind palette reference.
-
-#### B. Typography extraction
-
-Procedure:
-
-1. Pull all `@font-face` declarations from CSS
-2. Pull all `font-family` declarations and count frequency
-3. Identify the primary font (most common in body), secondary (often headings), and any display font
-4. For each font, extract: weights used (300, 400, 500, 600, 700, etc.), sizes used (px, rem, em values; build a size scale), line-heights, letter-spacing
-5. Check whether fonts are loaded via Google Fonts, self-hosted, or a service like Typekit
-6. Write typography as: font name + weight + size scale + line-height pattern per role (body, headings, display, accent)
-
-#### C. Layout pattern detection
-
-Procedure:
-
-1. Parse the rendered DOM (via Claude in Chrome if available, or via web_fetch's returned HTML if JS-light)
-2. Identify the major sections of the home page in order: hero, services, about, testimonials, FAQ, footer, etc.
-3. For each section, capture: HTML structure (which tags / classes), visual position (above-fold, below-fold), content density (text-heavy, image-heavy, mixed), CTA presence and style
-4. Compare against an internal taxonomy of known section patterns (see `references/patterns-to-watch.md` — extend this file when new section patterns emerge)
-5. Write layout patterns as a list of section conventions with examples
-
-#### D. Performance scores
-
-Procedure:
-
-1. Call Google PageSpeed Insights API for both mobile and desktop variants of the site
-2. Capture both lab data (Lighthouse synthetic) AND field data (real-user CrUX) where available
-3. Capture all three Core Web Vitals: LCP, INP, CLS
-4. Capture additional metrics: FCP, Speed Index, Total Blocking Time
-5. Note whether each metric is "Good," "Needs Improvement," or "Poor" per Google's thresholds
-6. Write performance scores as a table with each metric, lab + field values, and the Good/NI/Poor classification
-
-#### E. Image format inventory
-
-Procedure:
-
-1. Extract all `<img>` `src` and `<source>` `srcset` attributes from the page
-2. Count format distribution: AVIF, WebP, PNG, JPG, SVG, GIF
-3. Note whether the site uses responsive images (`srcset`, `sizes`, `<picture>`)
-4. Note whether Next.js Image component is in use (often visible from `_next/image?url=` patterns in URLs)
-5. Modern format prevalence (AVIF + WebP) is a Pillar 2 SEO signal (image weight correlates with LCP)
-6. Write image format inventory as a short table
-
-### When to use base skill vs design-fingerprint mode
-
-| User intent | Mode |
-|---|---|
-| Understand competitor landscape for SEO strategy | Base skill |
-| Profile a competitor for client positioning | Base skill |
-| Lift design patterns from a high-performing reference | Design-fingerprint mode |
-| Build a catalog entry in `inspiration/high-performing/` | Design-fingerprint mode |
-| Cross-competitor synthesis for Core 30 build | Base skill |
-| Cross-reference synthesis for design catalog | Design-fingerprint mode |
-
-If both are needed for the same site, run base skill first, then design-fingerprint mode. They produce sibling files (one in `admin-extracts/competitor-research/`, one in `website-design/inspiration/high-performing/`).
-
-### Future implementation notes
-
-When this refinement gets implemented:
-
-- The color palette + typography extraction steps lend themselves to scripts (`scripts/extract_palette.py`, `scripts/extract_typography.py`) that take a URL and emit structured output
-- The layout pattern detection is harder to automate; likely stays as a Claude-driven analysis with a reference taxonomy that grows over time
-- The PageSpeed API call is a single HTTP request; cheap to wrap
-- Image format inventory is parseable from `web_fetch`'s returned HTML
-- Add a new template file `references/design-dossier-template.md` that mirrors the format spec'd in the website-design domain's `inspiration/high-performing/_README.md`
-- Add a new patterns file `references/visual-patterns-taxonomy.md` cataloging known section conventions (hero variants, services-grid variants, FAQ shapes, footer styles)
-
-The implementation work is a follow-up project. This spec captures what the refinement should produce.
-
-### Related
-
-- [[decision-2026-05-23-pivot-to-custom-coded-websites-via-nextjs]] — the canonical decision triggering this refinement
-- [[strategy-custom-coded-nextjs-via-ai-with-competitor-inspiration]] — the strategy the refinement supports
-- [[tactic-emulate-competitor-design-patterns-with-ai]] — the tactic that consumes design dossiers
-- `~/workspace/skills/design-emulation-verify/SKILL.md` — sister skill that verifies our build against the reference's dossier
+> **Extracted 2026-06-16 ([DI-2]).** The `--mode design-fingerprint` spec that lived here (added
+> 2026-05-23, never implemented) has been built as a standalone skill at
+> `~/workspace/skills/design-fingerprint/`. That skill is now the canonical owner of
+> **capture package → structured design dossier** analysis (full 8-section + light design-only
+> depths, with a machine-readable trait sidecar for cross-site synthesis).
+>
+> **Composition pattern:** Run this skill (landscape tier) first to identify who ranks and why.
+> Then run `design-fingerprint` on the winner's `site-capture-engine` capture package to produce
+> the design dossier for emulation. The two skills produce sibling files: this skill writes to
+> `admin-extracts/competitor-research/`, `design-fingerprint` writes to the output path of your
+> choice (typically `website-design/inspiration/high-performing/` or `../design-only/`).
+>
+> See: `~/workspace/skills/design-fingerprint/SKILL.md` · [[design-emulation-verify]] (downstream
+> build-vs-reference diff) · [[tactic-emulate-competitor-design-patterns-with-ai]]
 
 ---
 
@@ -599,7 +533,7 @@ The link map feeds two consumers:
 1. **A synthesis recommendation** — "this is what our site's link graph should look like." One per client domain. Lives at `link-maps/_synthesis-<client-slug>.md`.
 2. **The internal-linking inserter script** (`repos/ai-agency-core/scripts/insert-internal-links.py`) — reads the synthesis and proposes/inserts cross-links into the client's published page corpus.
 
-Treat link-map mode the same way design-fingerprint mode is treated: a focused dimension that can run alongside the base skill (`dossier-plus-brief` equivalent) or on its own.
+Treat link-map mode as a focused dimension that can run alongside the base skill or on its own.
 
 ### Trigger phrases for link-map mode
 

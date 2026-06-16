@@ -56,29 +56,32 @@ Source notes: cite the ranking-data source + date.
 
 One row per Tier-2 competitor (top 10 in the SERP / ranking-source). The Tier-1 competitors appear here too with full data; Tier-2-only competitors get the same row shape. Sort by **Avg rank for head keyword** ascending.
 
-| # | Domain | Pages | Tech stack | Top 5 keywords | Backlinks | DA / DR | Avg rank | Service-page words | FAQs | Schema types |
-|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | <Tier-1 A> | | | | | | | | | |
-| 2 | <Tier-1 B> | | | | | | | | | |
-| 3 | <Tier-2> | | | | | | | | | |
-| 4 | <Tier-2> | | | | | | | | | |
-| 5 | <Tier-1 C> | | | | | | | | | |
-| 6 | <Tier-2> | | | | | | | | | |
-| 7 | <Tier-1 D> | | | | | | | | | |
-| 8 | <Tier-2> | | | | | | | | | |
-| 9 | <Tier-2> | | | | | | | | | |
-| 10 | <Tier-2> | | | | | | | | | |
+| # | Domain | Pages | Tech stack | Top 5 keywords | Backlinks | DA / DR | Avg rank | Svc-page words | FAQs | Schema types | AI-cite (V3) | Local-pack (V2) | Paid/LSA (V4) | Review vel. (M1) | Social (V5) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | <Tier-1 A> | | | | | | | | | | | | | | |
+| 2 | <Tier-1 B> | | | | | | | | | | | | | | |
+| 3 | <Tier-2> | | | | | | | | | | | | | | |
+| 4 | <Tier-2> | | | | | | | | | | | | | | |
+| 5 | <Tier-1 C> | | | | | | | | | | | | | | |
+| 6 | <Tier-2> | | | | | | | | | | | | | | |
+| 7 | <Tier-1 D> | | | | | | | | | | | | | | |
+| 8 | <Tier-2> | | | | | | | | | | | | | | |
+| 9 | <Tier-2> | | | | | | | | | | | | | | |
+| 10 | <Tier-2> | | | | | | | | | | | | | | |
 
-**Per-row source annotation** — append a one-line citation row beneath the table naming the method per row (DataForSEO / free-toolkit / mixed). Example: `Rows 1, 2, 5, 7 — DataForSEO Labs ranked_keywords + Backlinks Summary 2026-06-03; Rows 3, 4, 6, 8, 9, 10 — free-toolkit (BrightLocal Feb 2026 + Ahrefs Free Backlink Checker + sitemap probe).`
+**Per-row source annotation** — append a one-line citation row beneath the table naming the method per column group per row. Example: `Cols 1–10: Rows 1, 2, 5, 7 — DataForSEO Labs ranked_keywords + Backlinks Summary 2026-06-03; Rows 3, 4, 6, 8, 9, 10 — free-toolkit. Cols 11–15: V3 — Sonar 6-prompt probe 2026-06-14; V2 — DataForSEO SERP local_pack; V4 — Ads Transparency Center (Chrome) 2026-06-15; M1 — DataForSEO business_data/my_business_info; V5 — direct channel visit.`
 
 **Light-scan observations:**
 
-A few bullets surfacing the patterns visible in the 10-row table that aren't already in the Tier-1 deep dives:
+A few bullets surfacing the patterns visible in the 15-column table that aren't already in the Tier-1 deep dives:
 
 - Page-count distribution (where do most fall? who are the outliers?)
 - Tech-stack distribution (WordPress vs static vs enterprise vs hosted-builder)
 - Schema saturation (how many emit JSON-LD at all? which types are common?)
 - FAQ saturation (proportion of pages with embedded FAQs)
+- **Cross-arena heat map** *(v1.4)*: which competitors are active across multiple arenas (organic + local + paid + AI + social) vs single-arena specialists? Surface the 1–2 competitors with the broadest arena coverage — they are the hardest to displace.
+- **Review-velocity leaders** *(v1.4)*: who is growing review count fastest? Velocity is the durable lever (spec §3 M1) — a competitor with 200 reviews at 15/month will overtake a competitor with 1,000 reviews at 2/month.
+- **Paid-arena density** *(v1.4)*: how many of the 10 competitors run ads? If the arena is contested (6+ running ads), the client needs a paid strategy to compete. If it's empty (0–2 running ads), paid is a wide-open opportunity.
 - The 1–2 Tier-2-only competitors that look surprisingly strong (potential Tier-1-promotion candidates for the next refresh cycle)
 
 ---
@@ -266,7 +269,8 @@ List specifically what this round of research couldn't reach. Common ones:
 - No automated content-depth measurement (word counts estimated, not tokenized)
 - Only one service-page and one location-page audited per competitor
 - No mobile-specific audit
-- No competitive ad-spend research
+- No competitive ad-spend research (note: V4 column captures presence/count from Transparency Center, not spend)
+- Cross-arena columns (V3/V2/V4/M1/V5) are point-in-time flags — they don't track change over time without a baseline
 - Client's own current state wasn't deeply compared at page level
 
 ### What I'd do differently next time

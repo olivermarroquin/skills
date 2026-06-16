@@ -44,12 +44,19 @@ present (absence is a finding too). Bash = sandbox curl; decode with `scripts/ex
       (new vs old?)**.
 - [ ] DataForSEO `historical_rank_overview`: 6–12mo kw count + etv + position bands. **Breadth vs top-3.**
 - [ ] Note non-active subscriptions; fall back to BrightLocal/Ahrefs baseline.
+- [ ] Local-pack presence (V2) [v2.2]: parse `local_pack` items from DataForSEO SERP
+      response (already pulled). Free path: incognito Google search + screenshot. Record:
+      in 3-pack (position) / absent, GBP rating + review count, Google Guaranteed badge.
 - [ ] **GATE 2:** report the ranked-keywords reframing before Pass 4.
 
 ## Pass 4 — Conversion/UX + history + archaeology
 - [ ] Conversion/CTA system: header CTAs (call + Book Online); per-page sidebar (Need-Help-Now /
       Request-Quote / response-time / Service-Area-Info w/ county+population+ZIPs / Other-Services);
       symptom checklists ("Signs You Need…"); 24/7 voice booking. Map the funnel.
+- [ ] Review velocity + reputation snapshot (M1) [v2.2]: Google review count + rating
+      (DataForSEO `my_business_info` or Google Maps), velocity (BrightLocal or snapshot delta),
+      platform spread (Yelp/Angi/BBB), response rate, review-generation tools (Podium/Birdeye/
+      NiceJob — check footer scripts).
 - [ ] Migration: do old URLs 301/308-redirect to new? Enumerate the old→new map (the client migration playbook).
 - [ ] Old-page archaeology: recover proven-winner old URLs via Wayback CDX + snapshots; if archive.org down, defer.
 - [ ] Conversion + authority gap: reconcile breadth-vs-position; state "pages ≠ money without reviews/GBP/

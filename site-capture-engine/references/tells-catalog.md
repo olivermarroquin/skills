@@ -42,6 +42,7 @@ Expanded reference of concrete things to look for on every teardown. Each tell i
 | Review widgets | Birdeye, Podium, NiceJob — or custom/none | Script tags / embeds | Trust layer strategy |
 | SEO plugin | Rank Math, Yoast, AIOSEO, custom | HTML meta / schema patterns | Schema generation approach |
 | Comprehensive JSON-LD | `FAQPage`, `Offer`/`PriceSpecification`, `AggregateRating`, `BreadcrumbList`, `HowTo`, `SpeakableSpecification` | JSON-LD blocks | Schema completeness; `SpeakableSpecification` = voice/AI-answer bet |
+| Local-pack presence | Competitor in Google 3-pack at city centroid? Position, GBP rating/count, Google Guaranteed | DataForSEO SERP `local_pack` / Google search | Organic rank ≠ local-pack rank; a competitor can own organic but be invisible locally (MI-3: AJ Long dominates Fairfax 3-pack but trails Root in organic) |
 
 ## Pass 4 — Conversion/UX
 
@@ -51,6 +52,7 @@ Expanded reference of concrete things to look for on every teardown. Each tell i
 | Conversion sidebar | Need-Help-Now, Request-Quote, response-time reassurance, Service-Area-Info card, Other-Services cross-sell | Page sidebar | Per-page conversion system |
 | Symptom checklists | "Signs You Need…" sections | Page body | Qualify the visitor; trigger urgency |
 | 24/7 voice booking | AI voice agent that books real jobs after hours | Script tags / widget | After-hours revenue capture |
+| Review velocity | Google review count + rating + est. reviews/month; platform spread; review-gen tools (Podium/Birdeye/NiceJob) | DataForSEO `my_business_info` / Google Maps / footer scripts | Authority and reviews are decoupled (MI-3). Velocity is the durable lever — 200 reviews at 15/mo overtakes 1,000 at 2/mo |
 | Redirect preservation | Old URLs 301/308-redirect to new | `curl -I` on old URLs | Migration equity preservation |
 
 ## Pass 5 — Design, intent & money mechanics

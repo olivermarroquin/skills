@@ -1,6 +1,6 @@
 ---
 name: site-capture-engine
-version: 2.1
+version: 2.2
 description: >
   Universal site capture engine with context-aware output. Captures any website's complete state — HTML,
   screenshots, schema, assets, SingleFile per page, redirect map, broken links, meta-data audit,
@@ -20,7 +20,20 @@ description: >
 composes-with: [competitor-deep-research, website-design, design-emulation-verify, client-onboarding-automation, website-factory, design-fingerprint, reference-library]
 ---
 
-# Site Capture Engine (v2.1)
+# Site Capture Engine (v2.2)
+
+> **v2.2 changelog (2026-06-16, [MI-7] multi-arena signal)** — Two light additions to the
+> teardown deep pass, closing the two arenas the single-site teardown under-captured: (1) **Pass
+> 3 step 6: local-pack presence (V2)** — captures whether the competitor appears in Google's
+> local 3-pack at the client's city centroid, with GBP rating + review count visible in the pack.
+> DataForSEO path piggybacks on existing SERP call; free path = manual Google search + screenshot.
+> (2) **Pass 4 step 2: review velocity + reputation snapshot (M1)** — structured capture of Google
+> review count, rating, estimated reviews/month velocity, platform spread (Google/Yelp/Angi/BBB),
+> response rate, and review-generation tools detected on-site (Podium/Birdeye/NiceJob). DataForSEO
+> `business_data/my_business_info` path + free Google Maps path. Both distilled from the
+> [MI-3]/[MI-3b] proven run. **Boundary preserved:** point-in-time snapshots only; trend analysis +
+> geo-grid coverage stays in `market-intelligence-engine`. No changes to universal capture,
+> restoration context, or design-capture context.
 
 > **v2.1 changelog (2026-06-15)** — [DI-1] design-capture context extension. (1) **Third output context:
 > design-capture** — auto-detects from `website-design/inspiration/` or `design-reference/` paths, or via
@@ -305,6 +318,16 @@ Goal: make **every tool explicit** and confirm what truly performs.
 5. **DataForSEO — what actually ranks** (Labs subscription):
    - `ranked_keywords/live` → total ranked keywords, est. visits/value, which URLs rank.
    - `historical_rank_overview/live` → 6–12 months of keyword count + etv + position bands.
+6. **Local-pack presence (V2)** *(v2.2, [MI-7])* — Does this competitor appear in Google's local
+   3-pack for the client's head keyword at the primary city centroid? Capture: position in 3-pack
+   (or absent), GBP rating + review count visible in the pack, any "Google Guaranteed" badge.
+   **DataForSEO path:** parse `local_pack` items from the `serp/google/organic/live/regular`
+   response already pulled for step 5. **Free path:** run a Google search for the head keyword
+   from target geography (incognito); screenshot the local pack; record positions. This signal
+   matters because a competitor can own organic rankings but be invisible in the local pack (or
+   vice versa — the MI-3 run found AJ Long dominates the Fairfax 3-pack but trails Root Electric
+   in organic). The dossier records the finding; full geo-grid analysis stays in the
+   `market-intelligence-engine`.
 
 **Gate 2:** the ranked-keywords finding usually reframes strategy — report before Pass 4.
 
@@ -316,9 +339,24 @@ Goal: how they turn rankings into booked jobs, plus the migration + history.
 
 1. **Conversion/CTA system.** Persistent header CTAs, per-page conversion sidebar, symptom checklists,
    24/7 booking layer. Map the full funnel.
-2. **Migration playbook.** Check whether old URLs 301/308-redirect to new ones.
-3. **Old-page archaeology.** Recover proven winners via Wayback Machine.
-4. **Conversion + authority gap.** Reconcile with Pass-3 history.
+2. **Review velocity + reputation snapshot (M1)** *(v2.2, [MI-7])* — Capture the competitor's
+   review profile as a structured data point, not just prose. Record: (a) Google review count
+   (fresh, from GBP or DataForSEO `business_data/google/my_business_info/live`), (b) rating,
+   (c) estimated reviews/month velocity (from BrightLocal if available, or computed from
+   current count vs a prior snapshot), (d) review platform spread (Google, Yelp, Angi, BBB —
+   check each), (e) review-response rate (what proportion of reviews get an owner reply?),
+   (f) review-generation tools detected on the site (Podium widget, Birdeye, NiceJob, Grade.us
+   — check footer scripts + embedded review forms). **Why this matters for the teardown:** the
+   MI-3 run showed authority and review-volume are decoupled (Root wins organic with 350
+   ref-domains but only 112 reviews; AJ Long wins reviews with 1,147 but only 71 ref-domains).
+   Velocity is the durable lever — a competitor gaining 12 reviews/month will overtake a
+   stalled leader. The dossier records the snapshot; trend analysis over time stays in the
+   `market-intelligence-engine`. **Free path:** visit Google Maps for the business, record count
+   + rating + date. Check Yelp/BBB/Angi pages directly. Inspect site footer for review-tool
+   scripts.
+3. **Migration playbook.** Check whether old URLs 301/308-redirect to new ones.
+4. **Old-page archaeology.** Recover proven winners via Wayback Machine.
+5. **Conversion + authority gap.** Reconcile with Pass-3 history.
 
 **Gate 3 (closing):** dossier + blueprint updates.
 
