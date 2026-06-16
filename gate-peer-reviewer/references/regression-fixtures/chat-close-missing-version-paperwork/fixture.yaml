@@ -1,0 +1,23 @@
+fixture_id: chat-close-missing-version-paperwork
+description: G-chat-close OC-10 — skill-build chat ships a SKILL.md edit with no version bump, no changelog, no event-log row
+gate_type: G-chat-close
+defect_class: OC-10 (version paperwork missing)
+chat_profile: skill-build
+planted_defects:
+  - surface: SKILL.md frontmatter (version field)
+    defect_type: missing-update
+    description: SKILL.md was edited (new reference added) but version field not bumped
+    expected_catch_severity: blocking
+  - surface: SKILL.md version-history section
+    defect_type: missing-artifact
+    description: No changelog entry for the edit
+    expected_catch_severity: blocking
+  - surface: event-log
+    defect_type: missing-artifact
+    description: No event-log row for the version bump (because no bump happened)
+    expected_catch_severity: blocking
+expected_verdict: BLOCKING
+expected_checks_that_fire:
+  - OC-10-version-paperwork
+introduced_at_version: 3.6
+regression_for: competitor-deep-research v1.1 close (missing version paperwork caught by operator 06-03); acceptance criterion A2 (planted non-WF skill-build omission)

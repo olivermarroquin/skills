@@ -1,0 +1,15 @@
+fixture_id: chat-close-missing-exec-log
+description: G-chat-close OC-1 — multi-step build chat with no execution log at close time
+gate_type: G-chat-close
+defect_class: OC-1 (execution log missing)
+chat_profile: build
+planted_defects:
+  - surface: disk (execution-log path)
+    defect_type: missing-artifact
+    description: No execution-log-*.md exists in the expected location for this chat
+    expected_catch_severity: blocking
+expected_verdict: BLOCKING
+expected_checks_that_fire:
+  - OC-1-exec-log
+introduced_at_version: 3.6
+regression_for: WF-1 gap #1 (exec log skipped at close); S&H wave A2 (same class)

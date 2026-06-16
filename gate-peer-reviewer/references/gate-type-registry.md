@@ -1,10 +1,10 @@
 ---
 type: reference
 skill: gate-peer-reviewer
-skill-version: 3.4
+skill-version: 3.6
 created: 2026-06-03
-updated: 2026-06-08
-tags: [reference, gate-type-registry, substrate-agnostic, future-orchestrator-friendly, page-build, client-seo-onboarding, value-correctness, ground-truth]
+updated: 2026-06-15
+tags: [reference, gate-type-registry, substrate-agnostic, future-orchestrator-friendly, page-build, client-seo-onboarding, value-correctness, ground-truth, g-chat-close, omission-audit]
 ---
 
 # Gate-type registry
@@ -740,6 +740,42 @@ When the mandatory pre-land review gate fires on a task that has **no registered
 The tier is determined by the dirty-ledger entries accumulated during the task and logged in the review-pass marker.
 
 **Relationship to registered gates:** When a task runs under a registered orchestrator (e.g., client-seo-onboarding G-publish), that orchestrator's registered gate type takes precedence — G-default is NOT used. G-default only fires for work outside any registered orchestrator flow.
+
+## G-chat-close — omission-audit gate (v3.6, 2026-06-15)
+
+Every existing gate is **commission-oriented** — it inspects artifacts that exist. `G-chat-close` is the **omission** half: given what kind of chat this was, what artifacts and follow-through SHOULD exist, and do they? Fires at every chat close (Closing Protocol step 0 when manually dispatched; auto-dispatched by [RGH-5] once that ships).
+
+**Full spec:** `references/omission-check-registry.md` — 16 checks (OC-1..OC-16), 6 per-chat-type profiles, severity mapping, per-check verification procedures, honest limits.
+
+```yaml
+- orchestrator: G-chat-close (Closing Protocol step 0 / RGH-5 auto-dispatch)
+  mode: chat-close
+  gate_id: G-chat-close
+  fires_at: Closing Protocol step 0 (manual) or RGH-5 independent dispatch (auto) — before any closure rows are written
+  emits: omission-audit verdict — diff of expected-artifact-and-follow-through set against disk reality
+  contract_source: skills/gate-peer-reviewer/references/omission-check-registry.md
+  is_closing_gate: true
+  expects:
+    check_1_satisfaction_targets:
+      - chat classified into profile(s) per §B of omission-check-registry.md
+      - universal checks OC-7/8/9/11/12/15/16 run on every chat
+      - profile-specific checks added per classification
+      - OC-14 added if any identifier renamed
+      - each check produces disk-verified evidence (ls/grep), not self-claim
+    check_2_calibration_metrics: null  # $0/no-LLM — all checks are vault reads + greps
+    check_3_domain_probe_classes:
+      - completeness (always — the gate's entire mandate)
+    check_4_cross_wave_artifact_type: none
+    check_4_within_wave_prior_gate: null
+  registered_by: rgh6-g-chat-close-omission-audit-202606151200
+  registered_at: 2026-06-15
+```
+
+**Relationship to G-default:** G-default reviews *what was produced* (commission). G-chat-close reviews *what should have been produced but wasn't* (omission). Both may fire on the same chat — they are complementary, not competing. G-default is triggered by the dirty ledger (artifacts exist); G-chat-close is triggered by the chat closing (expected artifacts may be missing).
+
+**Relationship to [RGH-5]:** Until RGH-5 ships, G-chat-close is manually dispatched at Closing Protocol step 0 (the producing chat audits itself — same honest limit as G-default). RGH-5 auto-dispatches it under independent review, closing the self-audit gap.
+
+**Relationship to [RGH-7]:** OC-12..16 are the deterministic Layer-A checks RGH-7 builds as scripts. G-chat-close orchestrates them at close; this gate cites RGH-7's procedures rather than rebuilding them. Until RGH-7 ships, OC-12 falls back to OC-9's deliverable enumeration; OC-13..16 run their grep/ls procedures inline.
 
 ## Build wave 4 — cross-orchestrator generalization (SHIPPED 2026-06-05)
 

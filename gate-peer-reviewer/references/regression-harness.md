@@ -116,6 +116,24 @@ regression_for: <D-row or PR number this prevents regressing>
 **Expected:** Check 1 flags as `nit` severity. `verdict_severity: advisory`. Verdict: APPROVE-WITH-NOTES.
 **Regression for:** Severity tier classification — ensures advisory tier works and doesn't over-escalate.
 
+### Fixture 8: `chat-close-missing-exec-log` (v3.6 — G-chat-close OC-1)
+
+**Tests:** OC-1 — multi-step build chat with no execution log at close.
+**Gate type:** G-chat-close
+**Chat profile:** build
+**Planted defect:** No `execution-log-*.md` exists in any expected path. OC-1 `ls` finds nothing.
+**Expected:** OC-1 fires → BLOCKING. Gate prevents close until exec log is written.
+**Regression for:** WF-1 gap #1 (exec log rationalized away at close); S&H wave A2 (same class).
+
+### Fixture 9: `chat-close-missing-version-paperwork` (v3.6 — G-chat-close OC-10)
+
+**Tests:** OC-10 — skill-build chat edits SKILL.md without version bump, changelog, or event-log row.
+**Gate type:** G-chat-close
+**Chat profile:** skill-build
+**Planted defect:** SKILL.md edited (new reference added) but: version field not bumped, no changelog entry, no event-log row. All three paperwork elements missing.
+**Expected:** OC-10 fires → BLOCKING. Gate prevents close until all three paperwork elements present.
+**Regression for:** competitor-deep-research v1.1 close (missing version paperwork, 06-03). Also proves the skill-build profile works independently of the WF-1/COA-4b seed corpora (acceptance criterion A2).
+
 ---
 
 ## Running the harness
