@@ -1,23 +1,45 @@
 ---
 name: site-capture-engine
-version: 2.0
+version: 2.1
 description: >
   Universal site capture engine with context-aware output. Captures any website's complete state — HTML,
   screenshots, schema, assets, SingleFile per page, redirect map, broken links, meta-data audit,
   internal-link graph, form/embed/pixel inventories, DNS/WHOIS/SSL snapshots — then auto-detects output
-  context from the folder path. Client site (website-archive/old/) → restoration package (SingleFile +
-  restore-README + zipped archive). Competitor site (competitor-research/*-teardown/) → 6-pass forensic
-  teardown + reproduction blueprint. Capture is universal; output is context-aware. No modes — path
-  determines output. --force-restore / --force-teardown escape hatches for edge cases. Triggers: "capture
-  <site>", "archive <client>'s site", "tear down <competitor>", "snapshot <site> before cutover",
-  "reverse-engineer <site>", "blueprint <site>". 7 v1.1 plugin hooks ship as no-ops (Lighthouse, axe-core,
-  GA4, GSC, GBP, DataForSEO backlinks, cookies) — credentials gate, not code gate. Composes with
-  client-onboarding-automation Phase 5 as Step A.5; feeds website-factory rebuilds; baseline for
-  design-emulation-verify.
-composes-with: [competitor-deep-research, website-design, design-emulation-verify, client-onboarding-automation, website-factory]
+  context from the folder path. Three output contexts: (1) Client site (website-archive/old/) → restoration
+  package. (2) Competitor site (competitor-research/*-teardown/) → 6-pass forensic teardown + blueprint.
+  (3) Design reference (website-design/inspiration/ or --design-capture) → design-capture package:
+  multi-breakpoint screenshots (1440/768/390px), computed-style design tokens, motion/component inventory,
+  a11y/contrast snapshot, design-capture-manifest.json. Capture is universal; output is context-aware. No
+  modes — path determines output. --force-restore / --force-teardown / --design-capture escape hatches.
+  Triggers: "capture <site>", "archive <client>'s site", "tear down <competitor>", "snapshot <site> before
+  cutover", "reverse-engineer <site>", "blueprint <site>", "capture design tokens from <site>", "design
+  capture <site>". 7 v1.1 plugin hooks ship as no-ops (Lighthouse, axe-core, GA4, GSC, GBP, DataForSEO
+  backlinks, cookies) — credentials gate, not code gate. Composes with client-onboarding-automation Phase 5
+  as Step A.5; feeds website-factory rebuilds; baseline for design-emulation-verify; feeds [DI-2]
+  design-fingerprint, [DI-3] reference-library, [DI-4] design-emulation-verify.
+composes-with: [competitor-deep-research, website-design, design-emulation-verify, client-onboarding-automation, website-factory, design-fingerprint, reference-library]
 ---
 
-# Site Capture Engine (v2.0)
+# Site Capture Engine (v2.1)
+
+> **v2.1 changelog (2026-06-15)** — [DI-1] design-capture context extension. (1) **Third output context:
+> design-capture** — auto-detects from `website-design/inspiration/` or `design-reference/` paths, or via
+> `--design-capture` flag. Additive to universal capture — restoration and teardown contexts unchanged.
+> (2) **Multi-breakpoint rendered screenshots** — desktop (1440px), tablet (768px), mobile (390px) — each
+> with full-page + fold + per-major-section crops + scroll-stop captures + component bounding-box
+> screenshots. `screenshot-manifest.json` maps every image. (3) **Computed-style design tokens** — extracted
+> via `getComputedStyle` on the live rendered DOM (not source CSS): deduped color palette (hex + frequency +
+> inferred role), type scale per semantic role (h1–h6/body/button/caption), spacing histogram + inferred base
+> unit, border-radius set, shadow set. Output: `design-tokens.json` + `design-tokens.md`. (4) **Motion /
+> interaction inventory** — CSS transitions, keyframe animations, library detection (Framer Motion / GSAP /
+> AOS / Lottie / Intersection Observer). `motion-inventory.json`. (5) **Component inventory** — structural
+> heuristic detection of hero, nav, card grid, FAQ accordion, CTA block, testimonial, footer. Bounding
+> screenshot + descriptor per component. `component-inventory.json`. (6) **A11y / contrast snapshot** — WCAG
+> contrast ratios on top text/background pairs (pass/fail AA+AAA), heading hierarchy outline, alt-text
+> coverage %. `a11y-snapshot.json`. (7) **Design-capture manifest** (`design-capture-manifest.json`) — stable
+> downstream contract; [DI-2]/[DI-3]/[DI-4] bind to this. (8) **Package contract reference** at
+> `references/design-capture-package-contract.md`. New scripts: `extract_design_tokens.mjs` (token
+> extractor). Extended: `capture_screenshots.mjs` (`--design-capture` flag).
 
 > **v2.0 changelog (2026-06-14)** — Renamed from `seo-site-teardown`. (1) **Context-detection output
 > layer:** capture is universal; output auto-detects from folder path — `website-archive/old/` → restoration
@@ -65,14 +87,15 @@ A **universal site capture engine** that archives any website's complete state a
 output. Capture runs the same every time — every page, every asset, every structural extract. Output
 auto-detects what to produce from the folder path.
 
-**Two contexts, one capture:**
+**Three contexts, one capture:**
 
 | Output folder pattern | Context | Auto-produces | Skips |
 |---|---|---|---|
-| `.../website-archive/old/...` | **Restoration** | SingleFile per page + restore-README.md + zipped archive. Uses GSC for ranking data when credentials present. | DataForSEO ranking queries; reproduction blueprint |
-| `.../competitor-research/...-teardown/...` | **Teardown** | 6-pass forensic teardown analysis + reproduction blueprint. Uses DataForSEO for ranking data (optional, paid). | Restoration package; WP-cli DB export |
+| `.../website-archive/old/...` | **Restoration** | SingleFile per page + restore-README.md + zipped archive. Uses GSC for ranking data when credentials present. | DataForSEO ranking queries; reproduction blueprint; design-capture |
+| `.../competitor-research/...-teardown/...` | **Teardown** | 6-pass forensic teardown analysis + reproduction blueprint. Uses DataForSEO for ranking data (optional, paid). | Restoration package; WP-cli DB export; design-capture |
+| `.../website-design/inspiration/...` or `.../design-reference/...` or `.../design-capture/...` | **Design-capture** | Multi-breakpoint screenshots (1440/768/390px) + computed-style design tokens + motion inventory + component inventory + a11y/contrast snapshot + design-capture-manifest.json. | Restoration package; teardown analysis; DataForSEO |
 
-`--force-restore` / `--force-teardown` exist as operator escape hatches, never needed in normal use.
+`--force-restore` / `--force-teardown` / `--design-capture` exist as operator escape hatches. `--design-capture` can stack with restoration or teardown (additive).
 
 **Core principle — retain everything.** Save every sitemap, every decoded page, every schema graph, every
 data file. Modern SEO sites are usually Next.js/React and embed their **full content in the HTML** as
@@ -86,11 +109,13 @@ JSON-LD + RSC flight data — so a capture can recover the real FAQs, pricing, l
 - **Quarterly re-capture:** scheduled every 90 days for active clients.
 - **Competitor teardown:** before building a custom client site, to blueprint the strongest competitor.
 - **Competitor watchdog:** when a change alert fires, re-run to diff against the prior snapshot.
-- Any time the operator says "capture/archive/snapshot <site>" or "tear down/reverse-engineer <site>."
+- **Design reference capture:** capture any site's visual design system — tokens, motion, components, a11y — for the inspiration library or as a design direction input for a client build.
+- Any time the operator says "capture/archive/snapshot <site>", "tear down/reverse-engineer <site>", or "capture design tokens from <site>."
 
 Do **not** use for: a quick "who ranks for X" lookup (web search), a positioning-only brief (use
-`competitor-deep-research`), or a pure visual-design dossier (use `design-fingerprint` skill, [DI-2]).
-Compose with those — this skill is the deepest, build-oriented capture tier.
+`competitor-deep-research`), or writing a structured design dossier from captured data (use
+`design-fingerprint` skill, [DI-2] — this skill captures; [DI-2] interprets). Compose with those —
+this skill is the deepest, build-oriented capture tier.
 
 ## Inputs
 
@@ -185,6 +210,36 @@ When context = restoration (output folder matches `website-archive/old/`):
 3. **Zipped archive** — `restoration-package-YYYY-MM-DD.zip` containing SingleFile pages + assets + restore-README
 
 This is the "plug in this USB" artifact. A non-technical client can open any page in a browser and see their site.
+
+---
+
+## Design-capture output (design-reference context or `--design-capture`)
+
+When context = design-capture (output folder matches `website-design/inspiration/`, `design-reference/`,
+`design-capture/`, or `--design-capture` flag), the design-capture package is produced on top of the
+universal capture. This is **additive** — `--design-capture` can stack with restoration or teardown.
+
+**Produced artifacts:**
+
+1. **Multi-breakpoint screenshots** — desktop (1440px), tablet (768px), mobile (390px). Each gets
+   full-page + above-the-fold + per-major-section crops + scroll-stop captures. Component bounding-box
+   screenshots (desktop). All indexed in `screenshot-manifest.json`.
+2. **Computed-style design tokens** — `design-tokens.json` + `design-tokens.md`. Extracted from the live
+   rendered DOM via `getComputedStyle` (not source CSS). Palette (hex + frequency + inferred role), type
+   scale (per semantic role), spacing (histogram + base unit), border-radius, shadows.
+3. **Motion / interaction inventory** — `motion-inventory.json`. CSS transitions, keyframe animations,
+   detected libraries (Framer Motion, GSAP, AOS, Lottie).
+4. **Component inventory** — `component-inventory.json`. Detected: hero, primary nav, card grid, FAQ
+   accordion, CTA block, testimonial, footer. Bounding rect + descriptor per component.
+5. **A11y / contrast snapshot** — `a11y-snapshot.json`. WCAG contrast ratios (top 20 pairs, pass/fail
+   AA+AAA), heading hierarchy outline, alt-text coverage %.
+6. **Design-capture manifest** — `design-capture-manifest.json`. Top-level index for all design-capture
+   artifacts. Downstream skills ([DI-2]/[DI-3]/[DI-4]) bind to this manifest, not to file paths.
+
+**Full contract:** `references/design-capture-package-contract.md`.
+
+**Scripts:** `scripts/extract_design_tokens.mjs <url> <out-dir>` +
+`scripts/capture_screenshots.mjs <domain> <out-dir> [urls.txt] --design-capture`.
 
 ---
 
@@ -342,6 +397,14 @@ Latest snapshot wins for any downstream use (rebuild input, restoration package,
 8. **`extracted/`** (decoded content + schema per page via `extract_nextjs.py`)
 9. **`data/`** (inventories, matrices, research seed, DataForSEO pulls)
 
+### Design-capture context (design-reference path or `--design-capture`)
+6. **Multi-breakpoint screenshots** — desktop/tablet/mobile full-page + fold + section crops + scroll-stops + component screenshots + `screenshot-manifest.json`
+7. **`design-tokens.json`** + **`design-tokens.md`** — computed-style palette, type scale, spacing, radius, shadows
+8. **`motion-inventory.json`** — transitions, keyframe animations, library detection
+9. **`component-inventory.json`** — detected recurring visual components with bounding rects
+10. **`a11y-snapshot.json`** — WCAG contrast ratios, heading hierarchy, alt-text coverage
+11. **`design-capture-manifest.json`** — top-level index for all design-capture artifacts (downstream binding surface)
+
 ---
 
 ## The "tells" catalog
@@ -383,13 +446,15 @@ Codified so future runs don't miss them. Look for each; note present/absent:
 
 - `scripts/capture_site.py` — **main orchestrator** (v2.0). Universal capture + context detection + all 12 extensions + v1.1 hooks. Entry point.
 - `scripts/extract_nextjs.py` — multi-path content decoder: Next.js RSC, `__NEXT_DATA__`, HTML fallback. Auto-detects framework.
-- `scripts/capture_screenshots.mjs` — Playwright host script for automated screenshots (desktop+mobile, fold+full, dated folders). **Requires:** `npm install playwright` + `npx playwright install chromium`.
+- `scripts/capture_screenshots.mjs` — Playwright host script for automated screenshots (desktop+mobile, fold+full, dated folders). With `--design-capture`: adds tablet (768px) viewport, per-section crops, scroll-stop captures, component bounding-box screenshots, `screenshot-manifest.json`. **Requires:** `npm install playwright` + `npx playwright install chromium`.
+- `scripts/extract_design_tokens.mjs` — Playwright computed-style token extractor (v2.1). Extracts palette, type scale, spacing, radius, shadows from live rendered DOM via `getComputedStyle`. Also captures motion inventory, component inventory, a11y/contrast snapshot. **Requires:** Playwright.
 - `references/teardown-checklist.md` — per-pass concrete checklist (teardown context).
 - `references/questions-bank.md` — psychology/strategy probes.
 - `references/tells-catalog.md` — 47 tells across 6 passes.
 - `references/dataforseo-endpoints.md` — API calls, parameters, costs, fallbacks.
 - `references/teardown-dossier-template.md` — 28-section template for new teardown runs.
 - `references/v1.1-roadmap.md` — each v1.1 hook + insertion point + credential prereq + regression test plan.
+- `references/design-capture-package-contract.md` — stable output contract for the design-capture context (v2.1). Downstream skills ([DI-2]/[DI-3]/[DI-4]) bind to this.
 - **Worked examples:**
   - AJ Long teardown (teardown context): `ev-electric-services/admin-extracts/competitor-research/aj-long-teardown/`
   - Root Electric teardown (teardown context): `s-and-h-contracting/admin-extracts/competitor-research/root-electric-teardown/`
@@ -411,7 +476,9 @@ the version and reusability classification.
 - **website-factory program** — consumes the blueprint + structured extracts as rebuild seed.
 - **output-quality-loop** — closing eval on produced artifacts.
 - **gate-peer-reviewer** — gates each major artifact at produce-step.
-- **[DI-1] design-capture context** (v2.1, future) — adds a design-specific output context: multi-breakpoint screenshots + computed-style tokens + motion capture + component inventory + a11y/contrast. Serial-required with this skill (same dir).
+- **[DI-2] design-fingerprint** — **downstream**: consumes the design-capture package (design-tokens.json + screenshots + motion inventory) to produce structured design dossiers with normalized trait vocabulary.
+- **[DI-3] reference-library** — **downstream**: consumes design-capture manifest to populate the curated reference library + candidates registry.
+- **[DI-4] design-emulation-verify** — **downstream**: consumes design-capture tokens + screenshots as build-vs-reference diff baseline.
 
 ## Failure modes + recovery
 

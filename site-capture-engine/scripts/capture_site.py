@@ -13,6 +13,13 @@ Context detection (from output-dir path):
 Escape hatches:
     --force-restore    Force restoration context regardless of path
     --force-teardown   Force teardown context regardless of path
+    --design-capture   Enable design-capture context (additive — multi-breakpoint screenshots,
+                       computed-style tokens, motion/component inventory, a11y/contrast)
+
+Context auto-detection for design-capture:
+    .../website-design/inspiration/...  → design-capture enabled automatically
+    .../design-reference/...            → design-capture enabled automatically
+    .../design-capture/...              → design-capture enabled automatically
 
 Options:
     --skip-screenshots     Skip Playwright screenshot capture
@@ -45,37 +52,50 @@ from urllib.parse import urlparse, urljoin
 # Context detection
 # ---------------------------------------------------------------------------
 
-def detect_context(output_dir: str, force_restore: bool = False, force_teardown: bool = False) -> str:
+def detect_context(output_dir: str, force_restore: bool = False, force_teardown: bool = False,
+                   design_capture: bool = False) -> tuple:
     """Detect output context from folder path.
 
-    Returns 'restoration' or 'teardown'.
+    Returns (primary_context, design_capture_enabled) where:
+    - primary_context is 'restoration' or 'teardown'
+    - design_capture_enabled is True if the design-capture context should also run (additive)
 
     Rules:
-    - --force-restore / --force-teardown override everything
+    - --force-restore / --force-teardown override primary context
     - .../website-archive/old/... → restoration
     - .../competitor-research/...-teardown/... → teardown
-    - Ambiguous → teardown (safer default — no WP-cli / no zip without explicit signal)
+    - Ambiguous → teardown (safer default)
+    - --design-capture OR design-reference paths → design_capture_enabled=True (additive)
     """
     if force_restore:
-        return "restoration"
-    if force_teardown:
-        return "teardown"
+        primary = "restoration"
+    elif force_teardown:
+        primary = "teardown"
+    else:
+        normalized = output_dir.replace("\\", "/")
 
+        if "/website-archive/old/" in normalized:
+            primary = "restoration"
+        elif "/competitor-research/" in normalized and "-teardown" in normalized:
+            primary = "teardown"
+        else:
+            print(f"[context-detection] Path does not match known patterns — defaulting to 'teardown'")
+            print(f"  Path: {normalized}")
+            print(f"  Use --force-restore to produce a restoration package")
+            primary = "teardown"
+
+    # Design-capture: explicit flag OR path auto-detection (additive — stacks with primary)
     normalized = output_dir.replace("\\", "/")
+    dc_enabled = design_capture
+    if not dc_enabled:
+        dc_patterns = ["/website-design/inspiration/", "/design-reference/", "/design-capture/"]
+        for pat in dc_patterns:
+            if pat in normalized:
+                dc_enabled = True
+                print(f"[context-detection] Design-capture auto-detected from path pattern: {pat}")
+                break
 
-    # Client restoration: website-archive/old/ anywhere in path
-    if "/website-archive/old/" in normalized:
-        return "restoration"
-
-    # Competitor teardown: competitor-research/ with a -teardown/ suffix
-    if "/competitor-research/" in normalized and "-teardown" in normalized:
-        return "teardown"
-
-    # Default to teardown (no restoration package without explicit signal)
-    print(f"[context-detection] Path does not match known patterns — defaulting to 'teardown'")
-    print(f"  Path: {normalized}")
-    print(f"  Use --force-restore to produce a restoration package")
-    return "teardown"
+    return primary, dc_enabled
 
 
 # ---------------------------------------------------------------------------
@@ -1180,6 +1200,7 @@ def main():
     parser.add_argument("output_dir", help="Output directory")
     parser.add_argument("--force-restore", action="store_true", help="Force restoration context")
     parser.add_argument("--force-teardown", action="store_true", help="Force teardown context")
+    parser.add_argument("--design-capture", action="store_true", help="Enable design-capture context (additive — stacks with restoration/teardown)")
     parser.add_argument("--skip-screenshots", action="store_true")
     parser.add_argument("--skip-singlefile", action="store_true")
     parser.add_argument("--skip-wp-export", action="store_true")
@@ -1196,14 +1217,14 @@ def main():
     os.makedirs(out_dir, exist_ok=True)
 
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    context = detect_context(out_dir, args.force_restore, args.force_teardown)
+    context, design_capture = detect_context(out_dir, args.force_restore, args.force_teardown, args.design_capture)
 
     print(f"\n{'='*60}")
-    print(f"site-capture-engine v2.0")
+    print(f"site-capture-engine v2.1")
     print(f"{'='*60}")
     print(f"Domain:    {domain}")
     print(f"Output:    {out_dir}")
-    print(f"Context:   {context}")
+    print(f"Context:   {context}{' + design-capture' if design_capture else ''}")
     print(f"Timestamp: {timestamp}")
     print(f"{'='*60}\n")
 
@@ -1501,13 +1522,71 @@ def main():
             json.dump(manifest, open(manifest_path, "w"), indent=2)
         print()
 
+    # ---- Phase 7b: Design-capture context (additive) ----
+    if design_capture:
+        print("[Phase 7b] Design-capture context...")
+        scripts_dir = Path(__file__).resolve().parent
+        dc_out = os.path.join(out_dir, "design-capture")
+        os.makedirs(dc_out, exist_ok=True)
+
+        # 1. Extract design tokens (also writes motion-inventory, component-inventory, a11y-snapshot, design-capture-manifest)
+        token_script = scripts_dir / "extract_design_tokens.mjs"
+        if token_script.exists():
+            print("  [7b.1] Extracting computed-style design tokens...")
+            result = subprocess.run(
+                ["node", str(token_script), domain, dc_out],
+                capture_output=True, text=True, timeout=120
+            )
+            if result.returncode == 0:
+                print(f"  [output] design-tokens.json, design-tokens.md, motion-inventory.json, component-inventory.json, a11y-snapshot.json, design-capture-manifest.json")
+                for line in result.stdout.strip().split("\n"):
+                    if line.startswith("  "):
+                        print(f"    {line.strip()}")
+            else:
+                print(f"  [WARN] Token extraction failed: {result.stderr[:200]}")
+        else:
+            print(f"  [WARN] extract_design_tokens.mjs not found at {token_script}")
+
+        # 2. Multi-breakpoint screenshots with design-capture extensions
+        screenshot_script = scripts_dir / "capture_screenshots.mjs"
+        if screenshot_script.exists() and not args.skip_screenshots:
+            print("  [7b.2] Multi-breakpoint design screenshots...")
+            sc_args = ["node", str(screenshot_script), domain, dc_out, "--design-capture"]
+            # Write a urls.txt from captured page list for the screenshot script
+            urls_file = os.path.join(dc_out, "_urls.txt")
+            with open(urls_file, "w") as f:
+                for u in urls[:20]:  # cap at 20 pages for screenshot pass
+                    f.write(u + "\n")
+            sc_args.insert(3, urls_file)
+            result = subprocess.run(sc_args, capture_output=True, text=True, timeout=600)
+            if result.returncode == 0:
+                # Count screenshots from output
+                sc_lines = [l for l in result.stdout.split("\n") if l.startswith("ok") or "screenshot" in l.lower()]
+                print(f"  [output] screenshots/ + screenshot-manifest.json ({len(sc_lines)} log lines)")
+            else:
+                print(f"  [WARN] Screenshot capture failed: {result.stderr[:200]}")
+        elif args.skip_screenshots:
+            print("  [7b.2] Design screenshots — SKIPPED (--skip-screenshots)")
+
+        manifest["design_capture"] = {
+            "enabled": True,
+            "output_dir": dc_out,
+            "artifacts": ["design-tokens.json", "design-tokens.md", "motion-inventory.json",
+                          "component-inventory.json", "a11y-snapshot.json", "design-capture-manifest.json",
+                          "screenshot-manifest.json"],
+        }
+        json.dump(manifest, open(manifest_path, "w"), indent=2)
+        print()
+
     print(f"\n{'='*60}")
     print(f"Capture complete: {len(all_metas)}/{len(urls)} pages")
-    print(f"Context: {context}")
+    print(f"Context: {context}{' + design-capture' if design_capture else ''}")
     if context == "restoration" and restoration_zip:
         print(f"Restoration package: {restoration_zip}")
     elif context == "teardown":
         print(f"Next: run teardown analysis passes (SKILL.md Pass 1-6)")
+    if design_capture:
+        print(f"Design-capture: {os.path.join(out_dir, 'design-capture')}/")
     print(f"{'='*60}\n")
 
     return manifest
