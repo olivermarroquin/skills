@@ -31,16 +31,29 @@ Before drafting the prompt, read these files from the idea-factory repo:
 2. `workspace/repos/idea-factory/AGENT-TEMPLATE.md` — for the eleven-file structure.
 3. `workspace/repos/idea-factory/INGESTION-PROTOCOL.md` — if the source is a video/ad/screenshot/idea-message vs. a from-scratch spawn.
 4. `workspace/repos/idea-factory/pipeline.md` — to know what's currently Active, Pilot, or Research. **This determines what stage the new strategy is allowed to enter.**
-5. `workspace/repos/idea-factory/decisions.md` — to avoid duplicating an already-killed or already-spawned strategy.
+5. `workspace/repos/idea-factory/decisions.md` — to avoid duplicating an already-killed or already-spawned strategy (and to dedup on the `Dedup-key` column for Path-4 routes).
 6. `workspace/repos/idea-factory/shared/synergies.md` — to detect cluster opportunities or tool overlap.
+7. *(Path 4 / opportunity-teardown only)* `workspace/second-brain/_meta/handoffs/opportunity-radar/spec-opportunity-teardown-engine.md` (§9/§10) + the source `teardown-...md` note — to ground the route in the teardown's structured analysis without re-deriving it.
 
 If any of these files don't exist, ask the operator — don't guess.
 
 ### Step 2: Classify the request
 
 - **Spawn** — operator described an offer/business idea directly. Use the spawn flow from `AGENT-TEMPLATE.md`.
-- **Ingestion** — operator referenced a video, ad, screenshot, podcast clip, or external source. Use the ingestion flow from `INGESTION-PROTOCOL.md`.
+- **Ingestion** — operator referenced a video, ad, screenshot, podcast clip, or external source. Use the ingestion flow from `INGESTION-PROTOCOL.md` (Paths 1–3).
+- **Opportunity-teardown (Path 4)** — operator is routing a candidate the `opportunity-teardown` engine (the `opportunity-radar` program) flagged "pursue." The input is **not** raw media — it is a completed two-file teardown artifact (a `teardown-YYYY-MM-DD-<slug>.md` note in `second-brain/05_shared-intelligence/opportunity-radar/teardowns/` + its machine-readable block). Use the ingestion flow's **Path 4** in `INGESTION-PROTOCOL.md`. VIS does **not** run (the teardown already ingested the source). See "Opportunity-teardown (Path 4) specifics" below.
 - **Refine existing** — operator referenced an existing strategy folder. Skip this skill; suggest a normal in-place edit instead.
+
+#### Opportunity-teardown (Path 4) specifics
+
+When the request is a Path-4 route, the generated spawn prompt must:
+
+- **Route via `INGESTION-PROTOCOL.md` Path 4**, not the spawn or Paths-1–3 ingestion flow. The receiving chat creates `_inbox/{date}-{slug}/extraction.md` only — no transcript pull, no OCR.
+- **Emit the path-4 frontmatter** on `extraction.md`: `source-type: opportunity-teardown`, `teardown-source: [[teardown-YYYY-MM-DD-<slug>]]` (provenance pointer), and the four deep-dive carry-over fields `build-for-myself-fit` (yes/no/maybe), `effort-to-clone` (S/M/L), `build-buy-use` (rebuild/use-as-is/skip), and `dedup-key` (canonical source URL or offer-slug).
+- **Carry only the decision-relevant summary** into the `extraction.md` body (the one money-making insight + the build/buy/use rationale + `**Full teardown:** [[teardown-...]]`). Do **not** re-state the §6.3 money/GTM or §7 level-up — those stay in the teardown/registry and are *linked*, not copied.
+- **Dedup before creating the folder:** match `dedup-key` against the `Dedup-key` column in `decisions.md`; exact match → already seen, skip.
+- **Enter at Idea stage** (below Research). The skeptic still enforces the focus rules in Step 3 — never `pilot`/`active` while a strategy is in Pilot/Active.
+- **Name from the offer, not the source** (e.g. `short-form-repurposing-as-a-service`, not `opus-clip`).
 
 ### Step 3: Determine allowable stage based on pipeline state
 
