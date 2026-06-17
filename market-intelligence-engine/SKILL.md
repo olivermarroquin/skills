@@ -1,7 +1,7 @@
 ---
 type: skill
 skill: market-intelligence-engine
-version: 1.0
+version: 1.1
 created: 2026-06-16
 updated: 2026-06-16
 status: active
@@ -10,7 +10,7 @@ gate: G-market-intel
 tags: [skill, market-intelligence, competitive-intelligence, orchestrator, multi-arena, config-driven]
 ---
 
-# Skill — `market-intelligence-engine` v1.0
+# Skill — `market-intelligence-engine` v1.1
 
 A **config-driven, multi-arena competitive-intelligence orchestrator** that scores the top competitors
 in a client's field across every marketing arena, identifies who wins each arena and why, surfaces
@@ -49,7 +49,7 @@ competitors:
   top_n_deep: 5               # full site-capture-engine teardown
   retain_incumbents: []       # popular incumbents kept in deep set regardless of rank
 
-arenas_in_scope:              # which arenas to run this phase (default: all)
+arenas_in_scope:              # which arenas to run this phase (default: all standard)
   - V1  # Google organic
   - V2  # Local pack / Maps
   - V3  # AI answer engines
@@ -58,6 +58,13 @@ arenas_in_scope:              # which arenas to run this phase (default: all)
   - M1  # Reviews / reputation
   - M2  # Conversion / offer
   - A1  # Topical authority / E-E-A-T
+  # B2G arenas (add for government-contracting fields — see §3a):
+  # - G1  # Contract awards / past performance (USASpending/FPDS/SAM)
+  # - G2  # Set-aside / socioeconomic certs (SBA DSBS / certify.SBA.gov)
+  # - G3  # Contract vehicles / schedules (GSA eLibrary / agency vehicle lists)
+  # - G4  # Capability & compliance positioning (NAICS/PSC, CMMC, clearances)
+  # - G5  # Agency relationships / incumbency (USASpending expiring-award queries)
+  # - G6  # Teaming / partner network (USASpending sub-award data, JV registrations)
 
 substrate:
   host_side: true             # Claude Code (no timeout cap)
@@ -105,14 +112,27 @@ owns its domain; this engine owns the **cross-arena roll-up, scoring, synthesis,
 ### Phase 0 — Substrate preflight
 
 1. Parse and validate config (all required fields non-empty).
-2. **Substrate check:**
-   - If any Chrome-dependent arena is in scope (V4 ad-intelligence, M2 JS-rendered sites, V2 geo-grid tools):
+2. **Per-client provisioning preflight** (added v1.1, MI-8):
+   - For each client in `clients[]`, verify:
+     - Tool account access: DataForSEO credentials live, Local Falcon location added (if V2 in scope),
+       BrightLocal location added (if M1 in scope), Otterly workspace configured (if V3 in scope).
+     - For B2G fields (G-arenas in scope): SAM.gov API key or Chrome access confirmed,
+       USASpending API reachable (public, no key needed).
+     - Chrome profile logged in to required services (SAM.gov, GSA eLibrary, SBA DSBS, LinkedIn)
+       if Chrome-dependent arenas are in scope.
+   - Emit a **provisioning checklist** per client: `✅ ready` / `⚠️ needs setup` / `❌ blocked` per tool.
+   - **Do not silently skip a blocked tool.** Flag it, name the owning follow-up, and proceed with
+     the available substrate.
+3. **Substrate check:**
+   - If any Chrome-dependent arena is in scope (V4 ad-intelligence, M2 JS-rendered sites, V2 geo-grid tools,
+     G2 SBA DSBS, G3 GSA eLibrary, G4 SAM.gov entity detail):
      confirm Chrome is connected. If not → **STOP and tell the operator.** Do not silently substitute WebFetch.
    - If running in Cowork: flag 45s timeout cap. Route slow/batch calls (DataForSEO `my_business_info` batch,
      geo-grid, multi-competitor SERP sweeps) to host-side. Emit a limitations block.
-3. **Substrate routing rule** (from standing rule from MI-3 lessons — see `[[mi3-limitations-and-lessons-2026-06-14]]` §E):
-   - Host-side (Claude Code): slow batches, DataForSEO bulk calls, any call >20s.
-   - Chrome: JS-rendered competitor sites, Google Ads Transparency Center, Local Falcon, BrightLocal.
+4. **Substrate routing rule** (from standing rule from MI-3 lessons — see `[[mi3-limitations-and-lessons-2026-06-14]]` §E):
+   - Host-side (Claude Code): slow batches, DataForSEO bulk calls, USASpending/FPDS API, any call >20s.
+   - Chrome: JS-rendered competitor sites, Google Ads Transparency Center, Local Falcon, BrightLocal,
+     SAM.gov, GSA eLibrary, SBA DSBS, LinkedIn, GovWin.
    - Cowork: synthesis, scoring, writing — never heavy collection.
    - **Verify substrate before run.** If a planned source requires a substrate that isn't available,
      skip it with reason + owning follow-up — never silently substitute.
@@ -123,10 +143,17 @@ owns its domain; this engine owns the **cross-arena roll-up, scoring, synthesis,
 ### Phase 1 — Competitor set confirmation
 
 1. Ingest `competitors.seed_domains[]` from config.
+   - For B2G fields: if `seed_domains[]` is empty, **generate the seed set** from USASpending API
+     (`spending_by_category/recipient` filtered by field NAICS codes + relevant set-aside types).
+     Pull top awardees by volume → these become the seed competitors.
 2. Cross-reference with `competitor-deep-research` Tier-2 scan results if available.
 3. Add local-pack-seeded tier: competitors that dominate Maps on review volume but have near-zero
    organic presence (discovered in MI-3b). These are scored in a reference tier, promoted to main
    set if they also appear in paid/organic.
+   - **For B2G fields:** this tier is typically empty (local pack is N/A). Instead, add a
+     **set-aside-seeded tier:** firms that win heavily in restricted set-aside pools (8(a), SDVOSB,
+     WOSB, HUBZone) but have low open-market visibility. Promoted to main set if they also appear
+     in vehicle-based competition.
 4. Confirm the final set with the operator before scoring. Target: `top_n_light` (default 15) + clients.
 
 ### Phase 2 — Arena-source enumeration (mandatory — from `[[mi-arena-source-checklist]]`)
@@ -150,13 +177,19 @@ For each arena, collect data from all PLANNED sources per Phase 2:
 | Arena | Collection method | Substrate |
 |---|---|---|
 | V1 Google organic | DataForSEO `domain_rank_overview` + `ranked_keywords` per competitor | Host-side |
-| V2 Local pack | DataForSEO SERP `local_pack` + Local Falcon geo-grid (if Chrome) + manual map check | Host-side + Chrome |
+| V2 Local pack | DataForSEO SERP `local_pack` + Local Falcon geo-grid (if Chrome) + manual map check. **Geo-grid anchor fallback (v1.1, from `[[pattern-geo-grid-anchor-on-located-competitor-for-misgeocoded-SAB]]`):** if the client is a service-area business (SAB, no map pin) or has a mis-geocoded GBP, anchor the geo-grid on a correctly-located competitor in the target service area instead. The client will appear (or not) in the Competitor Report's ranked list — their absence/deep-rank quantifies the local cost of the GBP problem. Do NOT scan the wrong geocode; recognize the anomaly first. | Host-side + Chrome |
 | V3 AI engines | Perplexity Sonar probes + Otterly/AI-citation monitor + manual probes | Host-side + Chrome |
 | V4 Paid / LSA | Google Ads Transparency Center (Chrome) + live SERP ads sweep (mobile+desktop × geos) | Chrome + Host-side |
 | V5 Social / video | Direct channel visits (IG/TikTok/YT/FB) + competitor site embed check | Chrome |
 | M1 Reviews | DataForSEO `my_business_info` batch + BrightLocal + SERP local_pack rating | Host-side |
 | M2 Conversion | `site-capture-engine` homepage capture + tech detection | Chrome (JS sites) |
 | A1 Authority | DataForSEO `backlinks/summary` + `referring_domains` + entity/KG probe | Host-side |
+| **G1 Awards** (B2G) | USASpending API `spending_by_category/recipient` by NAICS + set-aside filters; FPDS for granular award detail | Host-side |
+| **G2 Set-aside certs** (B2G) | SBA DSBS / certify.SBA.gov (Chrome) + SAM.gov entity reps & certs (Chrome) + USASpending set-aside inference | Chrome + Host-side |
+| **G3 Contract vehicles** (B2G) | GSA eLibrary SIN search (Chrome) + agency vehicle lists + web search for OASIS+/GWAC holdings | Chrome + Host-side |
+| **G4 Capability/compliance** (B2G) | Competitor websites (WebFetch or Chrome) + SAM.gov NAICS/PSC detail (Chrome) + CMMC marketplace | Host-side + Chrome |
+| **G5 Agency/incumbency** (B2G) | USASpending `spending_by_category/awarding_agency` + expiring-award queries + GovWin (Chrome) | Host-side + Chrome |
+| **G6 Teaming** (B2G) | USASpending sub-award data + web search for JV/mentor-protégé announcements + SAM.gov JV registrations | Host-side + Chrome |
 
 **Ad-intelligence module (V4 deep pass):** When Chrome is connected and V4 is in scope, invoke the
 ad-intelligence module (see `references/ad-intelligence-module.md`) for the full creative capture:
@@ -290,6 +323,38 @@ See `references/arena-model.md` for the full arena definitions, data sources, an
 **Summary:** 5 visibility arenas (V1-V5) + 2 cross-cutting multipliers (M1-M2) + 1 authority/depth
 axis (A1). Composite = sum of 8 scores, max 40.
 
+### 3a. B2G arena variant (validated MI-8, v1.1)
+
+For **government-contracting (B2G) fields**, the standard local-services arenas partially apply:
+V2 (local pack), V4 (paid/LSA), and M1 (GBP reviews) are typically **defended-zero** because federal
+procurement is national/agency-based, RFP/vehicle-driven, and reputation lives in CPARS — not Maps,
+ads, or Google reviews. The engine adds 6 **G-arenas** that capture what actually decides B2G
+competition:
+
+| ID | B2G arena | What it measures | Primary sources | Scoring 0-5 |
+|---|---|---|---|---|
+| **G1** | Contract awards / past performance | Who actually wins — $ obligated, # awards, agencies, CPARS | USASpending API, FPDS, SAM.gov | 0=no awards → 5=arena leader by volume |
+| **G2** | Set-aside / socioeconomic certs | 8(a), SDVOSB, WOSB/EDWOSB, HUBZone — the eligibility moat | SBA DSBS, certify.SBA.gov, SAM.gov | 0=no certs → 5=dual cert (e.g. 8(a)+SDVOSB) |
+| **G3** | Contract vehicles / schedules | GSA MAS, GWACs (OASIS+, CIO-SP4, Alliant), agency IDIQs/BPAs | GSA eLibrary, agency vehicle lists | 0=no vehicles → 5=GSA MAS + ≥1 GWAC |
+| **G4** | Capability & compliance | NAICS/PSC coverage, capability statement, CMMC, clearances | Competitor sites, SAM.gov, CMMC marketplace | 0=no govcon framing → 5=modern+CMMC+clearance |
+| **G5** | Agency relationships / incumbency | Incumbent positions + recompete targets + agency depth | USASpending agency queries, GovWin | 0=no relationships → 5=multi-agency incumbent |
+| **G6** | Teaming / partner network | Prime↔sub relationships, JV/mentor-protégé | USASpending sub-awards, JV registrations | 0=no teaming → 5=large-firm JV (e.g. Deloitte) |
+
+**Composite for B2G runs:** sum of all in-scope arenas. A run with all 14 arenas (V1-V5 + M1-M2 +
+A1 + G1-G6) has max 70; several standard arenas will typically score defended-zero. The composite is
+**not comparable** across field types (local-services max 40 vs B2G max 70) — compare only within the
+same field's run.
+
+**Defended-zero rules for B2G:** V2/V4/M1 must be **explicitly defended** with the B2G reason
+(e.g., "M1 GBP reviews — N/A for B2G; reputation lives in CPARS/past-performance, see G1"). Do not
+silently drop them — log why each is N/A. V1/V3/V5/M2/A1 carry over with reduced weight (organic
+for govcon terms, AI-engine mentions, LinkedIn thought leadership, website conversion, GovCon media
+authority).
+
+**Precipitating event:** MI-8 (2026-06-16) proved the B2G variant on federal IT services. The
+local-services model missed 6 arenas that dominate B2G competition (awards, certs, vehicles,
+capability, incumbency, teaming). Without G1-G6, the scoring was structurally incomplete for B2G.
+
 ---
 
 ## 4. Self-expanding mechanisms
@@ -333,6 +398,20 @@ electrician-field run (2026-06-14 → 2026-06-16).
 ---
 
 ## 7. Changelog
+
+### v1.1 (2026-06-16) — B2G arena variant + provisioning preflight + geo-grid fallback
+
+**MI-8 duplicability proof (federal IT services).** Three structural fixes:
+1. **B2G arena variant (§3a):** 6 new G-arenas (G1 awards, G2 certs, G3 vehicles, G4 capability,
+   G5 incumbency, G6 teaming) with sources, scoring, and defended-zero rules for local-services
+   arenas that don't apply to B2G. Config contract updated with G1-G6 in `arenas_in_scope`.
+   Phase 3 collection table extended with B2G methods.
+2. **Per-client provisioning preflight (Phase 0 step 2):** tool-access + Chrome-login checklist
+   per client before run starts, emitting ✅/⚠️/❌ per tool. Prevents silent tool-skip.
+3. **Geo-grid anchor fallback (Phase 3 V2):** for SAB or mis-geocoded GBP clients, anchor the
+   geo-grid on a correctly-located competitor per
+   `[[pattern-geo-grid-anchor-on-located-competitor-for-misgeocoded-SAB]]`.
+   Phase 1 updated with B2G seed-set generation from USASpending + set-aside-seeded tier.
 
 ### v1.0 (2026-06-16) — Initial release
 
