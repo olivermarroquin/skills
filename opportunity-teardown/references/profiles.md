@@ -61,6 +61,30 @@ Notes:
 - Lane A is the always-on operator manual-add: Oliver drops a product/URL/"I keep seeing X" → straight to the quick
   pass. Discovery lanes B/C/D are the finder's job (`[OR-1.1]`), not built here.
 
+### Profile #1 — category variants (the slice is config, not logic)
+
+`first_run_slice` is a **config parameter**, not engine logic. The same `product-offer` profile runs over any product
+category by swapping this one string (and, on the finder side, the matching `default_category` / `lane_sources` in
+`finder-config-profiles.md`). The engine's teardown / level-up / money / build-buy-use contracts are identical across
+categories. Proven categories:
+
+```yaml
+# product-offer category variants — only the category string + finder lane framing differ; engine logic unchanged
+categories:
+  - slice: "AI content tools"          # 1st category (default) — first real run: BrandWell (2026-06-17), Opus Clip
+  - slice: "AI developer tools"        # 2nd category — [OR-1.4] duplicability proof (config-only): Lovable (2026-06-17)
+    note: >
+      Same profile (product-offer), same lanes/gates/destination/scoring. ONLY the category string changes here +
+      the matching default_category/lane_sources in finder-config-profiles.md. No SKILL.md edit. This is the spec §2
+      "provable from config on a second source" test for the ENGINE, exercised at the [OR-1.4] capstone.
+```
+
+> **[OR-1.4] duplicability note:** the AI-developer-tools category was run end-to-end on **Lovable** with **zero edits
+> to `SKILL.md`** — only this config block + the matching finder config block changed. If the engine had required a
+> code change to handle a dev-tool (vs a content tool), the slice would not be config and OR-1.4 would log a
+> generality finding. It did not. See the worked proof: `examples/` is unchanged; the proof artifact lives in the
+> vault at `05_shared-intelligence/opportunity-radar/teardowns/teardown-2026-06-17-lovable-duplicability-proof.md`.
+
 ---
 
 ## Profile #2 — startup / funding (`[OR-2]`, STUB — inherits this engine)

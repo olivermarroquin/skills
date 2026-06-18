@@ -94,6 +94,15 @@ host-side, not from the Cowork sandbox** (`reference_cowork_chrome_screenshots_n
 produce inline previews (e.g. a Mermaid block or an ASCII sketch) and **flag** any asset that needs host-side rendering
 to be committed to the vault. Never silently let an image deliverable fail to land.
 
+> **Pre-spawn substrate rule (verify BEFORE the run, not mid-run).** Vault-bound rendered output — committed `.png`/
+> `.svg` images, rendered diagrams, screenshots — **cannot be produced from the Cowork sandbox.** If a run will need a
+> committed visual deliverable, that portion must be **scoped to Claude Code / host-side from the start**, or carved out
+> explicitly — never inherited on a Cowork substrate that structurally can't produce it and surfaced as a "host-side
+> deferral" mid-run. This is the §6.4 instance of the standing **verify-substrate-before-spawn** discipline
+> (`feedback_verify_substrate_and_escalate_webfetch`, `feedback_heavy_collection_hostside_not_cowork`) and the durable
+> `[[lesson-verify-substrate-produces-vault-bound-visuals-before-spawn]]`. A Mermaid/ASCII *inline preview* in the
+> teardown is fine on Cowork; the committed image asset is a host-side deliverable.
+
 ---
 
 ## Machine-readable YAML block (the second file)

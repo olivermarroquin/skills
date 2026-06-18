@@ -59,6 +59,38 @@ keeper_route: repos/idea-factory/strategies/_inbox/   # money play, via idea-fac
 special_note: "no safety gate (products don't touch Oliver's accounts/code)"
 ```
 
+### Profile #1 — 2nd category variant: AI developer tools (`[OR-1.4]` engine duplicability proof, config-only)
+
+Same `product-offer` profile, **2nd category** — only `default_category` + the Lane-B/C/D source framing change. Lanes,
+weights, dedup target, and keeper route are unchanged; **no `SKILL.md` edit.** This is the engine-side companion to the
+`startup-funding` lane-set proof below: the `startup-funding` block proves a different *profile* runs from config; this
+block proves a different *category within the same profile* runs from config. Exercised at the [OR-1.4] capstone on
+**Lovable** (the AI-content finder run had correctly rejected Lovable as "out-of-category: code-gen, not content" — so
+accepting it here for the dev-tool category is itself proof the category boundary is pure config).
+
+```yaml
+profile: product-offer
+default_category: "AI developer tools"          # the only meaningful change vs the AI-content block above
+default_window: "12 months"
+lanes: [B, C, D]
+lane_sources:
+  B: "AI developer tools (AI app/code builders, coding agents, dev copilots, vibe-coding platforms)"
+  C:
+    - "https://www.producthunt.com/topics/developer-tools"
+    - "https://www.producthunt.com/topics/artificial-intelligence"
+    - "https://appsumo.com/browse/?search=ai+developer"
+  D: "alternatives-to / vs / same-maker expansion from a keeper (e.g. Bolt/v0/Replit from Lovable)"
+scoring_weights: { recency: 0.35, velocity: 0.40, saturation_headroom: 0.25 }   # default product-offer weights, unchanged
+dedup_target: 05_shared-intelligence/opportunity-radar/<build-it-better-registry>
+keeper_route: repos/idea-factory/strategies/_inbox/   # money play, via idea-factory-prompter (engine owns this)
+special_note: "no safety gate (a product, not code/accounts). Same as the AI-content category — proves category is config."
+```
+
+**Proof verdict:** ✅ **PASS** (exercised). The engine ran a full quick-pass + condensed deep-dive + level-up + build/buy/use
+on **Lovable** from this config alone, **zero `SKILL.md` edits** (both `opportunity-teardown/SKILL.md` and
+`opportunity-finder/SKILL.md` md5-frozen across the run). Proof artifact:
+`05_shared-intelligence/opportunity-radar/teardowns/teardown-2026-06-17-lovable-duplicability-proof.md`.
+
 ---
 
 ## Profile #2 — startup / funding (`[OR-2]`) — the 2nd-lane-set PROOF (config-only, no skill change)
