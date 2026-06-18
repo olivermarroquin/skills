@@ -1,10 +1,12 @@
 ---
 name: client-seo-onboarding
-version: 1.7
+version: 1.8
 description: One-Cowork-message entry point for onboarding a brand-new SEO client end-to-end. v1.1 wraps the v1.0 11-step pipeline (research → author data → verify WP → scaffold → imagery → publish → index → internal links → report) with three load-bearing additions — per-step `output-quality-loop` integration (Mode 1 EVALUATE + Mode 4 AUTO-RESEARCH + Mode 5 AUTO-APPROVE per artifact), multi-chat wave decomposition baked into the plan-bullet opening (scope-estimation gate computes hours + chat count + wave shape before any work fires), and the AI-surface reachability matrix that replaces "Cowork can't reach X" framing with concrete per-surface paths (Perplexity Sonar + OpenAI + Gemini + Anthropic Claude all working today via tier-3 carve-out; AI Overviews via Claude in Chrome). Triggers on phrases like "process this new client," "onboard this client for SEO," "run client-seo-onboarding on <slug>," "kick off the Core 30 build for <client>," "set up <client> end to end," "ingest these meeting notes and start the onboarding," or any time the operator hands over meeting notes + an intake form + a client slug and wants the full Core 30 pipeline run. Also use to resume a partially-completed onboarding when the operator says "pick up <slug>'s onboarding where we left off" — the skill detects the state file at 04_projects/clients/_active/<slug>/_state/onboarding.json and continues from the last completed step (or last in-progress wave for multi-chat runs).
 ---
 
-# Client SEO Onboarding (orchestrator skill, v1.7)
+# Client SEO Onboarding (orchestrator skill, v1.8)
+
+> **v1.8 changelog (2026-06-17, [DA1] content-coverage-audit)** — New Step 2b: `content-coverage-audit` skill wired as a research-wave gate between Step 2 (research briefs) and Step 3 (data-file generation). Runs three-lens coverage analysis (utilization / coverage-gaps-asymmetry / expansion) via profile-driven engine; emits `G-coverage` gate verdict (registered in gate-type-registry). Blocking on variant-missing-parity-field (the DA2 silent-degrade class); advisory on unused high-richness fields and expansion opportunities. **Graceful fallback:** if `skills/content-coverage-audit/SKILL.md` is not on disk, step skips with a warning — does not block the pipeline. No other behavior change.
 
 > **v1.7 changelog (2026-06-12, [WF-2] close-out)** — `site-capture-engine` (v1.1, registered 2026-06-11) wired into Step 2 as the website-factory path check: when the engagement includes (or will include) a custom-site build, run `site-capture-engine` on the strongest reference competitor BEFORE or alongside the research briefs — it is the mandatory first step of every website-factory client build and its reproduction blueprint is what the build phases consume. Composes with `competitor-deep-research` (landscape first, teardown the winner). Also fixes the stale title-line version (said v1.5 since the v1.6 bump). No other behavior change.
 
@@ -365,6 +367,37 @@ This step produced (per brief; one block emitted per brief landing):
 - A research sub-skill fails → mark step in-progress, log to `failures`, stop. Don't move on with a missing brief.
 - Operator wants to defer some research → respect that; only cells with briefs scaffold downstream.
 - Mode 4 returns Sonar refusal → escalate to operator, don't degrade to vault-internal-only research. Per memory `feedback_consult_reference_memories_before_infrastructure_claims`, verify the surface IS unreachable via direct probe before declaring it so.
+
+### Step 2b — Content coverage audit (research-wave gate)
+
+**Input:** all briefs from Step 2, competitor teardown inventories, existing data JSONs (if any).
+
+**Action:** run the `content-coverage-audit` skill with the appropriate profile (e.g., `core-30-service-city-seo` for Core 30 builds). The audit produces a two-file artifact (human report `.md` + machine findings `.json`) covering three lenses:
+
+1. **L1 — Utilization:** which source fields are consumed vs. unused (surfaces "we researched X and never used it").
+2. **L2 — Coverage gaps / asymmetry:** per-service and per-city depth comparison (surfaces "panel/EV pages are thinner than troubleshooting" — the DA2 silent-degrade class).
+3. **L3 — Expansion opportunities:** new sections or page types the existing source could justify (surfaces "competitor has problem pages we don't build").
+
+```markdown
+## Dispatch content-coverage-audit
+
+Run content-coverage-audit with profile <profile-name>
+  source base: <project-base>
+  output base: <project-base>/website-archive/new/core-30
+  output dir: <project-base>/execution-logs
+```
+
+**Gate verdict:** the audit emits a `G-coverage` gate verdict (registered in `gate-peer-reviewer/references/gate-type-registry.md`).
+
+| Verdict | Meaning | Action |
+|---------|---------|--------|
+| APPROVE | All parity fields at parity, no high-richness unused fields | Proceed to Step 3 |
+| APPROVE-WITH-NOTES | Advisory findings (unused fields, expansion opportunities) | Proceed; surface notes to operator |
+| REJECT-AND-REDO | Blocking findings (variant missing required parity field) | Fix research gaps before Step 3 |
+
+**Graceful fallback:** if the `content-coverage-audit` skill is not present on disk (`skills/content-coverage-audit/SKILL.md` does not exist), skip this step with a warning: "content-coverage-audit skill not found — skipping research-wave gate. Consider installing it for coverage analysis." Do NOT block the pipeline on a missing optional skill.
+
+**Output:** coverage audit report in `execution-logs/`, findings JSON alongside it. State updated: `step_status.step-2b: "complete"`.
 
 ### Step 3 — Author data files
 

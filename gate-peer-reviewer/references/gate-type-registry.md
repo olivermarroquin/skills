@@ -1,10 +1,10 @@
 ---
 type: reference
 skill: gate-peer-reviewer
-skill-version: 3.6
+skill-version: 3.8
 created: 2026-06-03
-updated: 2026-06-15
-tags: [reference, gate-type-registry, substrate-agnostic, future-orchestrator-friendly, page-build, client-seo-onboarding, value-correctness, ground-truth, g-chat-close, omission-audit]
+updated: 2026-06-17
+tags: [reference, gate-type-registry, substrate-agnostic, future-orchestrator-friendly, page-build, client-seo-onboarding, value-correctness, ground-truth, g-chat-close, omission-audit, g-coverage, content-coverage-audit]
 ---
 
 # Gate-type registry
@@ -845,3 +845,55 @@ Registered by [MI-5] build. `G-market-intel` is the closing gate for `market-int
 **Relationship to G-default.** G-market-intel extends G-default with 8 market-intelligence-specific checks (MI-1 through MI-8). When a task runs under `market-intelligence-engine`, G-market-intel takes precedence. G-default's named procedures (placeholder sweep, client-leak audit, link resolution) are inherited as check MI-9.
 
 **Relationship to G-chat-close.** G-chat-close fires at chat close (omission audit). G-market-intel fires at run completion (commission + completeness). Both may fire on the same chat — complementary, not competing.
+
+## G-coverage — content-coverage-audit gate (v1.0, 2026-06-17)
+
+Registered by [DA1] content-coverage-audit skill build. `G-coverage` is the research-wave gate for `client-seo-onboarding`: fires after Step 2 research completes and before Step 3 data-file generation. Audits source→output coverage across three lenses (utilization, coverage-gaps/asymmetry, expansion opportunities). Profile-driven — the same engine runs on any source→output domain.
+
+```yaml
+- orchestrator: client-seo-onboarding
+  mode: research-wave-gate
+  gate_id: G-coverage
+  fires_at: after Step 2 research completes, before Step 3 data-file generation
+  emits: two-file coverage audit report (md + json) with severity-tagged findings + gate verdict
+  contract_source: skills/content-coverage-audit/SKILL.md § 3-4
+  is_closing_gate: false
+  expects:
+    check_1_satisfaction_targets:
+      # --- Lens 1: Utilization ---
+      - every source field defined in the profile has a utilization status (utilized / unused)
+      - unused fields with high richness (>500 words) flagged as advisory findings
+      - competitor teardown inventories (urls-problems, urls-neighborhoods, urls-guides) checked for utilization
+      # --- Lens 2: Coverage gaps / asymmetry ---
+      - per-service depth comparison on parity fields (quick-ref, common-problem, neighborhood-problems)
+      - per-city depth comparison on parity fields (neighborhoods, housing-patterns, demographics)
+      - under-fed variants (depth < 50% median) flagged as blocking findings
+      - missing parity fields flagged as blocking findings
+      # --- Lens 3: Expansion opportunities ---
+      - source-driven expansion rules evaluated (housing-era subsection, neighborhood-problems block, etc.)
+      - competitor architecture diffed against output set (new page types: problem, neighborhood, guide)
+      - ranked expansion backlog emitted with evidence citations
+      # --- Output contract ---
+      - human report (coverage-audit-report-YYYY-MM-DD.md) with tables per lens
+      - machine findings (coverage-audit-findings-YYYY-MM-DD.json) with schema_version 1.0
+      - gate_verdict block with verdict + severity + blocking/advisory counts
+    check_2_calibration_metrics:
+      - source_artifact_count
+      - output_artifact_count
+      - unused_field_count
+      - under_fed_variant_count
+      - expansion_proposal_count
+    check_3_domain_probe_classes:
+      - content-depth (always — the gate's primary mandate)
+      - cross-variant-parity (always — the DA2 silent-degrade class)
+    check_4_cross_wave_artifact_type: coverage-audit-findings-json
+    check_4_within_wave_prior_gate: null
+  registered_by: da1-content-coverage-audit-202606172300
+  registered_at: 2026-06-17
+```
+
+**Calibration source.** The 2026-06-07 EV Core 30 peer-review manual analysis: (a) AJ Long teardown's `urls-problems`/`urls-neighborhoods`/`urls-guides` inventories extracted and never mined (L1 unused high-richness); (b) troubleshooting pages had localized depth while panel/EV pages didn't (L2 per-service asymmetry — the DA2 class); (c) housing patterns with 3+ eras supported an "issues by home era" subsection, 10+ neighborhoods supported a neighborhood-problems block (L3 expansion).
+
+**Relationship to G-default.** G-coverage is complementary to G-default. G-default reviews the produced artifact's surface quality (placeholders, leaks, links). G-coverage reviews the source→output conversion depth (utilization, parity, expansion). Both may fire on the same build — G-coverage at research→scaffold transition, G-default at scaffold→publish transition.
+
+**Relationship to G-chat-close.** G-coverage fires mid-pipeline (research-wave gate). G-chat-close fires at chat end (omission audit). Non-overlapping firing points.

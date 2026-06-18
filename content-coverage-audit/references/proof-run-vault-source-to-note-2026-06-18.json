@@ -1,0 +1,215 @@
+{
+  "schema_version": "1.0",
+  "profile": "vault-source-to-note",
+  "profile_version": "1.0",
+  "run_date": "2026-06-18",
+  "run_type": "non-seo-proof",
+  "source_artifact_count": 30,
+  "output_artifact_count": 184,
+
+  "lens_1_utilization": {
+    "total_fields_audited": 6,
+    "utilized_count": 5,
+    "unused_count": 1,
+    "unused_high_richness_count": 1,
+    "fields": [
+      {
+        "source_collection": "source-notes",
+        "field_name": "claims-or-takeaways",
+        "richness_score": 21,
+        "richness_metric": "item_count",
+        "utilized": true,
+        "referencing_outputs": ["patterns", "lessons"]
+      },
+      {
+        "source_collection": "source-notes",
+        "field_name": "tactics-or-strategies",
+        "richness_score": 21,
+        "richness_metric": "item_count",
+        "utilized": true,
+        "referencing_outputs": ["patterns"]
+      },
+      {
+        "source_collection": "source-notes",
+        "field_name": "tools-mentioned",
+        "richness_score": 18,
+        "richness_metric": "item_count",
+        "utilized": true,
+        "referencing_outputs": ["tools"],
+        "notes": "7-10 tools mentioned but held pending cross-creator validation"
+      },
+      {
+        "source_collection": "source-notes",
+        "field_name": "opportunities",
+        "richness_score": 15,
+        "richness_metric": "item_count",
+        "utilized": true,
+        "referencing_outputs": ["patterns", "blueprints"]
+      },
+      {
+        "source_collection": "source-notes",
+        "field_name": "pattern-candidates",
+        "richness_score": 10,
+        "richness_metric": "item_count",
+        "utilized": true,
+        "referencing_outputs": ["patterns"]
+      },
+      {
+        "source_collection": "source-notes",
+        "field_name": "research-questions",
+        "richness_score": 12,
+        "richness_metric": "item_count",
+        "utilized": false,
+        "referencing_outputs": [],
+        "notes": "No systematic tracking of question resolution in output set"
+      }
+    ]
+  },
+
+  "lens_2_coverage": {
+    "axes_audited": 1,
+    "variants_at_parity": 2,
+    "variants_under_fed": 3,
+    "variants_missing": 0,
+    "axes": [
+      {
+        "axis_name": "domain",
+        "parity_fields_checked": 3,
+        "variants": [
+          {
+            "variant_value": "marketing",
+            "field": "all-output-types",
+            "depth": 24,
+            "median_depth": 36,
+            "ratio_to_median": 0.67,
+            "status": "under-fed",
+            "notes": "67% of sources are marketing-tagged but only 13% of output artifacts"
+          },
+          {
+            "variant_value": "seo",
+            "field": "all-output-types",
+            "depth": 19,
+            "median_depth": 36,
+            "ratio_to_median": 0.53,
+            "status": "under-fed",
+            "notes": "50% of sources are SEO-tagged but only 10% of output artifacts; 1 lesson from 15 sources"
+          },
+          {
+            "variant_value": "client-services",
+            "field": "all-output-types",
+            "depth": 48,
+            "median_depth": 36,
+            "ratio_to_median": 1.33,
+            "status": "at-parity"
+          },
+          {
+            "variant_value": "automation-systems",
+            "field": "all-output-types",
+            "depth": 58,
+            "median_depth": 36,
+            "ratio_to_median": 1.61,
+            "status": "at-parity",
+            "notes": "Output-only domain (synthesis from cross-domain sources)"
+          },
+          {
+            "variant_value": "content-systems",
+            "field": "all-output-types",
+            "depth": 5,
+            "median_depth": 36,
+            "ratio_to_median": 0.14,
+            "status": "under-fed",
+            "notes": "Below 50% threshold by ratio, though proportional to source count (1 source / 5 artifacts) — severity advisory, not blocking"
+          }
+        ]
+      }
+    ]
+  },
+
+  "lens_3_expansion": {
+    "total_proposals": 4,
+    "high_priority_count": 0,
+    "backlog": [
+      {
+        "rank": 1,
+        "proposal_name": "Elevate SEO patterns from under-mined sources",
+        "type": "new-pattern",
+        "evidence": ["15 SEO sources exist", "only 8 SEO patterns in output", "5:1 source-to-artifact ratio"],
+        "priority": "medium",
+        "source_richness_score": 15,
+        "source_collection": "source-notes",
+        "competitor_signal": false
+      },
+      {
+        "rank": 2,
+        "proposal_name": "Create tool notes for cross-creator-validated tools",
+        "type": "new-tool-note",
+        "evidence": ["7-10 tools mentioned in sources without standalone artifacts", "Apify, Spline, Three.js, GenPPT, LinkD"],
+        "priority": "medium",
+        "source_richness_score": 10,
+        "source_collection": "source-notes",
+        "competitor_signal": false
+      },
+      {
+        "rank": 3,
+        "proposal_name": "Add marketing-specific lessons",
+        "type": "new-lesson",
+        "evidence": ["20 marketing sources", "only ~2 marketing lessons exist", "7.5:1 imbalance"],
+        "priority": "medium",
+        "source_richness_score": 20,
+        "source_collection": "source-notes",
+        "competitor_signal": false
+      },
+      {
+        "rank": 4,
+        "proposal_name": "Track research-question resolution",
+        "type": "new-data-binding",
+        "evidence": ["12 sources log research questions", "no output collection tracks resolution"],
+        "priority": "low",
+        "source_richness_score": 12,
+        "source_collection": "source-notes",
+        "competitor_signal": false
+      }
+    ]
+  },
+
+  "gate_verdict": {
+    "verdict": "APPROVE-WITH-NOTES",
+    "verdict_severity": "advisory",
+    "blocking_count": 0,
+    "advisory_count": 4,
+    "findings": [
+      {
+        "finding_id": "F-1",
+        "lens": "L1",
+        "severity": "advisory",
+        "summary": "7-10 tools mentioned in sources not yet standalone artifacts",
+        "detail": "Held by one-creator-only validation discipline (architectural constraint, not omission)",
+        "action": "Create tool notes when cross-creator validation triggers"
+      },
+      {
+        "finding_id": "F-2",
+        "lens": "L2",
+        "severity": "advisory",
+        "summary": "Marketing domain 7.5:1 source-to-artifact imbalance",
+        "detail": "67% of sources are marketing-tagged but only 13% of output artifacts are marketing-domain. Intentional synthesis pattern (sources provide use-case framing, outputs abstract upward) but direct marketing patterns/lessons are thin.",
+        "action": "Periodic review; elevate marketing-specific patterns when cross-project validation exists"
+      },
+      {
+        "finding_id": "F-3",
+        "lens": "L2",
+        "severity": "advisory",
+        "summary": "SEO domain 5:1 source-to-artifact imbalance",
+        "detail": "50% of sources are SEO-tagged but only 10% of output artifacts are SEO-domain. Only 1 SEO lesson exists despite 15 SEO sources.",
+        "action": "Elevate SEO patterns from under-mined sources (electrician case study, AI SEO methodology)"
+      },
+      {
+        "finding_id": "F-4",
+        "lens": "L3",
+        "severity": "advisory",
+        "summary": "Research question sections untracked in output",
+        "detail": "12 sources log research-question sections with no systematic resolution tracking in any output collection.",
+        "action": "Consider a research-questions-tracker or resolution-linking convention"
+      }
+    ]
+  }
+}

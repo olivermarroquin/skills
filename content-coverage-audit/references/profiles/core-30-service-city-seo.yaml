@@ -1,0 +1,623 @@
+# Profile: core-30-service-city-seo
+# Domain: Local SEO service x city page builds (Core 30 pattern)
+# Seed instance: EV Electric Services (Bethesda/Rockville build)
+# Created: 2026-06-17 by [DA1] content-coverage-audit skill build
+#
+# This profile maps research sources (briefs, data JSONs, competitor teardowns)
+# to output artifacts (draft pages) for a Core 30 service x city SEO build.
+# All client-specific values (paths, service lists, city lists) are parameterized.
+
+profile:
+  name: "core-30-service-city-seo"
+  domain: "Local SEO service x city page builds"
+  version: "1.0"
+  description: >
+    Audits how well research briefs, data JSONs, and competitor teardowns
+    are consumed by scaffolded draft pages in a Core 30 build. Detects
+    per-service depth asymmetry, unused competitor inventories, and
+    expansion opportunities from source richness.
+
+  # --- Parameters (set by invoker) ---
+  # These are resolved at runtime from the invocation context.
+  # The profile uses {{param}} syntax; the engine substitutes before running.
+  parameters:
+    client_slug: "{{client_slug}}"           # e.g. "ev-electric-services"
+    project_base: "{{project_base}}"         # e.g. "second-brain/04_projects/clients/_active/ev-electric-services"
+    data_base: "{{data_base}}"               # e.g. "repos/ai-agency-core/scripts/data"
+    research_base: "{{research_base}}"       # e.g. "second-brain/05_shared-intelligence/research-briefs"
+    competitor_slug: "{{competitor_slug}}"    # e.g. "aj-long"
+    services: "{{services}}"                 # e.g. ["troubleshooting", "panel-upgrade", "ev-charger", ...]
+    cities: "{{cities}}"                     # e.g. ["vienna-va", "fairfax-va", ...]
+
+  # --- Source set ---
+  source_set:
+    collections:
+      # Tier 1: Service research briefs
+      - name: "service-briefs"
+        description: "Per-service research briefs (keyword volumes, pricing, pain points, competitive landscape, FAQ clusters, code/regulatory)"
+        base_dir: "{{research_base}}/services"
+        glob: "*.md"
+        format: md
+        field_extraction: section_headings
+        fields:
+          - name: "service-identity"
+            path: "## 1. Service identity"
+            description: "Slug, display name, page template type"
+            richness_metric: word_count
+          - name: "top-10-serp"
+            path: "## 2. Top-10 SERP"
+            description: "SERP analysis for head keyword"
+            richness_metric: word_count
+          - name: "keyword-research"
+            path: "## 3. Keyword research"
+            description: "Volume data, long-tail, close variants"
+            richness_metric: word_count
+          - name: "service-scope"
+            path: "## 4. Service scope"
+            description: "Inclusion/exclusion rules"
+            richness_metric: word_count
+          - name: "terminology"
+            path: "## 5. Key terminology"
+            description: "Domain terminology definitions"
+            richness_metric: word_count
+          - name: "pricing-patterns"
+            path: "## 6. Pricing patterns"
+            description: "Market pricing data"
+            richness_metric: word_count
+          - name: "customer-pain-points"
+            path: "## 7. Customer pain points"
+            description: "Pain points from reviews, forums, PAA"
+            richness_metric: word_count
+          - name: "competitive-landscape"
+            path: "## 8. Local competitive landscape"
+            description: "Competitor positioning for this service"
+            richness_metric: word_count
+          - name: "positioning-opportunities"
+            path: "## 9. Positioning opportunities"
+            description: "Differentiation angles"
+            richness_metric: word_count
+          - name: "solution-approaches"
+            path: "## 10. Solution approaches"
+            description: "What competitors do for this service"
+            richness_metric: word_count
+          - name: "faq-clusters"
+            path: "## 11. Service-specific FAQ"
+            description: "FAQ themes and questions"
+            richness_metric: item_count
+          - name: "conversion-signals"
+            path: "## 12. Conversion signals"
+            description: "Trust markers and conversion patterns"
+            richness_metric: word_count
+          - name: "regulatory-context"
+            path: "## 13. Virginia code"
+            description: "Code and regulatory requirements"
+            richness_metric: word_count
+          - name: "remaining-gaps"
+            path: "## 14. Remaining gaps"
+            description: "Known research gaps and backfill paths"
+            richness_metric: word_count
+
+      # Tier 2: City research briefs
+      - name: "city-briefs"
+        description: "Per-city research briefs (demographics, housing, neighborhoods, permits, utilities, competitors)"
+        base_dir: "{{research_base}}/cities"
+        glob: "*.md"
+        format: md
+        field_extraction: section_headings
+        fields:
+          - name: "city-identity"
+            path: "## 1. City identity"
+            description: "Administrative basics, ZIPs, AHJ, utilities"
+            richness_metric: word_count
+          - name: "geographic-anchor"
+            path: "## 2. Geographic anchor"
+            description: "Boundary description, drive times"
+            richness_metric: word_count
+          - name: "neighborhoods"
+            path: "## 3. Neighborhoods"
+            description: "Neighborhood inventory with housing decades"
+            richness_metric: item_count
+          - name: "demographics"
+            path: "## 4. Demographics"
+            description: "Census ACS data (income, housing, education)"
+            richness_metric: word_count
+          - name: "housing-patterns"
+            path: "## 5. Housing stock patterns"
+            description: "Construction eras with electrical implications"
+            richness_metric: item_count
+          - name: "infrastructure-quirks"
+            path: "## 6. Local infrastructure"
+            description: "Utilities, permitting, code adoption, HOAs"
+            richness_metric: word_count
+          - name: "competitor-landscape"
+            path: "## 7. Local competitor"
+            description: "Chamber, BBB, directories"
+            richness_metric: word_count
+          - name: "search-behavior"
+            path: "## 8. Local search behavior"
+            description: "Google Trends, branded queries"
+            richness_metric: word_count
+          - name: "ai-search"
+            path: "## 9. AI-search"
+            description: "AI Overview, Perplexity, ChatGPT patterns"
+            richness_metric: word_count
+          - name: "positioning-facts"
+            path: "## 10. City-universal positioning"
+            description: "EV adoption, solar density, home-age, seasonal"
+            richness_metric: word_count
+
+      # Tier 3: Intersection research briefs
+      - name: "intersection-briefs"
+        description: "Per service x city intersection briefs (top 3 competitors, localized keywords, FAQ, review themes)"
+        base_dir: "{{research_base}}/intersections"
+        glob: "*.md"
+        format: md
+        field_extraction: section_headings
+        fields:
+          - name: "intersection-identity"
+            path: "## 1. Intersection identity"
+            description: "Service x city pair, head query"
+            richness_metric: word_count
+          - name: "top-3-competitors"
+            path: "## 2. Top 3"
+            description: "City-specific competitors with SERP ranks"
+            richness_metric: item_count
+          - name: "localized-keywords"
+            path: "## 3. Localized keyword"
+            description: "Volume + long-tail + PAA for this intersection"
+            richness_metric: word_count
+          - name: "ai-chat-questions"
+            path: "## 4. AI-chat"
+            description: "AI engine answer shapes + cited sources"
+            richness_metric: word_count
+          - name: "faq-themes"
+            path: "## 5. Localized FAQ"
+            description: "PAA + competitive FAQ gaps"
+            richness_metric: item_count
+          - name: "review-themes"
+            path: "## 6. Localized review"
+            description: "Google Maps praise + complaint themes"
+            richness_metric: word_count
+
+      # Service data JSONs (scaffolder input)
+      - name: "service-data-jsons"
+        description: "Structured service data consumed by the scaffolder (templates, problem cards, pricing items, FAQ items, schema)"
+        base_dir: "{{data_base}}/services"
+        glob: "*.json"
+        format: json
+        field_extraction: json_keys
+        fields:
+          - name: "hero-templates"
+            path: "$.hero_eyebrow_template"
+            description: "Hero section template strings"
+            richness_metric: boolean
+          - name: "problem-cards"
+            path: "$.problem_cards"
+            description: "Service-specific problem cards array"
+            richness_metric: item_count
+          - name: "process-steps"
+            path: "$.process_steps"
+            description: "Service process steps array"
+            richness_metric: item_count
+          - name: "pricing-items"
+            path: "$.pricing_items"
+            description: "Pricing line items array"
+            richness_metric: item_count
+          - name: "faq-items"
+            path: "$.faq_items"
+            description: "FAQ question-answer pairs"
+            richness_metric: item_count
+          - name: "related-cards"
+            path: "$.related_cards"
+            description: "Related services cards"
+            richness_metric: item_count
+          - name: "schema-service-fields"
+            path: "$.schema_service_description_template"
+            description: "JSON-LD Service schema template"
+            richness_metric: boolean
+
+      # City data JSONs (scaffolder input)
+      - name: "city-data-jsons"
+        description: "Structured city data consumed by the scaffolder (neighborhoods, housing patterns, localized items)"
+        base_dir: "{{data_base}}/cities"
+        glob: "*.json"
+        format: json
+        field_extraction: json_keys
+        fields:
+          - name: "neighborhoods-list"
+            path: "$.neighborhoods"
+            description: "Neighborhood objects with ZIP, housing era"
+            richness_metric: item_count
+          - name: "housing-patterns-list"
+            path: "$.housing_patterns"
+            description: "Housing era objects with symptoms"
+            richness_metric: item_count
+          - name: "quick-ref-localized"
+            path: "$.quick_ref_localized_items"
+            description: "Per-service localized quick-reference items"
+            richness_metric: item_count
+          - name: "common-problem-paragraph"
+            path: "$.most_common_problem_paragraph"
+            description: "Per-service localized problem statement"
+            richness_metric: word_count
+          - name: "neighborhood-problems"
+            path: "$.specific_problems_neighborhood_phrase"
+            description: "Per-service neighborhood-specific problem phrases"
+            richness_metric: word_count
+          - name: "ev-charger-homes"
+            path: "$.ev_charger_homes_phrase"
+            description: "EV charger housing context phrase"
+            richness_metric: word_count
+
+      # Competitor teardown inventories
+      - name: "competitor-teardown-inventories"
+        description: "URL inventories and structured data from competitor site teardowns"
+        base_dir: "{{project_base}}/admin-extracts/competitor-research/{{competitor_slug}}-teardown/data"
+        glob: "*.txt"
+        format: txt
+        field_extraction: line_inventory
+        fields:
+          - name: "urls-problems"
+            path: "urls-problems.txt"
+            description: "Competitor problem/symptom page URLs"
+            richness_metric: line_count
+          - name: "urls-neighborhoods"
+            path: "urls-neighborhoods.txt"
+            description: "Competitor neighborhood page URLs"
+            richness_metric: line_count
+          - name: "urls-guides"
+            path: "urls-guides.txt"
+            description: "Competitor guide/educational page URLs"
+            richness_metric: line_count
+          - name: "urls-blog"
+            path: "urls-blog.txt"
+            description: "Competitor blog post URLs"
+            richness_metric: line_count
+          - name: "urls-locations"
+            path: "urls-locations.txt"
+            description: "Competitor location/city page URLs"
+            richness_metric: line_count
+          - name: "urls-services"
+            path: "urls-services.txt"
+            description: "Competitor service page URLs"
+            richness_metric: line_count
+          - name: "problem-slugs"
+            path: "problem-slugs.txt"
+            description: "Extracted problem/symptom slug taxonomy"
+            richness_metric: line_count
+          - name: "neighborhood-slugs"
+            path: "neighborhood-slugs.txt"
+            description: "Extracted neighborhood slug inventory"
+            richness_metric: line_count
+          - name: "guide-slugs"
+            path: "guide-slugs.txt"
+            description: "Extracted guide slug inventory"
+            richness_metric: line_count
+          - name: "service-city-presence-grid"
+            path: "service-city-presence-grid.tsv"
+            description: "Service x city presence matrix"
+            richness_metric: line_count
+
+      # Competitor teardown extracted content
+      - name: "competitor-teardown-extracts"
+        description: "Structured content and schema extracted from competitor pages"
+        base_dir: "{{project_base}}/admin-extracts/competitor-research/{{competitor_slug}}-teardown/extracted"
+        glob: "**/*.{content.txt,schema.json}"
+        format: txt
+        field_extraction: line_inventory
+        fields:
+          - name: "city-content-extracts"
+            path: "cities/*.content.txt"
+            description: "Per-city content extraction (text nodes, FAQs)"
+            richness_metric: word_count
+          - name: "city-schema-extracts"
+            path: "cities/*.schema.json"
+            description: "Per-city JSON-LD schema objects"
+            richness_metric: item_count
+
+      # Competitor DataForSEO keyword data
+      - name: "competitor-keyword-data"
+        description: "DataForSEO keyword rankings, difficulty, backlinks for competitor"
+        base_dir: "{{project_base}}/admin-extracts/competitor-research/{{competitor_slug}}-teardown/data"
+        glob: "dfs-*.json"
+        format: json
+        field_extraction: json_keys
+        fields:
+          - name: "ranked-keywords"
+            path: "dfs-ranked-keywords-*.json"
+            description: "Competitor keyword rankings with difficulty"
+            richness_metric: item_count
+          - name: "keyword-difficulty"
+            path: "dfs-kw-difficulty.json"
+            description: "Keyword difficulty scores"
+            richness_metric: item_count
+          - name: "backlinks"
+            path: "dfs-backlinks-raw.json"
+            description: "Backlink profile"
+            richness_metric: item_count
+
+  # --- Output set ---
+  output_set:
+    collections:
+      - name: "draft-pages"
+        description: "Core 30 draft pages (markdown + WP-wrapped HTML)"
+        base_dir: "{{project_base}}/website-archive/new/core-30"
+        glob: "**/draft-v*.md"
+        format: md
+        variant_key: "service"   # extracted from frontmatter or folder name
+        section_extraction: headings
+        sections:
+          - name: "hero"
+            selector: "## Hero"
+            description: "Hero heading + subheading + image"
+          - name: "what-it-means"
+            selector: "## What"
+            description: "Service explanation section"
+          - name: "quick-ref"
+            selector: "## Quick"
+            description: "Quick reference accordion (localized items)"
+          - name: "why-city"
+            selector: "## Why"
+            description: "Why-this-city localized section"
+          - name: "problems"
+            selector: "## Common"
+            description: "Problem cards section"
+          - name: "process"
+            selector: "## Our Process"
+            description: "Process steps section"
+          - name: "pricing"
+            selector: "## Pricing"
+            description: "Pricing items section"
+          - name: "about"
+            selector: "## About"
+            description: "About the owner section"
+          - name: "neighborhoods"
+            selector: "## Neighborhoods"
+            description: "Neighborhoods served section"
+          - name: "related"
+            selector: "## Related"
+            description: "Related services cards"
+          - name: "faq"
+            selector: "## FAQ"
+            description: "FAQ accordion (8 Q&A)"
+          - name: "final-cta"
+            selector: "## Call"
+            description: "Final CTA section"
+          - name: "schema-json-ld"
+            selector: "json-ld"
+            description: "Embedded JSON-LD schema blocks"
+
+  # --- Field-to-section mapping ---
+  # Which source fields should feed which output sections
+  field_to_section_map:
+    # Service brief → page sections
+    - source_collection: "service-briefs"
+      source_field: "customer-pain-points"
+      target_collection: "draft-pages"
+      target_section: "problems"
+      required: true
+      notes: "Pain points research feeds problem cards"
+    - source_collection: "service-briefs"
+      source_field: "pricing-patterns"
+      target_collection: "draft-pages"
+      target_section: "pricing"
+      required: true
+      notes: "Market pricing data feeds pricing section"
+    - source_collection: "service-briefs"
+      source_field: "faq-clusters"
+      target_collection: "draft-pages"
+      target_section: "faq"
+      required: true
+      notes: "FAQ research feeds FAQ accordion"
+    - source_collection: "service-briefs"
+      source_field: "solution-approaches"
+      target_collection: "draft-pages"
+      target_section: "process"
+      required: true
+      notes: "Solution approaches feed process steps"
+    - source_collection: "service-briefs"
+      source_field: "regulatory-context"
+      target_collection: "draft-pages"
+      target_section: "what-it-means"
+      required: false
+      notes: "Regulatory context enriches service explanation"
+    - source_collection: "service-briefs"
+      source_field: "keyword-research"
+      target_collection: "draft-pages"
+      target_section: "hero"
+      required: true
+      notes: "Head keyword feeds H1 and meta title"
+    - source_collection: "service-briefs"
+      source_field: "conversion-signals"
+      target_collection: "draft-pages"
+      target_section: "about"
+      required: false
+      notes: "Trust markers can enrich about section"
+
+    # City brief → page sections
+    - source_collection: "city-briefs"
+      source_field: "neighborhoods"
+      target_collection: "draft-pages"
+      target_section: "neighborhoods"
+      required: true
+      notes: "Neighborhood inventory feeds neighborhoods section"
+    - source_collection: "city-briefs"
+      source_field: "housing-patterns"
+      target_collection: "draft-pages"
+      target_section: "why-city"
+      required: true
+      notes: "Housing patterns feed localized why-city section"
+    - source_collection: "city-briefs"
+      source_field: "demographics"
+      target_collection: "draft-pages"
+      target_section: "why-city"
+      required: false
+      notes: "Demographics can enrich why-city positioning"
+
+    # City data JSON → page sections
+    - source_collection: "city-data-jsons"
+      source_field: "quick-ref-localized"
+      target_collection: "draft-pages"
+      target_section: "quick-ref"
+      required: true
+      notes: "Localized quick-ref items feed accordion"
+    - source_collection: "city-data-jsons"
+      source_field: "common-problem-paragraph"
+      target_collection: "draft-pages"
+      target_section: "problems"
+      required: true
+      notes: "Localized problem statement feeds problem intro"
+    - source_collection: "city-data-jsons"
+      source_field: "neighborhood-problems"
+      target_collection: "draft-pages"
+      target_section: "why-city"
+      required: false
+      notes: "Neighborhood-specific problems enrich localization"
+
+    # Service data JSON → page sections
+    - source_collection: "service-data-jsons"
+      source_field: "problem-cards"
+      target_collection: "draft-pages"
+      target_section: "problems"
+      required: true
+      notes: "Structured problem cards feed problems section"
+    - source_collection: "service-data-jsons"
+      source_field: "process-steps"
+      target_collection: "draft-pages"
+      target_section: "process"
+      required: true
+      notes: "Process steps feed process section"
+    - source_collection: "service-data-jsons"
+      source_field: "pricing-items"
+      target_collection: "draft-pages"
+      target_section: "pricing"
+      required: true
+      notes: "Pricing line items feed pricing section"
+    - source_collection: "service-data-jsons"
+      source_field: "faq-items"
+      target_collection: "draft-pages"
+      target_section: "faq"
+      required: true
+      notes: "FAQ pairs feed FAQ accordion"
+    - source_collection: "service-data-jsons"
+      source_field: "schema-service-fields"
+      target_collection: "draft-pages"
+      target_section: "schema-json-ld"
+      required: true
+      notes: "Schema templates feed JSON-LD blocks"
+
+    # Intersection brief → page sections
+    - source_collection: "intersection-briefs"
+      source_field: "top-3-competitors"
+      target_collection: "draft-pages"
+      target_section: "why-city"
+      required: false
+      notes: "Competitor intelligence can inform positioning"
+    - source_collection: "intersection-briefs"
+      source_field: "faq-themes"
+      target_collection: "draft-pages"
+      target_section: "faq"
+      required: false
+      notes: "Localized FAQ themes supplement service FAQs"
+    - source_collection: "intersection-briefs"
+      source_field: "review-themes"
+      target_collection: "draft-pages"
+      target_section: "about"
+      required: false
+      notes: "Review themes inform trust markers"
+
+  # --- Variant axes ---
+  # Dimensions across which to compare coverage depth
+  variant_axes:
+    - name: "service"
+      source_key: "service-slug"
+      expected_values: "{{services}}"
+      parity_fields:
+        # These fields should have comparable depth across ALL services
+        - "quick-ref-localized"        # city-data-jsons
+        - "common-problem-paragraph"   # city-data-jsons
+        - "neighborhood-problems"      # city-data-jsons
+        - "faq-themes"                 # intersection-briefs
+        - "review-themes"             # intersection-briefs
+        - "localized-keywords"        # intersection-briefs
+
+    - name: "city"
+      source_key: "city-slug"
+      expected_values: "{{cities}}"
+      parity_fields:
+        # These fields should have comparable depth across ALL cities
+        - "neighborhoods"              # city-briefs
+        - "housing-patterns"           # city-briefs
+        - "demographics"              # city-briefs
+        - "neighborhoods-list"        # city-data-jsons
+        - "housing-patterns-list"     # city-data-jsons
+
+  # --- Expansion rules ---
+  expansion_rules:
+    - name: "housing-era-subsection"
+      trigger: "city-briefs.housing-patterns has >=3 distinct eras"
+      proposal: "Add an 'electrical issues by home era' subsection to the why-city section"
+      evidence_source: "city-briefs.housing-patterns"
+      priority: high
+
+    - name: "neighborhood-problems-block"
+      trigger: "city-briefs.neighborhoods has >=6 neighborhoods"
+      proposal: "Add a 'neighborhood-specific electrical problems' block to the problems section"
+      evidence_source: "city-briefs.neighborhoods"
+      priority: medium
+
+    - name: "competitor-problem-pages"
+      trigger: "competitor-teardown-inventories.urls-problems has >=5 URLs"
+      proposal: "Build dedicated problem/symptom pages (new page type) matching competitor architecture"
+      evidence_source: "competitor-teardown-inventories.urls-problems"
+      priority: high
+
+    - name: "competitor-neighborhood-pages"
+      trigger: "competitor-teardown-inventories.urls-neighborhoods has >=5 URLs"
+      proposal: "Build dedicated neighborhood pages (new page type) matching competitor architecture"
+      evidence_source: "competitor-teardown-inventories.urls-neighborhoods"
+      priority: medium
+
+    - name: "competitor-guide-pages"
+      trigger: "competitor-teardown-inventories.urls-guides has >=3 URLs"
+      proposal: "Build educational guide pages (new page type) matching competitor architecture"
+      evidence_source: "competitor-teardown-inventories.urls-guides"
+      priority: medium
+
+    - name: "competitor-blog-content"
+      trigger: "competitor-teardown-inventories.urls-blog has >=10 URLs"
+      proposal: "Develop blog content strategy informed by competitor blog taxonomy"
+      evidence_source: "competitor-teardown-inventories.urls-blog"
+      priority: low
+
+    - name: "review-theme-section"
+      trigger: "intersection-briefs.review-themes word count >= 200 for >=3 intersections"
+      proposal: "Add a 'what customers say' section with localized review themes"
+      evidence_source: "intersection-briefs.review-themes"
+      priority: medium
+
+    - name: "ai-search-optimization"
+      trigger: "intersection-briefs.ai-chat-questions present for >=3 intersections"
+      proposal: "Add AI-search-optimized answer blocks targeting citation in AI engines"
+      evidence_source: "intersection-briefs.ai-chat-questions"
+      priority: medium
+
+    - name: "service-city-presence-gap"
+      trigger: "competitor-teardown-inventories.service-city-presence-grid shows competitor covers city+service pairs we don't"
+      proposal: "Expand Core 30 build order to cover competitor-served intersections"
+      evidence_source: "competitor-teardown-inventories.service-city-presence-grid"
+      priority: high
+
+  # --- Competitor architecture diff ---
+  competitor_architecture:
+    inventory_source: "{{project_base}}/admin-extracts/competitor-research/{{competitor_slug}}-teardown/data"
+    diff_against: output_set
+    expansion_signal: true
+
+  # --- Severity thresholds ---
+  severity_thresholds:
+    unused_source_field: advisory
+    variant_depth_asymmetry: blocking       # The DA2 class — per-service silent degrade
+    variant_missing_field: blocking
+    expansion_high_priority: advisory
+    expansion_competitor_gap: advisory

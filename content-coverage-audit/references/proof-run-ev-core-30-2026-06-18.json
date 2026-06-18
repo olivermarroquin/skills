@@ -1,0 +1,366 @@
+{
+  "schema_version": "1.0",
+  "profile": "core-30-service-city-seo",
+  "profile_version": "1.0",
+  "run_date": "2026-06-18",
+  "run_type": "acceptance-test",
+  "client_slug": "ev-electric-services",
+  "source_artifact_count": 102,
+  "output_artifact_count": 31,
+
+  "lens_1_utilization": {
+    "total_fields_audited": 9,
+    "utilized_count": 3,
+    "unused_count": 6,
+    "unused_high_richness_count": 6,
+    "fields": [
+      {
+        "source_collection": "competitor-teardown-inventories",
+        "field_name": "urls-problems",
+        "richness_score": 13,
+        "richness_metric": "line_count",
+        "utilized": false,
+        "referencing_outputs": [],
+        "notes": "13 competitor problem URLs; 0 references in 31 draft-v*.md pages"
+      },
+      {
+        "source_collection": "competitor-teardown-inventories",
+        "field_name": "urls-neighborhoods",
+        "richness_score": 218,
+        "richness_metric": "line_count",
+        "utilized": false,
+        "referencing_outputs": [],
+        "notes": "218 competitor neighborhood URLs; 0 references in 31 draft-v*.md pages"
+      },
+      {
+        "source_collection": "competitor-teardown-inventories",
+        "field_name": "urls-guides",
+        "richness_score": 13,
+        "richness_metric": "line_count",
+        "utilized": false,
+        "referencing_outputs": [],
+        "notes": "13 competitor guide URLs; 0 references in 31 draft-v*.md pages"
+      },
+      {
+        "source_collection": "competitor-teardown-inventories",
+        "field_name": "problem-slugs",
+        "richness_score": 13,
+        "richness_metric": "line_count",
+        "utilized": false,
+        "referencing_outputs": [],
+        "notes": "13 problem slugs extracted from competitor; unused"
+      },
+      {
+        "source_collection": "competitor-teardown-inventories",
+        "field_name": "neighborhood-slugs",
+        "richness_score": 218,
+        "richness_metric": "line_count",
+        "utilized": false,
+        "referencing_outputs": [],
+        "notes": "218 neighborhood slugs extracted from competitor; unused"
+      },
+      {
+        "source_collection": "competitor-teardown-inventories",
+        "field_name": "guide-slugs",
+        "richness_score": 13,
+        "richness_metric": "line_count",
+        "utilized": false,
+        "referencing_outputs": [],
+        "notes": "13 guide slugs extracted from competitor; unused"
+      },
+      {
+        "source_collection": "service-briefs",
+        "field_name": "all-14-sections",
+        "richness_score": 6,
+        "richness_metric": "item_count",
+        "utilized": true,
+        "referencing_outputs": ["service-data-jsons", "draft-pages"]
+      },
+      {
+        "source_collection": "city-briefs",
+        "field_name": "all-12-sections",
+        "richness_score": 13,
+        "richness_metric": "item_count",
+        "utilized": true,
+        "referencing_outputs": ["city-data-jsons", "draft-pages"],
+        "notes": "Only 4 of 13 city briefs have corresponding data JSONs"
+      },
+      {
+        "source_collection": "intersection-briefs",
+        "field_name": "all-sections",
+        "richness_score": 30,
+        "richness_metric": "item_count",
+        "utilized": true,
+        "referencing_outputs": ["draft-pages"],
+        "notes": "Distribution is asymmetric across services (see L2)"
+      }
+    ]
+  },
+
+  "lens_2_coverage": {
+    "axes_audited": 2,
+    "variants_at_parity": 3,
+    "variants_under_fed": 4,
+    "variants_missing": 2,
+    "axes": [
+      {
+        "axis_name": "service",
+        "parity_fields_checked": 3,
+        "description": "City data coverage per service (quick_ref_localized, most_common_problem, neighborhood_problems)",
+        "variants": [
+          {
+            "variant_value": "troubleshooting",
+            "field": "city-data-parity-fields",
+            "depth": 4,
+            "median_depth": 1,
+            "ratio_to_median": 4.0,
+            "status": "at-parity",
+            "notes": "Present in all 4 anchor cities (Vienna, Fairfax, McLean, Oakton)"
+          },
+          {
+            "variant_value": "light-fixture",
+            "field": "city-data-parity-fields",
+            "depth": 2,
+            "median_depth": 1,
+            "ratio_to_median": 2.0,
+            "status": "at-parity",
+            "notes": "Present in McLean + Vienna"
+          },
+          {
+            "variant_value": "smoke-alarm",
+            "field": "city-data-parity-fields",
+            "depth": 1,
+            "median_depth": 1,
+            "ratio_to_median": 1.0,
+            "status": "under-fed",
+            "notes": "Present in Vienna only; 0 intersection briefs"
+          },
+          {
+            "variant_value": "outlet-installation",
+            "field": "city-data-parity-fields",
+            "depth": 1,
+            "median_depth": 1,
+            "ratio_to_median": 1.0,
+            "status": "under-fed",
+            "notes": "Present in Vienna only; 0 intersection briefs"
+          },
+          {
+            "variant_value": "panel-upgrade",
+            "field": "city-data-parity-fields",
+            "depth": 0,
+            "median_depth": 1,
+            "ratio_to_median": 0.0,
+            "status": "missing",
+            "notes": "0/4 cities have panel-upgrade parity fields; pages silent-degrade to generic content"
+          },
+          {
+            "variant_value": "ev-charger",
+            "field": "city-data-parity-fields",
+            "depth": 0,
+            "median_depth": 1,
+            "ratio_to_median": 0.0,
+            "status": "missing",
+            "notes": "0/4 cities have ev-charger parity fields; pages silent-degrade to generic content"
+          }
+        ]
+      },
+      {
+        "axis_name": "service-intersection-briefs",
+        "parity_fields_checked": 1,
+        "description": "Intersection brief count per service",
+        "variants": [
+          {
+            "variant_value": "panel-upgrade",
+            "field": "intersection-brief-count",
+            "depth": 10,
+            "median_depth": 7,
+            "ratio_to_median": 1.43,
+            "status": "at-parity"
+          },
+          {
+            "variant_value": "emergency-electrician",
+            "field": "intersection-brief-count",
+            "depth": 9,
+            "median_depth": 7,
+            "ratio_to_median": 1.29,
+            "status": "at-parity"
+          },
+          {
+            "variant_value": "ev-charger-installation",
+            "field": "intersection-brief-count",
+            "depth": 7,
+            "median_depth": 7,
+            "ratio_to_median": 1.0,
+            "status": "at-parity"
+          },
+          {
+            "variant_value": "light-fixture-installation",
+            "field": "intersection-brief-count",
+            "depth": 4,
+            "median_depth": 7,
+            "ratio_to_median": 0.57,
+            "status": "under-fed"
+          },
+          {
+            "variant_value": "smoke-alarm-installation",
+            "field": "intersection-brief-count",
+            "depth": 0,
+            "median_depth": 7,
+            "ratio_to_median": 0.0,
+            "status": "missing",
+            "notes": "Zero intersection briefs for smoke-alarm"
+          },
+          {
+            "variant_value": "outlet-installation",
+            "field": "intersection-brief-count",
+            "depth": 0,
+            "median_depth": 7,
+            "ratio_to_median": 0.0,
+            "status": "missing",
+            "notes": "Zero intersection briefs for outlet-installation"
+          }
+        ]
+      }
+    ]
+  },
+
+  "lens_3_expansion": {
+    "total_proposals": 6,
+    "high_priority_count": 3,
+    "backlog": [
+      {
+        "rank": 1,
+        "proposal_name": "Phase 2 service category hubs",
+        "type": "new-artifact-type",
+        "evidence": ["All 6 services have >=3 city pages live", "Architectural trigger reached per build-order"],
+        "priority": "high",
+        "source_richness_score": 6,
+        "source_collection": "service-briefs",
+        "competitor_signal": false
+      },
+      {
+        "rank": 2,
+        "proposal_name": "Issues by home era subsections",
+        "type": "new-section",
+        "evidence": ["Vienna: 3 eras (1950s-70s/1970s-90s/2000s-20s)", "Fairfax: 3 eras", "McLean: 3 eras", "Oakton: 3 eras"],
+        "priority": "high",
+        "source_richness_score": 12,
+        "source_collection": "city-briefs",
+        "competitor_signal": true
+      },
+      {
+        "rank": 3,
+        "proposal_name": "Neighborhood-specific electrical problems blocks",
+        "type": "new-section",
+        "evidence": ["Vienna: 7 neighborhoods", "Fairfax: 9 neighborhoods", "McLean: 10 neighborhoods", "Oakton: 8 neighborhoods"],
+        "priority": "medium",
+        "source_richness_score": 34,
+        "source_collection": "city-briefs",
+        "competitor_signal": true,
+        "notes": "Competitor has 218 neighborhood pages; we have 0 dedicated neighborhood content"
+      },
+      {
+        "rank": 4,
+        "proposal_name": "Dedicated problem/symptom pages (new page type)",
+        "type": "new-artifact-type",
+        "evidence": ["AJ Long has 13 problem URLs (urls-problems.txt)", "EV has 0 dedicated problem pages"],
+        "priority": "high",
+        "source_richness_score": 13,
+        "source_collection": "competitor-teardown-inventories",
+        "competitor_signal": true
+      },
+      {
+        "rank": 5,
+        "proposal_name": "Dedicated guide/educational pages (new page type)",
+        "type": "new-artifact-type",
+        "evidence": ["AJ Long has 13 guide URLs (urls-guides.txt)", "EV has 0 guide pages"],
+        "priority": "medium",
+        "source_richness_score": 13,
+        "source_collection": "competitor-teardown-inventories",
+        "competitor_signal": true
+      },
+      {
+        "rank": 6,
+        "proposal_name": "Dedicated neighborhood pages (scale play)",
+        "type": "new-artifact-type",
+        "evidence": ["AJ Long has 218 neighborhood URLs (urls-neighborhoods.txt)", "EV has 0 neighborhood pages", "Long-tail keyword opportunity"],
+        "priority": "medium",
+        "source_richness_score": 218,
+        "source_collection": "competitor-teardown-inventories",
+        "competitor_signal": true
+      }
+    ]
+  },
+
+  "gate_verdict": {
+    "verdict": "APPROVE-WITH-NOTES",
+    "verdict_severity": "blocking",
+    "blocking_count": 2,
+    "advisory_count": 4,
+    "findings": [
+      {
+        "finding_id": "F-1",
+        "lens": "L2",
+        "severity": "blocking",
+        "summary": "Panel-upgrade city data coverage: 0/4 cities — missing all parity fields",
+        "detail": "Zero cities have quick_ref_localized_items, most_common_problem_paragraph, or specific_problems_neighborhood_phrase for panel-upgrade. Pages silent-degrade to generic content.",
+        "action": "Backfill panel-upgrade parity fields in city data JSONs (DA2 scope)"
+      },
+      {
+        "finding_id": "F-2",
+        "lens": "L2",
+        "severity": "blocking",
+        "summary": "EV-charger city data coverage: 0/4 cities — missing all parity fields",
+        "detail": "Same missing-parity-field class as panel-upgrade. Zero localized problem data for EV-charger pages.",
+        "action": "Backfill ev-charger parity fields in city data JSONs (DA2 scope)"
+      },
+      {
+        "finding_id": "F-3",
+        "lens": "L1",
+        "severity": "advisory",
+        "summary": "6 competitor inventory files (244+ unique URLs) extracted but operationally unused",
+        "detail": "urls-problems (13), urls-neighborhoods (218), urls-guides (13) plus slug inventories exist in teardown data/ but are not referenced in any of 31 draft-v*.md pages.",
+        "action": "Mine inventories for expansion backlog (DA3 scope)"
+      },
+      {
+        "finding_id": "F-4",
+        "lens": "L2",
+        "severity": "advisory",
+        "summary": "Smoke-alarm and outlet-installation have 0 intersection briefs",
+        "detail": "Only 1/4 cities (Vienna) have any data for these services. Research coverage is minimal.",
+        "action": "Author intersection briefs for smoke-alarm and outlet-installation"
+      },
+      {
+        "finding_id": "F-5",
+        "lens": "L3",
+        "severity": "advisory",
+        "summary": "3 new page types supportable from competitor architecture",
+        "detail": "Problem pages (13 competitor URLs), guide pages (13 competitor URLs), neighborhood pages (218 competitor URLs) — EV has 0 of each.",
+        "action": "Sequence via prioritization skill; feed to DA3 competitor-architecture-mining"
+      },
+      {
+        "finding_id": "F-6",
+        "lens": "L3",
+        "severity": "advisory",
+        "summary": "Housing-era subsections supportable for all 4 anchor cities",
+        "detail": "All 4 cities have >=3 documented housing eras with electrical implications. Competitor shows era-specific content works.",
+        "action": "Add 'electrical issues by home era' subsection to why-city section"
+      }
+    ]
+  },
+
+  "acceptance_criterion_match": {
+    "a_unused_competitor_inventories": {
+      "matched": true,
+      "evidence": "6 inventory files (244+ URLs) with ZERO references in 31 draft-v*.md pages"
+    },
+    "b_per_service_depth_asymmetry": {
+      "matched": true,
+      "evidence": "Troubleshooting 4/4 cities; panel 0/4; EV 0/4 — DA2 class confirmed"
+    },
+    "c_ranked_expansion_backlog": {
+      "matched": true,
+      "evidence": "6-tier ranked backlog from housing-era sections to 200+ neighborhood pages"
+    }
+  }
+}

@@ -1,0 +1,219 @@
+# Profile: vault-source-to-note
+# Domain: Knowledge OS source-to-artifact coverage
+# Non-SEO proof for content-coverage-audit engine agnosticism
+# Created: 2026-06-17 by [DA1] content-coverage-audit skill build
+#
+# This profile audits how well VIS-extracted source notes (videos, articles,
+# transcripts) are converted into vault knowledge artifacts (patterns, lessons,
+# blueprints, tools). Zero SEO concepts — purely knowledge management domain.
+
+profile:
+  name: "vault-source-to-note"
+  domain: "Knowledge OS source-to-artifact coverage"
+  version: "1.0"
+  description: >
+    Audits how well ingested source material (VIS source notes with claims,
+    tactics, tools, opportunities) is converted into promoted vault artifacts
+    (patterns, lessons, blueprints, tools). Detects under-mined sources,
+    domain coverage asymmetry, and expansion opportunities from source richness.
+
+  parameters:
+    vault_base: "{{vault_base}}"   # e.g. "second-brain"
+
+  source_set:
+    collections:
+      # VIS source notes (ingested videos, articles, transcripts)
+      - name: "source-notes"
+        description: "VIS-extracted source notes with structured claims, tactics, tools, opportunities"
+        base_dir: "{{vault_base}}/00_inbox/sources-pending"
+        glob: "**/*.md"
+        format: md
+        field_extraction: section_headings
+        fields:
+          # VIS source notes use varying heading schemes across extraction versions.
+          # The engine matches any of these heading patterns (substring match).
+          - name: "claims-or-takeaways"
+            path: "## Main claim|## Take-away|## Content topics"
+            description: "Core claims, takeaways, or topic coverage from the source"
+            richness_metric: item_count
+          - name: "tactics-or-strategies"
+            path: "## New tactic|## Strategy extraction|## Workflow breakdown|## Structured action"
+            description: "Actionable tactics, strategies, or workflows extracted"
+            richness_metric: item_count
+          - name: "tools-mentioned"
+            path: "## New tool notes|## Tools mentioned"
+            description: "Tools and platforms mentioned or catalogued"
+            richness_metric: item_count
+          - name: "opportunities"
+            path: "## Opportunities surfaced|## Speculative extensions|## Replication potential"
+            description: "Business/content opportunities identified"
+            richness_metric: item_count
+          - name: "pattern-candidates"
+            path: "## Pattern candidates|## Cross-creator-count"
+            description: "Signals toward pattern promotion"
+            richness_metric: item_count
+          - name: "research-questions"
+            path: "## Research questions"
+            description: "Open questions logged for follow-up"
+            richness_metric: item_count
+
+      # Promoted source notes (already processed)
+      - name: "promoted-sources"
+        description: "Source notes that have been promoted from inbox to domain folders"
+        base_dir: "{{vault_base}}/03_domains"
+        glob: "**/sources/**/*.md"
+        format: md
+        field_extraction: frontmatter
+        fields:
+          - name: "source-type"
+            path: "$.type"
+            description: "Source artifact type (source, video-note, article-note)"
+            richness_metric: boolean
+          - name: "source-tier"
+            path: "$.tier"
+            description: "Source quality tier (1-3)"
+            richness_metric: boolean
+          - name: "domain-tag"
+            path: "$.tags"
+            description: "Domain classification tags"
+            richness_metric: item_count
+
+  output_set:
+    collections:
+      # Patterns (reusable procedures)
+      - name: "patterns"
+        description: "Promoted pattern notes in shared-intelligence"
+        base_dir: "{{vault_base}}/05_shared-intelligence/patterns"
+        glob: "pattern-*.md"
+        format: md
+        variant_key: "domains"
+        section_extraction: headings
+        sections:
+          - name: "problem"
+            selector: "## Problem"
+            description: "What reusable situation this addresses"
+          - name: "steps"
+            selector: "## Steps"
+            description: "Procedural steps"
+          - name: "validation"
+            selector: "## Validation"
+            description: "How to confirm the pattern worked"
+
+      # Lessons (experience-derived insights)
+      - name: "lessons"
+        description: "Promoted lesson notes in shared-intelligence"
+        base_dir: "{{vault_base}}/05_shared-intelligence/lessons"
+        glob: "lesson-*.md"
+        format: md
+        variant_key: "domains"
+        section_extraction: headings
+        sections:
+          - name: "context"
+            selector: "## Context"
+            description: "When this lesson applies"
+          - name: "lesson"
+            selector: "## Lesson"
+            description: "The insight itself"
+          - name: "evidence"
+            selector: "## Evidence"
+            description: "Supporting evidence"
+
+      # Blueprints (system/architecture specs)
+      - name: "blueprints"
+        description: "Promoted blueprint notes in shared-intelligence"
+        base_dir: "{{vault_base}}/05_shared-intelligence/blueprints"
+        glob: "blueprint-*.md"
+        format: md
+        variant_key: "domains"
+        section_extraction: headings
+        sections:
+          - name: "overview"
+            selector: "## Overview"
+            description: "System/architecture overview"
+          - name: "components"
+            selector: "## Components"
+            description: "Component breakdown"
+
+      # Tools (tool-as-note references)
+      - name: "tools"
+        description: "Tool reference notes in shared-intelligence"
+        base_dir: "{{vault_base}}/05_shared-intelligence/tools"
+        glob: "tool-*.md"
+        format: md
+        variant_key: "domains"
+        section_extraction: headings
+        sections:
+          - name: "purpose"
+            selector: "## Purpose"
+            description: "What the tool does"
+          - name: "usage"
+            selector: "## Usage"
+            description: "How to use it"
+
+  field_to_section_map:
+    # Source tactics → patterns
+    - source_collection: "source-notes"
+      source_field: "tactics-or-strategies"
+      target_collection: "patterns"
+      target_section: "steps"
+      required: false
+      notes: "Tactics from sources should eventually become pattern steps"
+
+    # Source tools → tool notes
+    - source_collection: "source-notes"
+      source_field: "tools-mentioned"
+      target_collection: "tools"
+      target_section: "purpose"
+      required: false
+      notes: "Tools mentioned in sources should have tool reference notes"
+
+    # Source claims → lessons
+    - source_collection: "source-notes"
+      source_field: "claims-or-takeaways"
+      target_collection: "lessons"
+      target_section: "lesson"
+      required: false
+      notes: "Validated claims can become lessons"
+
+    # Source opportunities → blueprints or patterns
+    - source_collection: "source-notes"
+      source_field: "opportunities"
+      target_collection: "blueprints"
+      target_section: "overview"
+      required: false
+      notes: "Opportunities with enough depth can become blueprints"
+
+  variant_axes:
+    - name: "domain"
+      source_key: "tags"
+      expected_values: []    # auto-discovered from source tags
+      parity_fields:
+        - "tactics"
+        - "tools-mentioned"
+        - "key-claims"
+
+  expansion_rules:
+    - name: "unprocessed-high-value-source"
+      trigger: "source-notes has sources with >=5 tactics and 0 linked patterns"
+      proposal: "Extract patterns from high-tactic-density source notes"
+      evidence_source: "source-notes.tactics"
+      priority: high
+
+    - name: "tool-without-reference"
+      trigger: "source-notes.tools-mentioned names a tool with no matching tool-*.md"
+      proposal: "Create tool reference note for frequently-mentioned tool"
+      evidence_source: "source-notes.tools-mentioned"
+      priority: medium
+
+    - name: "domain-cluster-synthesis"
+      trigger: ">=5 source-notes share a domain tag with no corresponding blueprint"
+      proposal: "Synthesize domain cluster into a blueprint"
+      evidence_source: "promoted-sources.domain-tag"
+      priority: medium
+
+  severity_thresholds:
+    unused_source_field: advisory
+    variant_depth_asymmetry: advisory     # less critical than SEO (no silent-degrade risk)
+    variant_missing_field: advisory
+    expansion_high_priority: advisory
+    expansion_competitor_gap: advisory    # n/a for this domain but kept for engine compatibility
