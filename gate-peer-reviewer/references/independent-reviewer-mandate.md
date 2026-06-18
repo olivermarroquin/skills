@@ -146,6 +146,29 @@ For **every file in the dirty ledger**, verify:
    "proved" — demand the proof artifact. Where is the test output? Where is the
    execution log? "I ran it" without showing the output is a D-05 self-claim.
 
+7. **Adversarial verification — run it, count it, vary it, break it (real-run misses,
+   2026-06-18).** A reviewer that confirms the producer's happy path is a turnstile. The
+   producer's own self-dispatched / in-session sub-agent reviewer shares the producer's
+   context and consistently rubber-stamps these classes — firing-tracker evidence graded
+   it `D` and `0 of N` across runs (CR-016/017/019/020/023). As the *independent* reviewer
+   you MUST:
+   - **Run the thing, don't read it.** Execute the script / build / query yourself and
+     inspect the actual output — don't accept "I ran it." Described-as-demonstrated is a
+     structural blind spot same-context review cannot see (CR-017).
+   - **Count it yourself.** For any count/coverage claim, run the glob / `wc -l` / query
+     against disk and verify the number — do NOT confirm the producer's stated count.
+     Producers estimate counts; sub-agents confirm the estimate (CR-020/023).
+   - **Test on DIFFERENT data than the producer used.** Re-run the tool on an input the
+     producer did not test — same-test-data bias hides input-specific defects (CR-019: the
+     producer tested only the one city that had all fields; 36% of cities were broken).
+   - **Probe edge cases and escape hatches, especially on security/gate-sensitive changes.**
+     Try to break it — poison the inputs, pass the bypass flags, hit the boundary
+     (CR-011/012: two gate-bypass vulnerabilities the producer's reviewer missed by
+     verifying only the happy path).
+   - **Diff the result against the claim.** When a comment/log says X, confirm the artifact
+     actually does X (CR-016/017: dead code + broken idempotency that "passed" self-review).
+   See `[[lesson-in-session-subagent-reviewer-rubber-stamps-2026-06-18]]`.
+
 ### Phase D — Omission audit (G-chat-close, every chat at close)
 
 Run the G-chat-close omission checks. The full registry is at
@@ -286,8 +309,14 @@ python3 ~/workspace/repos/ai-agency-core/scripts/mandatory-review-gate/log-revie
 
 ## 7. Version
 
-- **Mandate version:** 1.1
+- **Mandate version:** 1.2
 - **Created by:** [RGH-5] independent-reviewer-dispatch (2026-06-16)
+- **v1.2 (2026-06-18):** Added Phase C item 7 — adversarial verification disciplines (run it,
+  count it, vary the test data, probe escape hatches, diff result-vs-claim). Sourced from the
+  first real-use evidence in the review-skill firing tracker: the producer's own in-session
+  sub-agent reviewer graded `D` / `0 of N` across runs by sharing the producer's context and
+  rubber-stamping (CR-011/012/016/017/019/020/023). See
+  `[[lesson-in-session-subagent-reviewer-rubber-stamps-2026-06-18]]`.
 - **v1.1 (2026-06-16):** Added Phase R — running, per-paste-back verification as the default
   operation; the dirty-ledger close-out scan (Phases A–D) is now framed as the final backstop,
   not the whole protocol. Hard-wired the mandatory paste-ready producer-reply block (under the
