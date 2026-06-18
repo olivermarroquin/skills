@@ -62,6 +62,15 @@ grep -nE '^\| ~~' <TRACKER_PATH>
 Expected output: empty (zero matches). If grep finds any matches, those rows broke the move-don't-strikethrough rule — delete them entirely and re-verify before declaring done. Strikethrough pointers create drift the next chat will read as stale state. This enforcement step exists because two prior closes (S&H wave A6 at pass 98; transcript-fix at pass 110) left strikethrough pointers despite the rule being documented in three places. The grep is the gate the documentation alone couldn't enforce.
 - Bump frontmatter `last-change` value — **keep the single-quote wrapper around the value** per the "How to use this file" convention (the YAML colon-space trap has bitten the file repeatedly)
 
+**Step 3b — Update the review-skill firing tracker + catch register.**
+
+Record whether the three review skills fired on this run and what they caught. This is how the system learns whether the gate, the independent peer-review, and the quality-loop are actually earning their cost — the firing tracker is the empirical answer to "is this machinery worth keeping?"
+
+- **Append rows to `~/workspace/second-brain/_meta/handoffs/_review-skill-firing-tracker.md` — one row per (run × review skill)** for the three skills (`Gate-blocking reviewer`, `Peer-review`, `Quality-control`). For each, fill: Fired? (`Yes` / `No` / `Exempt` / `Blocked-me`) and **why** (a silent skip is a defect — if exempt, name the exemption: pure read-only / planning / trivial single-line non-state edit), what it caught (count + severity + catch IDs), Grade (A–F, on what it found this run — not effort), Worth keeping? (`Keep` / `Drop` / `Conditional`), and what would make it worth keeping. Use this chat's event-log Run ID so all rows group.
+- **Producer vs reviewer split:** the producer chat owns the `Gate-blocking reviewer` + `Quality-control` rows (Role = `Producer`). The paired independent peer-review chat owns the `Peer-review` row (Role = `Reviewer`) — it records what it caught that the self-gate missed.
+- **For every catch worth keeping, every "the gate fired but missed X," and every limitation hit**, append a `CR-###` row to `~/workspace/second-brain/_meta/handoffs/_review-gate-catch-register.md` (the living catch/limitation memory) and put the id in the tracker row's Register-refs column. Append as you went, not from end-of-run memory. The register's "what would close it" is the source for the tracker's "what would make it worth keeping."
+- Bump the firing tracker's frontmatter `last-change` (single-quote wrapper), then regenerate the Excel view: `python3 ~/workspace/second-brain/_meta/scripts/build-review-firing-xlsx.py`
+
 **Step 4 — Verify YAML parses cleanly.**
 
 Run from the second-brain repo root:
