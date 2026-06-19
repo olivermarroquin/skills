@@ -314,7 +314,7 @@ C-23 (rename deletions unstaged), C-07 (pycache committed).
 
 ---
 
-### OC-17: Review-skill firing-tracker row present (WARN — breaker shipped 2026-06-18; promotion to BLOCKING is now an operator go/no-go)
+### OC-17: Review-skill firing-tracker row present (BLOCKING — promoted 2026-06-19; CR-040)
 
 **What it checks:** every state-changing / artifact-producing run records its rows in
 `second-brain/_meta/handoffs/_review-skill-firing-tracker.md` (one per run × review skill), per the
@@ -325,7 +325,7 @@ tracker — without it the tracker stays complete only by memory.
 
 1. Determine this run's Run ID (the chat's event-log id).
 2. `grep` the firing tracker for that Run ID.
-3. No row for a run that wrote/edited files or changed state → **WARN** (surface: "firing-tracker row
+3. No row for a run that wrote/edited files or changed state → **BLOCKING** (surface: "firing-tracker row
    missing for this run — append it per Closing Protocol step 3b"). Pure read-only / planning / trivial
    non-state edits are exempt (no row required).
 4. **Who this blocks — the authoring party (critical for the BLOCKING flip).** Under reviewer-led
@@ -341,21 +341,16 @@ tracker — without it the tracker stays complete only by memory.
      **producer** is the authoring party, self-reports flagged, and OC-17 fires on it.
 5. A genuinely exempt run (pure read-only / planning / trivial non-state edit) needs no row.
 
-**Severity — WARN now; the BLOCKING precondition is MET, but promotion is an operator decision.**
-The original hold was "don't add a BLOCKING condition while the Stop hook can loop infinitely." That
-circuit breaker **shipped 2026-06-18** — CR-010 is now `Applied (RGH-CB)` (append-only JSONL history +
-SHA-256 fingerprinting, auto-skip after 3 consecutive identical blocks, 108 tests pass, adversarial
-peer review confirmed). So the technical blocker on promotion is cleared. OC-17 is **deliberately held
-at WARN pending a short soak — for two reasons:** (1) the breaker shipped the same day, so let it prove
-stable in real runs first; and (2) **reviewer-led authorship is also brand-new (shipped 2026-06-18) and
-has not yet run in real paired chats** — flipping to BLOCKING before the "reviewer authors the rows"
-ordering has proven out risks hard-blocking the wrong chat.
-
-**To promote to BLOCKING (a clean one-edit toggle, after the soak):** (a) change `WARN` → `BLOCKING`
-in step 3 + this row's heading; (b) update the Universal-checks line at the end of §B; (c) confirm the
-authoring-party rule in step 4 is what blocks (the reviewer in paired runs; the producer in no-reviewer
-runs) so a producer waiting on its reviewer is never trapped. **Recommended trigger:** after ~3–5 real
-reviewer-led runs have logged firing rows without incident. (Cowork has no Stop hook, so OC-17 is
+**Severity — BLOCKING (promoted 2026-06-19).** Both preconditions for promotion are met:
+(1) The circuit breaker **shipped 2026-06-18** — CR-010 is now `Applied (RGH-CB)` (append-only JSONL
+history + SHA-256 fingerprinting, auto-skip after 3 consecutive identical blocks, 108 tests pass,
+adversarial peer review confirmed). (2) **10+ reviewer-led runs have successfully logged firing-tracker
+rows** since the reviewer-led authorship model shipped 2026-06-18, confirming the ordering works in
+real paired chats. **Promotion triggered by CR-040:** reviewer forgot firing-tracker rows in the
+DA2+DA3 session; operator caught it post-commit. A WARN-only check cannot prevent this — the reviewer
+closes without rows and the omission is only discovered during operator review. BLOCKING ensures the
+reviewer cannot clear the gate without first authoring the rows. The authoring-party rule in step 4
+ensures a producer waiting on its reviewer is never trapped. (Cowork has no Stop hook, so OC-17 is
 advisory-only there regardless.)
 
 **Seed rationale:** the firing tracker is wired into the Closing Protocol as instruction-only; the
@@ -380,8 +375,7 @@ OC-7 (event-log completeness), OC-8 (Closing Protocol compliance), OC-9 (handoff
 diff), OC-11 (silent-skip sweep), OC-12 (per-deliverable existence), OC-15 (frontmatter
 freshness), OC-16 (commit-staging audit — **deferred at step-0 time**; runs at commit-time
 via pre-push hook or RGH-5 post-commit dispatch; see OC-16 trigger-timing note), OC-17
-(firing-tracker row present — **WARN**; circuit breaker shipped 2026-06-18 so BLOCKING promotion
-is now an operator go/no-go after a stability soak; advisory-only on Cowork).
+(firing-tracker row present — **BLOCKING**; promoted 2026-06-19 per CR-040; advisory-only on Cowork).
 
 ### Profile table
 
