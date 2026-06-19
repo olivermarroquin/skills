@@ -328,18 +328,35 @@ tracker — without it the tracker stays complete only by memory.
 3. No row for a run that wrote/edited files or changed state → **WARN** (surface: "firing-tracker row
    missing for this run — append it per Closing Protocol step 3b"). Pure read-only / planning / trivial
    non-state edits are exempt (no row required).
-4. The independent reviewer authors the rows (reviewer-led); a producer-only run with no reviewer
-   self-reports flagged — either way a row must exist.
+4. **Who this blocks — the authoring party (critical for the BLOCKING flip).** Under reviewer-led
+   authorship the independent peer-review authors the run's rows as part of its review. So when OC-17
+   is BLOCKING it fires on the **authoring chat**, never on a producer waiting for its reviewer:
+   - **Paired run → the reviewer.** The reviewer may not close until it has authored all of the run's
+     rows (its own peer-review row + the producer's gate + quality rows). The **producer is NOT
+     hard-blocked** for a missing row — its close is already gated on the reviewer's PASS (Closing
+     Protocol Step 0), and the reviewer authors the rows as part of that PASS. If rows are still
+     missing at the producer's close, surface a pointer ("your reviewer must author the firing rows")
+     rather than trapping the producer.
+   - **No-reviewer run** (genuinely exempt, or a Cowork chat with no reviewer spawned) → the
+     **producer** is the authoring party, self-reports flagged, and OC-17 fires on it.
+5. A genuinely exempt run (pure read-only / planning / trivial non-state edit) needs no row.
 
 **Severity — WARN now; the BLOCKING precondition is MET, but promotion is an operator decision.**
 The original hold was "don't add a BLOCKING condition while the Stop hook can loop infinitely." That
 circuit breaker **shipped 2026-06-18** — CR-010 is now `Applied (RGH-CB)` (append-only JSONL history +
 SHA-256 fingerprinting, auto-skip after 3 consecutive identical blocks, 108 tests pass, adversarial
 peer review confirmed). So the technical blocker on promotion is cleared. OC-17 is **deliberately held
-at WARN pending a short operator soak** — the breaker shipped the same day, and bolting a new BLOCKING
-condition onto the gate before the breaker has proven stable in real runs would be premature. When the
-operator is satisfied the breaker is stable, flip this row to BLOCKING and update the Universal-checks
-line. (Cowork has no Stop hook, so OC-17 is advisory-only there regardless.)
+at WARN pending a short soak — for two reasons:** (1) the breaker shipped the same day, so let it prove
+stable in real runs first; and (2) **reviewer-led authorship is also brand-new (shipped 2026-06-18) and
+has not yet run in real paired chats** — flipping to BLOCKING before the "reviewer authors the rows"
+ordering has proven out risks hard-blocking the wrong chat.
+
+**To promote to BLOCKING (a clean one-edit toggle, after the soak):** (a) change `WARN` → `BLOCKING`
+in step 3 + this row's heading; (b) update the Universal-checks line at the end of §B; (c) confirm the
+authoring-party rule in step 4 is what blocks (the reviewer in paired runs; the producer in no-reviewer
+runs) so a producer waiting on its reviewer is never trapped. **Recommended trigger:** after ~3–5 real
+reviewer-led runs have logged firing rows without incident. (Cowork has no Stop hook, so OC-17 is
+advisory-only there regardless.)
 
 **Seed rationale:** the firing tracker is wired into the Closing Protocol as instruction-only; the
 first real-use round (2026-06-18) showed sessions complied when told, but nothing forces it. OC-17 is
