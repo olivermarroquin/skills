@@ -239,7 +239,7 @@ Schema:
     "converged": true | false
   },
   "cost_usd": 0.0,
-  "mandate_version": "1.1",
+  "mandate_version": "1.2",
   "mandate_path": "skills/gate-peer-reviewer/references/independent-reviewer-mandate.md"
 }
 ```
