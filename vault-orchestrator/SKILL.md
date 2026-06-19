@@ -1,9 +1,12 @@
 ---
 name: vault-orchestrator
-description: Five-mode orchestrator skill that sits above `multi-chat-coordination` and `master-tracker-aggregator`. Reads the entire vault state — master tracker (including the aggregator's generated rollup section), per-project `_chat-tracker.md` + `_chat-status.md` digests, hot decisions, scheduled tasks, `03_domains/` knowledge surfaces, recently-closed chats, execution-log activity, project state files, and the inter-chat event log — and produces operator-facing decision support plus (in Mode 3) drafted handoffs + a substrate-agnostic spawn queue plus (in Mode 6) dispatched sub-agents that produce per-artifact outputs under orchestrator coordination. **Mode 1 (SURVEY):** plain-language state-of-the-vault report with nine ordered sections (in-flight / ready / queued / open decisions / scheduled / recent wins / domain signals / stale signals / cross-project signals). **Mode 2 (NEXT-MOVES):** composes with multi-chat-coordination's NEXT-MOVE ranking, then layers session-budget totals (neutral, no editorializing), parallel-work detection (disjoint file sets), serial-blocked detection (high-leverage unblockers), per-candidate substrate recommendation (Claude Code / Cowork / either) per the working-surfaces convention, decision-research convention on ranking ties or priority conflicts, and a recommended session plan capped at 8 hours. **Mode 3 (PROVISION):** composes with multi-chat-coordination's DECOMPOSE to split a project goal into N drafted handoffs, runs decision-research at every meaningful decomposition decision, tags each drafted handoff with a `preferred-substrate:` field, scans drafted + in-flight + queued handoffs for shared-file conflicts (edit-zone detection), appends substrate-agnostic copy-paste-ready rows to `_meta/handoffs/_spawn-queue.md`, registers the new project at the appropriate tracker tier, integrates the chat-resilience checkpoint reminder into long-running handoffs, ties the operator-fatigue heuristic to queue totals (warns at >10h queued), and produces a plain-language operator summary. **Mode 5 (RESUME):** project-scoped mid-project visibility — reads a named project's state file, execution logs newest-first, per-project chat tracker + digest, the event log delta since the state file's `updated_at`, the master tracker rows naming this project, and the handoff files whose `client:` field matches; produces a six-section plain-language report (project state summary + available next-wave handoffs + cross-project unblockers + decomposition diagram text + stale-state reconciliations + what-I-read audit trail), surfaces every stale-state reconciliation Mode 5 applied (state-file-says-X-but-event-log-says-Y) with operator confirmation prompts, and chains into Mode 3 PROVISION when the operator wants the ready-waves drafted into handoffs. **Mode 6 (EXECUTE):** multi-agent control plane — takes a specific next-wave handoff (Mode-3-PROVISION-drafted or operator-drafted) + dispatches narrowly-scoped per-artifact sub-agents under orchestrator coordination, with substrate-adaptive dispatch (true parallel on Claude Code Task tool; sequential one-shot on Cowork Agent tool; push-driven on future Hermes-harness), inter-agent coordination via the project state file's per-key write isolation, operator-gate routing via a per-project `_pending-operator-decisions.md` file, and parallel-safe coordination via reuse of Phase 4's edit-zone conflict detection over the sub-agent set. Closes the EXECUTION side of v1.1 known-gap-1; with Mode 5 + Mode 6 shipped the v1.2 trio (RESUME → PROVISION → EXECUTE) closes known-gap-1 end-to-end. All five modes auto-invoke `output-quality-loop` on their artifacts EXCEPT Mode 6 (per lesson D-05, the per-sub-agent four-substep loops cover quality at the artifact level; an aggregated wave-close roll-up substitutes). Modes 1, 2, and 5 are read-only on vault content; Mode 3 writes drafted handoffs + queue rows + tracker rows + new project subfolders only after operator approval at a single review gate; Mode 6 writes the project state file (via sub-agents' per-key writes), the gate file, and the dispatch log only after operator approval of the dispatch plan at a single review gate. Phase 3 + Phase 4 + v1.2 Phase 1 + v1.2 Phase 2 of the vault-orchestrator project (2026-06-01 + 2026-06-02 + 2026-06-03). Trigger phrases include "run vault-orchestrator," "survey the vault," "state of the vault," "what's the state of play," "give me the vault rollup," "what should I work on next," "what should I spawn next," "rank my next moves," "next-moves recommendation," "session plan for tonight," "give me the spawnable list," "what's the highest-leverage move right now," "provision <goal>," "draft handoffs for <goal>," "decompose this project into chats," "set up a spawn queue for <goal>," "scaffold this initiative," "resume <project>," "where are we on <project>," "what's next for <project>," "show wave status for <project>," "decompose what's left for <project>," "execute wave-<id> for <project>," "dispatch sub-agents for <wave>," "run wave-<id> through the orchestrator," "fire the next wave for <project>."
+version: 1.6
+description: Five-mode orchestrator skill that sits above `multi-chat-coordination` and `master-tracker-aggregator`. Reads the entire vault state — master tracker (including the aggregator's generated rollup section), per-project `_chat-tracker.md` + `_chat-status.md` digests, hot decisions, scheduled tasks, `03_domains/` knowledge surfaces, recently-closed chats, execution-log activity, project state files, and the inter-chat event log — and produces operator-facing decision support plus (in Mode 3) drafted handoffs + a substrate-agnostic spawn queue plus (in Mode 6) dispatched sub-agents that produce per-artifact outputs under orchestrator coordination. **Mode 1 (SURVEY):** plain-language state-of-the-vault report with nine ordered sections (in-flight / ready / queued / open decisions / scheduled / recent wins / domain signals / stale signals / cross-project signals). **Mode 2 (NEXT-MOVES):** composes with multi-chat-coordination's NEXT-MOVE ranking, then layers session-budget totals (neutral, no editorializing), parallel-work detection (disjoint file sets), serial-blocked detection (high-leverage unblockers), per-candidate substrate recommendation (Claude Code / Cowork / either) per the working-surfaces convention, decision-research convention on ranking ties or priority conflicts, and a recommended session plan capped at 8 hours. **Mode 3 (PROVISION):** composes with multi-chat-coordination's DECOMPOSE to split a project goal into N drafted handoffs, runs decision-research at every meaningful decomposition decision, tags each drafted handoff with a `preferred-substrate:` field, scans drafted + in-flight + queued handoffs for shared-file conflicts (edit-zone detection), appends substrate-agnostic copy-paste-ready rows to `_meta/handoffs/_spawn-queue.md`, registers the new project at the appropriate tracker tier, integrates the chat-resilience checkpoint reminder into long-running handoffs, ties the operator-fatigue heuristic to queue totals (warns at >10h queued), and produces a plain-language operator summary. **v1.6 existing-project path (`--existing-project <slug>`):** reuses Mode 5 RESUME's six-source state-read to classify each phase as done/partial/not-started, then decomposes only the remaining + partial work — collision-aware against existing handoffs, in-flight chats, and spawn-queue rows. Closes Gap 1. **Mode 5 (RESUME):** project-scoped mid-project visibility — reads a named project's state file, execution logs newest-first, per-project chat tracker + digest, the event log delta since the state file's `updated_at`, the master tracker rows naming this project, and the handoff files whose `client:` field matches; produces a six-section plain-language report (project state summary + available next-wave handoffs + cross-project unblockers + decomposition diagram text + stale-state reconciliations + what-I-read audit trail), surfaces every stale-state reconciliation Mode 5 applied (state-file-says-X-but-event-log-says-Y) with operator confirmation prompts, and chains into Mode 3 PROVISION when the operator wants the ready-waves drafted into handoffs. **Mode 6 (EXECUTE):** multi-agent control plane — takes a specific next-wave handoff (Mode-3-PROVISION-drafted or operator-drafted) + dispatches narrowly-scoped per-artifact sub-agents under orchestrator coordination, with substrate-adaptive dispatch (true parallel on Claude Code Task tool; sequential one-shot on Cowork Agent tool; push-driven on future Hermes-harness), inter-agent coordination via the project state file's per-key write isolation, operator-gate routing via a per-project `_pending-operator-decisions.md` file, and parallel-safe coordination via reuse of Phase 4's edit-zone conflict detection over the sub-agent set. Closes the EXECUTION side of v1.1 known-gap-1; with Mode 5 + Mode 6 shipped the v1.2 trio (RESUME → PROVISION → EXECUTE) closes known-gap-1 end-to-end. All five modes auto-invoke `output-quality-loop` on their artifacts EXCEPT Mode 6 (per lesson D-05, the per-sub-agent four-substep loops cover quality at the artifact level; an aggregated wave-close roll-up substitutes). Modes 1, 2, and 5 are read-only on vault content; Mode 3 writes drafted handoffs + queue rows + tracker rows + new project subfolders only after operator approval at a single review gate; Mode 6 writes the project state file (via sub-agents' per-key writes), the gate file, and the dispatch log only after operator approval of the dispatch plan at a single review gate. Phase 3 + Phase 4 + v1.2 Phase 1 + v1.2 Phase 2 of the vault-orchestrator project (2026-06-01 + 2026-06-02 + 2026-06-03). Trigger phrases include "run vault-orchestrator," "survey the vault," "state of the vault," "what's the state of play," "give me the vault rollup," "what should I work on next," "what should I spawn next," "rank my next moves," "next-moves recommendation," "session plan for tonight," "give me the spawnable list," "what's the highest-leverage move right now," "provision <goal>," "draft handoffs for <goal>," "decompose this project into chats," "set up a spawn queue for <goal>," "scaffold this initiative," "provision what's left for <project>," "decompose the remaining work for <project>," "draft handoffs for what's left on <project>," "resume <project>," "where are we on <project>," "what's next for <project>," "show wave status for <project>," "decompose what's left for <project>," "execute wave-<id> for <project>," "dispatch sub-agents for <wave>," "run wave-<id> through the orchestrator," "fire the next wave for <project>."
 ---
 
-# Vault Orchestrator (v1.5)
+# Vault Orchestrator (v1.6)
+
+> **v1.6 changelog (2026-06-19)** — Added existing-project decomposition path to Mode 3 PROVISION (`--existing-project <slug>`). PROVISION can now take a project that is already underway and decompose only the remaining work, instead of assuming greenfield. Reuses Mode 5 RESUME's six-source state-read (master tracker, event log delta, state file, execution logs, per-project tracker, handoffs naming the project) as input to a three-state phase classifier (done / partial / not-started). Done phases are skipped; partial phases are scoped to remaining sub-work; not-started phases decompose fully. Collision-aware: checks existing handoffs, in-flight chats, and spawn-queue rows before drafting — never duplicates or overwrites in-flight work. One approval gate (same as greenfield PROVISION). Greenfield behavior unchanged (regression-safe). Classification rules documented in `references/existing-project-classification-rules.md`. Validated against website-factory program (17 phases: 7 done correctly skipped, 3 partial correctly scoped, 7 not-started correctly identified). Closes Gap 1 from the vault-orchestrator README. Unblocks Phase 5 (per-project orchestrator decomposition). **Why:** almost all real work is mid-engagement, not greenfield — pointing PROVISION at an in-progress project would re-propose already-shipped phases or miss partial work. See `handoff-2026-06-16-provision-existing-project-decomposition.md`.
 
 > **v1.5 changelog (2026-06-04)** — Imagery pipeline integrated as a first-class orchestrated wave. Mode 3 PROVISION: added mandatory DECOMPOSE composition rule — any page-build decomposition must include an imagery wave sequenced AFTER content/draft and BEFORE publish, with 5 sub-steps (auto-generate prompts → operator Higgsfield pause → operator variant-selection gate via `_pending-operator-decisions.md` → organize → wire). Publish wave hard-depends on imagery wave OR an explicit operator-approved "publish without images" decision routed through the gate file. Imagery wave inputs (reference photos at `marketing-assets/reference-photos/`, prompts, scripts) flow through the existing Step 3 disk-verify. Mode 6 EXECUTE: added imagery-wave dispatch flow (Phase A prompt-gen parallel → Phase B Higgsfield pause → Phase C variant-selection gate → Phase D organize+wire parallel → Phase E wave-close). Operator-legibility requirement: dispatch plan must surface prompt-gen location, variant-selection gate, image save/wire flow, and per-prompt-type reference-photo requirements without operator asking. **Why:** EV pages 06-12 run Issue #16 — imagery pipeline existed as SOP+scripts but was orchestration-invisible; deferred at PROVISION with no re-entry; prompts hand-authored; no variant-selection gate fired; save/wire flow undiscoverable; almost published with 404 placeholder images (Issue #15). See `execution-log-2026-06-03-core-30-pages-06-12-dataforseo-run.md` Issues #15-#20.
 
@@ -68,6 +71,14 @@ Direct triggers for decomposing a project goal into drafted handoffs and staging
 - "Scaffold this initiative"
 - "Set up a spawn queue for <goal>"
 - "Plan the chats for <project name>"
+
+Direct triggers for decomposing **remaining work** in an existing (in-progress) project:
+
+- "Provision what's left for <project>"
+- "Decompose the remaining work for <project>"
+- "Draft handoffs for what's left on <project>"
+- "PROVISION --existing-project <slug>"
+- A RESUME output chained into PROVISION (operator says "now provision the remaining phases" or "draft handoffs for the not-started work")
 
 Indirect triggers — when the operator names a multi-phase initiative without specifying decomposition:
 
@@ -755,10 +766,156 @@ Per the multi-chat-coordination DECOMPOSE convention, tracker edits are NOT in t
 - `--skip-checkpoint-reminders` — skip Step 7 checkpoint-reminder injection for all drafted handoffs. Discouraged for handoffs >2h.
 - `--fatigue-ceiling H` (default 10) — override the operator-fatigue warning threshold.
 - `--chain-from-next-moves` — read the most recent NEXT-MOVES output for goal context (used when chaining; usually inferred from operator phrasing).
+- `--existing-project <slug>` — activate the existing-project decomposition path (v1.6). Instead of assuming greenfield, PROVISION reads the project's current state via RESUME's six-source read, classifies each phase as done/partial/not-started per [[existing-project-classification-rules]], and decomposes only the remaining work. Collision-aware against existing handoffs, in-flight chats, and spawn-queue rows. Same approval gate. Greenfield PROVISION runs when this flag is absent — regression-safe.
 
 ### PROVISION worked example
 
 See `examples/first-provision-2026-06-01-ev-blog-content-calendar.md` for the first real-use run.
+
+### Existing-project decomposition path (`--existing-project`, v1.6)
+
+When the operator triggers PROVISION with `--existing-project <slug>` (or uses a trigger phrase like "provision what's left for <project>"), PROVISION runs a modified step sequence that reuses Mode 5 RESUME's state-read to classify existing work and decompose only the remainder. Greenfield PROVISION (Steps 1-12 above) is unchanged — the existing-project path is a branch, not a replacement.
+
+**Why this exists:** almost all real work is mid-engagement. Greenfield PROVISION assumes a clean start and re-proposes every phase, including phases already shipped. The existing-project path reads what's on disk, classifies what's done vs partial vs not-started, and feeds only the remaining work to DECOMPOSE. This closes Gap 1 from the vault-orchestrator project plan and unblocks Phase 5.
+
+**Step E1 — Receive the project slug + resolve the vault path.**
+
+Same as Mode 5 RESUME Step 1. The operator provides the slug; PROVISION resolves it against `04_projects/clients/_active/`, `04_projects/clients/_private/`, and `04_projects/personal/`. If ambiguous, ask one clarifying question. If the slug doesn't resolve, stop with an honest finding.
+
+Also locate the project's handoff subfolder in `_meta/handoffs/<slug>/` (if it exists). Not all projects have a subfolder — some have handoffs scattered at the root level with matching filenames.
+
+**Step E2 — Execute RESUME's six-source state-read.**
+
+Reuse Mode 5 RESUME Steps 2-6 to gather the project's current state from all six sources, in RESUME's read order:
+
+1. Master tracker rows naming this project
+2. Event log delta (since state file's `updated_at`, or last 24 hours)
+3. State file (`_state/onboarding.json` or equivalent)
+4. Execution logs, newest-first (1-3 most recent)
+5. Per-project chat tracker + digest
+6. Handoffs naming this project (frontmatter `client:` match + body text match)
+
+Surface any missing sources per RESUME's honest-gap-surfacing convention. PROVISION proceeds with whatever sources exist — it does not require all six to classify.
+
+**Step E3 — Enumerate the project's planned decomposition.**
+
+Build the full list of planned phases/deliverables from:
+
+- **Handoff files** in the project's subfolder (`_meta/handoffs/<slug>/`) — each handoff = one phase
+- **State file `waves[]` + `planned_remaining_waves[]`** — if the project uses a state machine
+- **Project `_README.md` or roadmap** — if it lists phases not yet formalized as handoffs
+- **Master tracker rows** — phases registered as tracker rows but not as separate handoff files
+
+The enumeration must be exhaustive — every piece of planned work appears in the list. If two sources disagree on the plan (e.g., README lists 13 phases but only 10 handoffs exist), surface the gap.
+
+**Step E4 — Classify each phase (done / partial / not-started).**
+
+Apply the three-state classifier per [[existing-project-classification-rules]]. For each phase in the enumeration:
+
+1. Read its handoff frontmatter `status:` + `consumed:` date
+2. Check `_recently-closed` for a shipped outcome
+3. Read any execution logs referencing this phase
+4. `ls`/grep for the deliverables it was supposed to produce
+5. Check the master tracker for in-flight / ready / queued rows
+6. Check the state file for wave status (if applicable)
+7. Resolve signal conflicts per the priority rules in the classification-rules reference
+
+Produce the classification table (see [[existing-project-classification-rules]] § "Classification output shape"). Every phase gets exactly one classification. Conflicts get a `⚠️` marker and are surfaced to the operator.
+
+For **partial** phases, read the execution log + any rejection notes to scope what remains. If a successor handoff exists (e.g., a `-R2` redo), reference it as the remaining-work specification.
+
+**Step E5 — Check for collisions against existing handoffs + in-flight work.**
+
+Before drafting anything for remaining work:
+
+1. For each **partial** and **not-started** phase, grep `_meta/handoffs/` for handoffs already covering that work (including redo handoffs, follow-ups, etc.)
+2. Check the master tracker's Active section for in-flight chats working on those phases
+3. Check `_spawn-queue.md` for queued rows covering those phases
+
+For each collision:
+- **Existing unconsumed handoff covers this phase** → do NOT draft a duplicate. Reference the existing handoff: "handoff exists at `<path>`, status: `<status>` — no new draft needed."
+- **In-flight chat active on this phase** → do NOT draft a competing handoff. Flag: "chat `<name>` is actively working on this — defer until chat closes."
+- **Spawn-queue row already queued** → do NOT duplicate. Reference: "spawn-queue row N already covers this."
+
+Collisions reduce the set of phases that need new handoffs. Only collision-free remaining work proceeds to DECOMPOSE.
+
+**Step E6 — Feed remaining work to DECOMPOSE.**
+
+Build the DECOMPOSE input from only the **not-started** phases (full scope) + **partial** phases (remaining sub-work scope) that are collision-free. Done phases and collision-covered phases are excluded.
+
+Invoke `multi-chat-coordination` Mode 1 (DECOMPOSE) with:
+- The reduced scope (not the full project goal)
+- The existing project subfolder path (handoffs land in the existing folder, not a new one)
+- The existing dependency graph (preserved from the original decomposition — new handoffs wire into the existing graph, not a parallel one)
+
+DECOMPOSE returns the standard output (handoff bodies, dependency graph, tracker rows). PROVISION layers the same Steps 3-12 discipline on top: disk-verify, decision-research, conflict scan, substrate tagging, checkpoint reminders, fatigue check, single review gate, atomic writes.
+
+**Step E7 — Render the existing-project PROVISION proposal.**
+
+The proposal follows the same shape as greenfield (Step 9) but with two additional sections at the top:
+
+```
+PROVISION PROPOSAL — <today> (existing-project decomposition)
+
+Project: <slug>
+Vault path: <resolved path>
+Mode: existing-project (--existing-project)
+
+Phase classification:
+| Phase | Handoff | Status signal | Artifacts on disk | Classification | Remaining work |
+|---|---|---|---|---|---|
+| ... | ... | ... | ... | ✅ done / 🟡 partial / ⬜ not-started | ... |
+
+Summary: N phases total. K done (skipped). P partial (scoped to remaining). Q not-started (full decompose). C collision-covered (existing handoff/chat).
+
+Collision report:
+| Phase | Collision type | Existing resource | Action |
+|---|---|---|---|
+| ... | existing handoff / in-flight chat / spawn-queue row | <path or name> | no new draft / defer |
+
+[Then the standard PROVISION proposal shape for the remaining work:]
+
+N proposed handoffs:
+1. ...
+2. ...
+
+[... remainder of standard proposal (disk-verify, decision-research, conflicts, substrate, checkpoints, fatigue, files-to-write) ...]
+```
+
+The operator sees exactly what was classified, what was skipped, what collided, and what's being proposed — full transparency.
+
+**Step E8 — On approval, write into the existing project.**
+
+Same as greenfield Step 10, but:
+- Handoffs are written into the EXISTING project subfolder (`_meta/handoffs/<slug>/`), not a new one
+- The project `_README.md` is UPDATED (not created) if new phases are added to the plan
+- Tracker rows are added at the appropriate tier (respecting the existing project's row placement)
+- Spawn-queue rows are appended as usual
+
+No existing handoff files are modified. No consumed handoffs are touched. No in-flight work is disrupted.
+
+**Step E9 — Emit the operator summary.**
+
+Same shape as greenfield Step 11, but opens with the classification summary:
+
+```
+✅ PROVISION complete for <project> (existing-project decomposition).
+
+Classification: N phases total. K done (skipped). P partial. Q not-started. C collision-covered.
+New handoffs drafted: M (for remaining work only).
+```
+
+**Step E10 — Auto-invoke output-quality-loop.**
+
+Same as greenfield Step 12. Only the newly-drafted handoffs are in the evaluation list — existing handoffs and classification artifacts are not re-evaluated.
+
+### Existing-project path — what it does NOT do
+
+- **Modify existing handoff files.** The path reads them; it does not edit consumed/active/queued handoffs.
+- **Modify the state file.** Read-only on state, same as RESUME.
+- **Re-propose shipped phases.** The classifier's done state is terminal — greenfield DECOMPOSE never sees done phases.
+- **Override the operator's judgment on partial phases.** The classifier scopes remaining work; the operator can edit the scope at the approval gate.
+- **Auto-chain from RESUME.** The operator drives the chain explicitly ("provision what's left for <project>"). RESUME does not auto-invoke this path.
 
 ## Mode 5 — RESUME
 
@@ -1245,7 +1402,7 @@ Substrate recommendation is mandatory on every NEXT-MOVES candidate. Cite the co
 - **Editing the master tracker outside the aggregator's marker block (Modes 1-2).** That section belongs to `master-tracker-aggregator`, not this skill. PROVISION (Mode 3) edits the hand-edited "Ready to spawn" / "Queued — Tier 2" / "Queued — Tier 3" sections via row additions — never edits the aggregator's marker block.
 - **Editing per-project digests or trackers.** Read-only on per-project digests; PROVISION may write a new per-project subfolder + `_README.md` only when the operator approves a new project at the review gate.
 - **Editing in-flight or already-queued handoffs.** PROVISION drafts new handoffs; it does not modify handoffs that already exist. Edits to existing handoffs are operator-driven or a separate maintenance chat.
-- **Decomposing + dispatching remaining work for EXISTING projects — fully closed in v1.2 as of 2026-06-03.** v1.1's PROVISION created a new project subfolder for a new initiative; it had no path for existing-project resumes. v1.2 Mode 5 RESUME closes the identification side (2026-06-02): read the project's state file + execution logs + event log + master tracker rows naming this project, surface which `planned_remaining_waves[]` are ready, chain into Mode 3 PROVISION when the operator wants ready-waves drafted into handoff files. v1.2 Mode 6 EXECUTE closes the dispatch side (2026-06-03): take a wave's handoff + dispatch narrowly-scoped per-artifact sub-agents under orchestrator coordination, with the substrate-adaptive dispatch model (parallel on Claude Code Task tool; sequential on Cowork Agent tool; future push-driven on Hermes-harness). Together the trio (RESUME → PROVISION → EXECUTE) closes known-gap-1 end-to-end. Workaround for projects not yet using state files: Mode 5 reads what's present (master tracker rows + execution logs + handoffs naming the project) and produces a partial report; operator drafts the next-wave handoff by hand from that report; Mode 6 then dispatches against the hand-drafted handoff.
+- **Decomposing + dispatching remaining work for EXISTING projects — fully closed across v1.2 + v1.6.** v1.2 (2026-06-03) closed known-gap-1 end-to-end via the RESUME → PROVISION → EXECUTE trio for projects with `planned_remaining_waves[]` state files. v1.6 (2026-06-19) closes Gap 1 for ALL in-progress projects (including those without state files): `PROVISION --existing-project <slug>` reads the project's on-disk state via RESUME's six-source read, classifies every phase as done/partial/not-started, and decomposes only the remaining + partial work into handoffs — collision-aware against existing handoffs, in-flight chats, and spawn-queue rows. See `references/existing-project-classification-rules.md` for the classifier. The workaround (operator hand-drafts from a RESUME report) is no longer needed.
 - **Cross-vault federation.** Single vault (`~/workspace/second-brain/`). Tier-3 vault is air-gapped by design.
 - **Domain-level per-domain trackers.** Domains stay SURVEY-only — read folder listings + frontmatter freshness signals, don't expect a per-domain tracker.
 - **Semantic-conflict detection.** Edit-zone conflict detection catches shared-file races; it does not predict semantic contradictions between two chats updating disjoint sections. That's a NEXT-MOVES decision-research call when surfaced.
@@ -1279,6 +1436,18 @@ Before the chat declares "SURVEY complete," "NEXT-MOVES complete," or "PROVISION
 9. YAML parses on every touched file (drafted handoffs + project `_README.md` + `_spawn-queue.md` + master tracker).
 10. Auto-invoke quality-loop block emitted naming every artifact (drafted handoffs + project `_README.md` + spawn-queue write); tracker edits excluded per the multi-chat-coordination convention.
 11. Plain-language operator summary rendered with substrate routing breakdown, conflict count, fatigue-check status, and "what's next" guidance.
+
+**Mode 3 PROVISION — existing-project path additional checks (v1.6):**
+
+When `--existing-project` is active, the greenfield checks above still apply to the newly-drafted handoffs, PLUS:
+
+12. The RESUME six-source state-read executed (Step E2) and missing sources were surfaced honestly.
+13. The phase classification table is present in the proposal with every planned phase classified as done/partial/not-started per [[existing-project-classification-rules]]. Signal conflicts carry `⚠️` markers.
+14. Zero done phases appear in the DECOMPOSE input or the drafted handoffs. Done phases are listed in the classification table only.
+15. Partial phases have scoped remaining work (not the full original scope). The scope source (execution log, rejection note, successor handoff) is cited.
+16. Collision check ran (Step E5): no drafted handoff duplicates an existing unconsumed handoff, an in-flight chat, or a spawn-queue row. Collisions are listed in the collision report.
+17. New handoffs were written into the existing project subfolder (not a new one). The project `_README.md` was updated if new phases were added.
+18. No existing handoff files were modified. No consumed handoffs were touched. No state file was mutated.
 
 **Mode 5 (RESUME):**
 
