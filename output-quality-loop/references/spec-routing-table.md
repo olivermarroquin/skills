@@ -342,6 +342,26 @@ If a future need arises to evaluate dispatch-plan COMPLETENESS (did Mode 6 dispa
 
 - v1.0 addition driven by `gate-peer-reviewer` skill v1 ship, 2026-06-03.
 
+### Code artifact (executable source) (v1.4, 2026-06-18)
+
+Spec sources to load (project-agnostic; the shape sub-type from detection selects emphasis):
+
+1. **The repo's own conventions + the artifact's tests** (required) — the nearest `CLAUDE.md` / `README` in the repo, and the test file(s) for this artifact.
+   - Drives: house structure + naming + the executable proof that it works.
+   - Missing tests on a **state-writing** or **gate** artifact → hard requirement miss.
+2. **RGH-7 deterministic Layer-A checks** (required — reuse, do NOT reimplement) — `repos://ai-agency-core/scripts/mandatory-review-gate/` (`dod-check.py` + `oc-12..16`).
+   - Drives: per-deliverable existence, count-reconciliation-vs-source, rename-propagation, frontmatter-freshness, commit-staging — all `$0`/no-LLM. Call them; only add the judgment layer on top.
+3. **The review-gate catch register** (required — the living check source) — `vault://_meta/handoffs/_review-gate-catch-register.md`.
+   - Drives: the defect classes that have ACTUALLY escaped on code here — idempotency (CR-017), soft-delete / update WHERE-clause (CR-018), dead-code-after-refactor (CR-016), same-test-data bias (CR-019), gate escape-hatch bypass (CR-011/012). Every code review checks for the register's open code-class catches.
+   - This is the self-improving link — see "Growing this table from the catch register" below.
+4. **Plain-language conventions** (for comments / docstrings / log + error messages) — `vault://_meta/plain-language-conventions.md`.
+
+Notes:
+
+- **Shape selects emphasis** (full criteria in `evaluation-heuristics-by-type.md` § Code artifact): state-writing service → idempotency + write-correctness + run-it-and-diff; verification / gate engine → adversarial escape-hatch probes + test-on-different-data + real-runner test; pure logic → the baseline (build + tests + no-dead-code) only.
+- **Reuse over reinvention:** where RGH-7's OC-12..16 already mechanize a check (`$0`), invoke them rather than re-evaluating by LLM.
+- This row is why a route handler, connector, or gate script is no longer "Exempt — no routed spec" in `[[_review-skill-firing-tracker]]` (the recurring 2026-06-18 gap). It composes with the `gate-peer-reviewer` independent-reviewer mandate's Phase C adversarial disciplines — output-quality-loop checks the artifact; the mandate governs how the reviewer probes it.
+
 ## Catch-all / unrouted artifact types (v1.3, 2026-06-08)
 
 When the artifact type detector finds **no matching row** in this table, the quality loop uses this catch-all entry instead of skipping the evaluation entirely. This ensures every artifact — even unrouted ones — gets a baseline quality evaluation.
@@ -359,6 +379,7 @@ When the artifact type detector finds **no matching row** in this table, the qua
 - Hard requirements: valid syntax (YAML frontmatter parses, no truncation, no broken markdown), file in correct location per conventions
 - Quality dimensions: plain language score, completeness (no TODO/FIXME/PLACEHOLDER tokens), attribution density where claims exist
 - Discipline rules: non-destructive editing, no premature abstraction, no undocumented side effects
+- **For executable code with no dedicated shape match (universal code baseline, v1.4):** it builds / imports clean, its tests exist and pass **on disk** (run them — "I ran it" without output is a self-claim), no dead code left by a refactor, no placeholders / secrets / hardcoded client values. Prefer the dedicated `### Code artifact` row above; this baseline is the floor when the shape is unclear.
 
 **When the catch-all fires, the evaluation report header includes:**
 ```
@@ -367,7 +388,17 @@ When the artifact type detector finds **no matching row** in this table, the qua
 **Note:** This artifact type has no dedicated routing entry. If this type recurs, add a row to spec-routing-table.md.
 ```
 
-- v1.3 addition driven by mandatory pre-land review gate build (2026-06-08). Addresses the gap where ad-hoc artifacts (scripts, config files, infrastructure) had no quality loop entry and were silently skipped.
+- v1.3 addition driven by mandatory pre-land review gate build (2026-06-08). Addresses the gap where ad-hoc artifacts (scripts, config files, infrastructure) had no quality loop entry and were silently skipped. (As of **v1.4**, executable code has a dedicated `### Code artifact` row above; this catch-all now covers non-code unrouted artifacts + serves as the code floor when the shape is unclear.)
+
+## Growing this table from the catch register (v1.4, 2026-06-18)
+
+The routing table is meant to **compound, not go stale.** The `vault://_meta/handoffs/_review-gate-catch-register.md` is the feeder:
+
+- When a `CR-###` row is filed whose fix is "add / extend a quality check for artifact type X" (often a `type: Enhancement-idea`, or a recurring `Catch` / `Shortfall`), that becomes a concrete check here — added to an existing row's criteria or as a new row.
+- The reviewer that files such a CR writes **`→ OQL routing`** in its "what would close it" cell so the hand-off is explicit and greppable.
+- Result: every defect class that escapes a code/skill review **once** becomes a permanent check the quality loop runs forever. The `### Code artifact` row above was itself built this way from CR-011/012/016/017/018/019/020/023.
+
+This closes the loop with `[[_review-skill-firing-tracker]]`: a low Quality-control grade, or an "Exempt — no routed spec" row, is the signal that a new entry is needed here. Maintenance note **M-code** in the SKILL.md tracks this path.
 
 ## Operator overrides
 

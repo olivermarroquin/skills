@@ -122,6 +122,17 @@ Each row carries three columns: **artifact type** (the canonical name the routin
 - **Frontmatter:** `type: blueprint`, `status: <draft|promoted|validated>`
 - **Content shape:** architecture spec; "Components," "Data flow," "Decision points," "Open questions"
 
+### Code artifact (executable source — `.py` / `.ts` / `.tsx` / `.js` / `.sql` / shell)
+
+- **Path pattern:** executable source under `repos://**` or `skills://**/scripts/**`, plus migration / SQL files. NOT markdown, NOT a scaffolded data `.json`.
+- **No frontmatter:** code files have no YAML frontmatter (shebang / imports / `export` instead of `---`).
+- **Shape sub-type** (selects which heuristic block applies, if any — pure logic uses the baseline only; see `evaluation-heuristics-by-type.md` § Code artifact):
+  - **state-writing service** — API route handler, CLI connector, ingestion / migration script that writes to a DB, disk, cache, or external state (DB-client calls, `fs.write`, upserts, HTTP POST/PUT/PATCH, migrations).
+  - **verification / gate engine** — review-gate scripts, `verify-artifact`, deterministic checkers; anything whose job is to pass/fail other work (verdict / exit-code logic, `mandatory-review-gate/`, `verify-*`).
+  - **pure logic** — transforms / helpers / parsers with no external side effects.
+- **Disambiguation:** a `SKILL.md` is NOT code (own row). A scaffolded `<service>/<city>/<client>.json` is NOT code (own row). Test files ARE code, evaluated under this row with the shape of what they test.
+- **Added v1.4 (2026-06-18)** to close the recurring "Exempt — no routed spec" gap on route handlers / connectors / gate scripts (firing-tracker evidence).
+
 ## Multi-match resolution
 
 When more than one row matches:

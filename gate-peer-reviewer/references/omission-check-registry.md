@@ -314,6 +314,39 @@ C-23 (rename deletions unstaged), C-07 (pycache committed).
 
 ---
 
+### OC-17: Review-skill firing-tracker row present (WARN — breaker shipped 2026-06-18; promotion to BLOCKING is now an operator go/no-go)
+
+**What it checks:** every state-changing / artifact-producing run records its rows in
+`second-brain/_meta/handoffs/_review-skill-firing-tracker.md` (one per run × review skill), per the
+Closing Protocol step 3b reviewer-led authorship. This is the enforcement layer for the firing
+tracker — without it the tracker stays complete only by memory.
+
+**Verification procedure:**
+
+1. Determine this run's Run ID (the chat's event-log id).
+2. `grep` the firing tracker for that Run ID.
+3. No row for a run that wrote/edited files or changed state → **WARN** (surface: "firing-tracker row
+   missing for this run — append it per Closing Protocol step 3b"). Pure read-only / planning / trivial
+   non-state edits are exempt (no row required).
+4. The independent reviewer authors the rows (reviewer-led); a producer-only run with no reviewer
+   self-reports flagged — either way a row must exist.
+
+**Severity — WARN now; the BLOCKING precondition is MET, but promotion is an operator decision.**
+The original hold was "don't add a BLOCKING condition while the Stop hook can loop infinitely." That
+circuit breaker **shipped 2026-06-18** — CR-010 is now `Applied (RGH-CB)` (append-only JSONL history +
+SHA-256 fingerprinting, auto-skip after 3 consecutive identical blocks, 108 tests pass, adversarial
+peer review confirmed). So the technical blocker on promotion is cleared. OC-17 is **deliberately held
+at WARN pending a short operator soak** — the breaker shipped the same day, and bolting a new BLOCKING
+condition onto the gate before the breaker has proven stable in real runs would be premature. When the
+operator is satisfied the breaker is stable, flip this row to BLOCKING and update the Universal-checks
+line. (Cowork has no Stop hook, so OC-17 is advisory-only there regardless.)
+
+**Seed rationale:** the firing tracker is wired into the Closing Protocol as instruction-only; the
+first real-use round (2026-06-18) showed sessions complied when told, but nothing forces it. OC-17 is
+the enforcement check that closes "instructed but not enforced." Pairs with `[[_review-skill-firing-tracker]]`.
+
+---
+
 ## B. Per-chat-type profiles (classification → check set)
 
 ### Classification logic
@@ -329,7 +362,9 @@ C-23 (rename deletions unstaged), C-07 (pycache committed).
 OC-7 (event-log completeness), OC-8 (Closing Protocol compliance), OC-9 (handoff-deliverables
 diff), OC-11 (silent-skip sweep), OC-12 (per-deliverable existence), OC-15 (frontmatter
 freshness), OC-16 (commit-staging audit — **deferred at step-0 time**; runs at commit-time
-via pre-push hook or RGH-5 post-commit dispatch; see OC-16 trigger-timing note).
+via pre-push hook or RGH-5 post-commit dispatch; see OC-16 trigger-timing note), OC-17
+(firing-tracker row present — **WARN**; circuit breaker shipped 2026-06-18 so BLOCKING promotion
+is now an operator go/no-go after a stability soak; advisory-only on Cowork).
 
 ### Profile table
 

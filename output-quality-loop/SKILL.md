@@ -3,7 +3,7 @@ name: output-quality-loop
 description: Evaluate a finished Knowledge OS artifact against the specs that define what "good" looks like for its type, produce a structured verdict (PASS / NEEDS REVISION minor or substantive / FAIL), generate a revision prompt the producing chat can ingest to regenerate, and (Mode 4) compose with `perplexity-refinement` to research the strongest published version of each gap and feed those elevation suggestions back into the revision prompt. Triggers on phrases like "quality-check <artifact-path>," "evaluate <artifact-path>," "run output-quality-loop on <artifact-path>," "is this draft ready to ship," "does this brief meet the spec," "did the refinement pass actually elevate the source note," "audit this synthesis against its sources," "elevate this draft against the strongest published version," "what's the best version of this artifact in the world," or any time the operator wants a structured fitness evaluation of an artifact already on disk. Also fires via the auto-invoke convention block other skills emit at completion (see references/auto-invoke-convention.md). The keystone of the output-quality-loop system; Phases 2-6 of the roadmap build on top of this skill.
 ---
 
-# Output Quality Loop Skill (v1.3)
+# Output Quality Loop Skill (v1.4)
 
 The quality-evaluation layer of the Knowledge OS. Runs after an artifact lands. Reads the artifact, walks the spec-routing table to gather every spec source that applies to that artifact type, builds an evaluation checklist from the specs, scores the artifact against the checklist, lands a verdict, writes the verdict to the folder-level quality log, and — when the verdict is NEEDS REVISION or FAIL — produces a revision prompt the producing chat can ingest to regenerate.
 
@@ -728,6 +728,12 @@ When the skill errors or produces a miss in production, add a new entry: **Issue
 ### M-catchall: Catch-all routing for unrouted types (added 2026-06-08, v1.3)
 
 **The change:** `spec-routing-table.md` now has a catch-all entry that fires when no artifact type matches. Previously, unrouted types caused the quality loop to surface a gap and stop. Now, unrouted types get a baseline evaluation against 3 project-agnostic spec sources (plain-language-conventions, conventions, CLAUDE.md) + conservative confidence threshold (90 auto-approve, 65 PASS anchor). The catch-all evaluation report flags the missing routing row so it can be added if the type recurs. Companion `confidence-calibration.md` row added. Driven by the mandatory pre-land review gate build (every task must pass quality evaluation, including ad-hoc tasks producing unrouted artifact types).
+
+---
+
+### M-code: Code-artifact routing family + self-improving feeder (added 2026-06-18, v1.4)
+
+**The change:** added a `Code artifact (executable source)` family in lockstep across all three reference files — `artifact-type-detection.md` (detection + three shape sub-types: state-writing service, verification / gate engine, and pure logic), `spec-routing-table.md` (routing row + universal code baseline added to the catch-all), and `evaluation-heuristics-by-type.md` (hard requirements + quality dimensions + per-shape checks). **Driven by real firing-tracker evidence (2026-06-18):** route handlers, connectors, and gate scripts kept landing `Exempt — no routed spec`, so `output-quality-loop` never fired on a large class of work. Every check is evidence-based — it traces to a catch in `[[_review-gate-catch-register]]` the independent peer-review caught that the producer's self-review missed (idempotency CR-017, soft-delete WHERE CR-018, dead-code CR-016, same-test-data bias CR-019, gate escape-hatch bypass CR-011/012, count-estimation CR-020/023). Reuses RGH-7's OC-12..16 deterministic checks rather than reimplementing them. **Self-improving feeder:** the new "Growing this table from the catch register" section makes any future `CR-###` with a `→ OQL routing` fix flow into this table — every escaped defect class becomes a permanent check. Companion `research-budget-per-type.md` row (Code artifact, 4-query cap) added.
 
 ## See also
 

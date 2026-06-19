@@ -373,6 +373,45 @@ Per `verdict-rollup-thresholds.md` § "high-stakes dimension at fail" rule, the 
 
 **Special-case high-stakes path:** If the EVALUATE pass flagged a high-stakes dimension at fail (capsule-content, substitution-map, invented facts, or schema-checklist), Mode 4 prioritizes that gap first. The first 1-2 queries go to the high-stakes gap; remaining budget covers the top-N of the other gaps. The folder log's `### External research (Mode 4)` block names the high-stakes gap first.
 
+## Code artifact (executable source)
+
+**Evidence-based (v1.4, 2026-06-18):** every check below traces to a real catch in `[[_review-gate-catch-register]]` that a producer's self-review missed and the independent peer-review caught (firing-tracker, 2026-06-18). Apply the **baseline** to ALL code; add the one **shape** block that matches.
+
+### Hard requirements (all code)
+
+- **It builds / compiles / imports clean** — `tsc` / `next build` / `python -c "import ..."` passes; no syntax or type errors. (spec source: repo tests + RGH-7 routing)
+- **Tests exist and pass ON DISK** — run them and paste the count. "I ran it" / "tested" without the output is a D-05 self-claim (CR-016/017). No tests on a state-writing or gate artifact = hard miss.
+- **No dead code left by a refactor** — every function is reachable; a removed path leaves no orphan (CR-016: dead `fetchRemoteEtags`).
+- **No placeholders / secrets / hardcoded client values** — no TODO/FIXME/FILL, no committed keys, no single client's data baked into a reusable tool (reuse rule).
+
+### Quality dimensions (all code)
+
+- **Run-it-and-diff, don't read-it** — execute the thing and compare the actual result to what the comment / log claims. "Described-as-demonstrated" is a structural blind spot same-context review cannot see (CR-016/017).
+- **Error handling** — failure paths return / throw correctly; no silent swallow.
+- **Plain-language comments, logs, and error messages.**
+
+### Shape — state-writing service (route handler / connector / ingestion / migration)
+
+- **Idempotency** — running it twice changes nothing the second time; no full re-write every run (CR-017: all 436 files re-upserted each run).
+- **Write-correctness** — update / delete WHERE-clauses target the right rows; a soft-delete actually filters deleted rows on read (CR-018: un-delete bug — WHERE checked etag, not the deleted flag).
+- **Migration integrity** — the migration journal / snapshot exists and the pipeline applies cleanly end-to-end (CR-016: missing Drizzle journal = broken pipeline).
+
+### Shape — verification / gate engine
+
+- **Adversarial escape-hatch probe** — try to BYPASS it: poison the inputs, pass the bypass flags, hit the boundaries (CR-011/012: history-file poisoning + flag-heuristic bypass — two gate bypasses the producer's reviewer missed).
+- **Test on data DIFFERENT from what the author used** — same-test-data bias hides input-specific defects (CR-019: 36% of cities broke; the author tested only the one city that had all fields).
+- **Real-runner test, not simulated** — the test exercises the real entry point, not a mock harness (CR-004: every v1 gate bug reached live sessions because tests ran against a simulated harness).
+
+### Discipline rules
+
+- **Reuse RGH-7's OC-12..16 where they apply (`$0`); do not reimplement** the deterministic checks by LLM.
+- **Count claims are globbed from disk, never estimated** (CR-020/023: producers estimate counts; same-context reviewers confirm the estimate).
+- **Non-destructive:** no silent behavior change to an existing public interface without surfacing it.
+
+### Auto-research strategy (Mode 4)
+
+**Cap:** 4 queries; top-3 gaps (lower than content types — most code quality is verifiable on disk, not researched). Characteristic gap shapes: an unfamiliar framework's idempotency / migration idiom (e.g. "what is the canonical idempotent-upsert pattern for <ORM> as of 2026?"), or a security boundary on a gate artifact ("known bypass classes for <auth/gate pattern>"). **Compose-with:** the `gate-peer-reviewer` independent-reviewer mandate (Phase C adversarial disciplines) governs HOW the reviewer probes; this skill defines WHAT good looks like. Add the matching row to `research-budget-per-type.md`.
+
 ## Update path
 
 When a new artifact type appears, add a block here mirroring the structure above:
