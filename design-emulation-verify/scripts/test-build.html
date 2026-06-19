@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Electrical Services Build</title>
+  <style>
+    /* DELIBERATE MISMATCHES vs AJ Long Electric:
+       1. Font: Arial instead of Inter (CRITICAL font mismatch)
+       2. Off-palette color: #00ff00 green accent (not in AJ Long palette)
+       3. Missing FAQ section (structural gap)
+       4. Hero background is plain blue, not the dark theme */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: Arial, sans-serif; /* WRONG: should be Inter */
+      color: #ffffff;
+      background-color: #1e1e1e;
+    }
+    header {
+      background: #000000;
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header .logo { font-size: 24px; font-weight: 700; color: #ff7100; }
+    nav { display: flex; gap: 24px; }
+    nav a { color: #ffffff; text-decoration: none; font-size: 16px; }
+    .hero {
+      background: linear-gradient(135deg, #0000ff 0%, #0066cc 100%); /* WRONG: should be dark brand gradient */
+      padding: 80px 40px;
+      text-align: center;
+    }
+    .hero h1 { font-size: 48px; margin-bottom: 16px; }
+    .hero p { font-size: 18px; line-height: 1.7; max-width: 600px; margin: 0 auto 32px; }
+    .hero .cta-btn {
+      display: inline-block;
+      background: #00ff00; /* WRONG: off-palette neon green */
+      color: #000;
+      padding: 16px 32px;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      font-size: 18px;
+    }
+    section.services {
+      padding: 60px 40px;
+      background: #252525;
+    }
+    section.services h2 { font-size: 36px; text-align: center; margin-bottom: 40px; }
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #1e1e1e;
+      border-radius: 14px;
+      padding: 32px;
+    }
+    .card h3 { font-size: 20px; margin-bottom: 12px; color: #ff7100; }
+    .card p { font-size: 16px; line-height: 1.6; color: #cccccc; }
+    section.testimonials {
+      padding: 60px 40px;
+      background: #1e1e1e;
+    }
+    section.testimonials h2 { font-size: 36px; text-align: center; margin-bottom: 40px; }
+    .testimonial-card {
+      background: #252525;
+      border-radius: 14px;
+      padding: 32px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .testimonial-card p { font-size: 16px; line-height: 1.6; font-style: italic; }
+    .testimonial-card .author { margin-top: 16px; color: #ff7100; font-weight: 600; }
+    /* NOTE: FAQ section is MISSING (deliberate structural gap) */
+    footer {
+      background: #000000;
+      padding: 40px;
+      text-align: center;
+    }
+    footer p { font-size: 14px; color: #888888; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">Test Electric Co.</div>
+    <nav role="navigation">
+      <a href="/">Home</a>
+      <a href="/services">Services</a>
+      <a href="/about">About</a>
+      <a href="/contact">Contact</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h1>Your Trusted Local Electrician</h1>
+    <p>Professional electrical services for residential and commercial properties. Licensed, insured, and ready to help with any project.</p>
+    <a href="/contact" class="cta-btn">Book Online</a>
+  </section>
+
+  <section class="services">
+    <h2>Our Services</h2>
+    <div class="card-grid">
+      <div class="card">
+        <h3>Residential Wiring</h3>
+        <p>Complete home electrical solutions from panel upgrades to whole-house rewiring.</p>
+      </div>
+      <div class="card">
+        <h3>Commercial Electrical</h3>
+        <p>Keep your business running with reliable commercial electrical services.</p>
+      </div>
+      <div class="card">
+        <h3>Emergency Service</h3>
+        <p>24/7 emergency electrical repair when you need it most.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="testimonials">
+    <h2>What Our Customers Say</h2>
+    <div class="testimonial-card">
+      <p>"Excellent work on our panel upgrade. Professional, on time, and fair pricing."</p>
+      <div class="author">- John D., Fairfax</div>
+    </div>
+  </section>
+
+  <!-- FAQ section deliberately MISSING to test structural gap detection -->
+
+  <footer role="contentinfo">
+    <p>&copy; 2026 Test Electric Co. All rights reserved.</p>
+  </footer>
+</body>
+</html>

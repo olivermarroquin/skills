@@ -1,15 +1,36 @@
 ---
 name: design-emulation-verify
-description: Diff a Keelworks client build against a reference site to verify that the design emulation actually matches. Produces a gap report covering structural, stylistic, and pattern differences that Claude Code can act on directly. Use this skill whenever a Keelworks custom-coded Next.js site is being built using a reference site from second-brain/03_domains/website-design/inspiration/high-performing/ and Oliver wants to verify "passes the diff check," not just "looks close." Triggers on phrases like "verify my emulation," "diff my build vs the reference," "check the design emulation," "run the verify skill," "is my build at the bar of [reference]," or any time a custom-coded site has been generated and needs a verification pass before Step 7 (refine for client branding) of the emulate-competitor-design-patterns tactic. Outputs a gap report scoped to structural similarity, stylistic similarity, and pattern presence — the three axes that determine whether the emulation passes the Pillar 3 (Verified Emulation) bar from the website-design strategy doc.
+version: 1.0
+description: >
+  Diff ANY rendered build against a reference site to verify that the design emulation
+  actually matches. Produces a gap report covering structural, stylistic, and pattern
+  differences that Claude Code can act on directly. Framework-agnostic: works on Next.js,
+  WordPress, static HTML, or any build Playwright can render. Use this skill whenever a
+  build needs verification against its reference — "passes the diff check," not just
+  "looks close." Triggers on phrases like "verify my emulation," "diff my build vs the
+  reference," "check the design emulation," "run the verify skill," "is my build at the
+  bar of [reference]," or any time a site has been generated and needs a verification pass.
+  Outputs a gap report scoped to structural similarity, stylistic similarity, and pattern
+  presence — the three axes that determine whether the emulation passes the Pillar 3
+  (Verified Emulation) bar from the website-design strategy doc. Also runs a legal-boundary
+  check (patterns are legal, assets are not).
+composes-with: [site-capture-engine, design-fingerprint, reference-library]
 ---
 
-# Design Emulation Verify
+# Design Emulation Verify (v1.0)
 
-**Status:** spec only. Implementation TBD as a follow-up project.
+> **v1.0 (2026-06-19)** — Implemented from spec. Playwright-based diff engine
+> (`scripts/diff_build_vs_reference.mjs`) compares any rendered build against any
+> reference across three axes (structural / stylistic / pattern-presence) plus a
+> legal-boundary check. Framework-agnostic: gate is "Playwright can render it," not
+> "is it React." Validated on Next.js reference + non-React proof build.
 
-A reusable workflow for diffing a Keelworks client build against a reference site to verify that the design emulation actually matches. The third pillar of the [[strategy-custom-coded-nextjs-via-ai-with-competitor-inspiration|website-design strategy]] depends on this skill: emulation that hasn't been verified is just "looks close," which isn't the bar.
+A reusable engine for diffing any rendered build against a reference site to verify that the design emulation actually matches. The third pillar of the [[strategy-custom-coded-nextjs-via-ai-with-competitor-inspiration|website-design strategy]] depends on this skill: emulation that hasn't been verified is just "looks close," which isn't the bar.
 
-This skill is a sister to `design-fingerprint` (which turns a capture package into a structured design dossier) — it consumes the dossier that skill produces and uses it as the comparison baseline.
+**Composes with:**
+- **Upstream:** `design-fingerprint` ([DI-2]) — produces the dossier this skill uses as the comparison baseline
+- **Upstream:** `site-capture-engine` ([DI-1]) — captures both reference and build sides
+- **Downstream:** the website-design build loop ([DI-5]) — consumes gap reports to drive iteration
 
 ---
 
@@ -24,9 +45,9 @@ Trigger this skill when:
 
 Do NOT use this skill for:
 
-- WordPress builds (the skill is shaped for custom-coded React / Next.js; WordPress builds use the existing Core 30 SOP's QA checklist)
 - Generic "is this site any good" lookups (use a Lighthouse audit instead)
 - Side-by-side screenshot comparisons without an emulation target (this skill needs a specific reference)
+- Pages behind authentication (Playwright must be able to load the page without login)
 
 ---
 
@@ -34,15 +55,17 @@ Do NOT use this skill for:
 
 Required:
 
-1. **Reference site URL** — the high-performing reference site being emulated. Must have a dossier in `second-brain/03_domains/website-design/inspiration/high-performing/`. If no dossier exists, run `site-capture-engine` (with `--design-capture`) then `design-fingerprint` first.
-2. **Client build URL** — `next dev` localhost, Vercel preview, Netlify preview, or production URL. Must be reachable from the verification environment.
-3. **Composition doc** — the per-client composition file written in Step 2 of the emulate tactic. This is what tells the verify skill what patterns were *intentionally* emulated vs what was carried over by accident.
+1. **Build URL** (`--build-url`) — the build being verified. Any URL Playwright can render: `next dev` localhost, Vercel/Netlify preview, production URL, or `file://` path.
+2. **Reference URL** (`--ref-url`) — the reference site being compared against.
+3. **Dossier** (`--dossier`) — path to a [DI-2] dossier file (`dossier-<slug>.md`). If no dossier exists, run `site-capture-engine` (with `--design-capture`) then `design-fingerprint` first.
 
 Optional:
 
-4. **Page scope** — which specific page(s) to diff. Defaults to the home page; can be expanded to a specific service page, location page, or "all Core 30 pages."
-5. **Verification mode** — `full` (all three axes), `structural-only`, `stylistic-only`, `pattern-only`. Default `full`.
-6. **Brand-differentiation policy** — for any stylistic difference between build and reference, the policy can be `strict-match` (every difference is a gap), `brand-differentiation-allowed` (color and typography differences are explained as brand choices), or `pattern-only-emulation` (only structure and patterns need to match; styling is free). Default `brand-differentiation-allowed`.
+4. **Composition doc** (`--composition`) — the per-client composition file written in Step 2 of the emulate tactic. Tells the engine which patterns were *intentionally* emulated. If omitted, falls back to the dossier's "patterns worth lifting" section.
+5. **Trait sidecar** (`--trait-sidecar`) — path to the [DI-2] YAML trait sidecar. Reserved for future cross-site analysis.
+6. **Output directory** (`--output`) — where to write the gap report. Defaults to current directory.
+7. **Verification mode** (`--mode`) — `full` (all three axes), `structural-only`, `stylistic-only`, `pattern-only`. Default `full`.
+8. **Brand-differentiation policy** (`--policy`) — `strict-match` (every difference is a gap), `brand-differentiation-allowed` (color and font diffs are within policy), or `pattern-only-emulation` (only structure + patterns must match). Default `brand-differentiation-allowed`.
 
 If any required input is missing, the skill should ask before running. Bad inputs produce gap reports that mislead Claude Code.
 
@@ -112,53 +135,83 @@ Diff method: cross-reference the composition doc's pattern list against detected
 
 ## How the skill works (procedural detail)
 
+### Invocation
+
+```bash
+node skills/design-emulation-verify/scripts/diff_build_vs_reference.mjs \
+  --build-url  <build-url> \
+  --ref-url    <reference-url> \
+  --dossier    <path-to-dossier.md> \
+  [--composition  <path-to-composition.md>] \
+  [--trait-sidecar <path-to-traits.yaml>] \
+  [--output     <output-dir>] \
+  [--mode       full|structural-only|stylistic-only|pattern-only] \
+  [--policy     strict-match|brand-differentiation-allowed|pattern-only-emulation]
+```
+
 ### Step 1 — Load the reference dossier
 
-Read `second-brain/03_domains/website-design/inspiration/high-performing/dossier-<reference-slug>.md`. If it doesn't exist, error out with a message asking the operator to run `site-capture-engine` (with `--design-capture`) then `design-fingerprint` first.
+Reads the [DI-2] dossier file. Extracts palette (hex colors), font families, and
+"patterns worth lifting" section. If the dossier doesn't exist, the script errors out
+asking the operator to run `site-capture-engine` then `design-fingerprint` first.
 
-Extract from the dossier:
+### Step 2 — Load the composition doc (optional)
 
-- The visual design fingerprint section (color palette, typography, layout patterns)
-- The "patterns worth emulating" section
-- The "patterns to skip" section (so the skill can flag if the build accidentally inherited a "skip" pattern)
-- The "how we emulate without copying assets" section (so the skill can run a final asset-carryover check)
+If provided, extracts the expected pattern list from the composition doc. If not provided,
+falls back to the dossier's "patterns worth lifting" section. Without either, the pattern
+axis is skipped.
 
-### Step 2 — Fetch the reference page
+### Step 3 — Render both pages in Playwright
 
-Use `mcp__workspace__web_fetch` for the reference page. If the page is JS-rendered and `web_fetch` returns empty content, fall back to `mcp__Claude_in_Chrome__navigate` + `get_page_text` for the rendered DOM.
+Launches headless Chromium at 1440×900 viewport. Renders both the reference and build
+pages with `networkidle` + 2s JS settle. **This is where the hub-and-nav-build lesson
+applies:** the engine uses `getComputedStyle` on the live rendered DOM, not source CSS
+analysis. "Present ≠ applying" — a stripped `<style>` block passes every CSS-presence
+check while the rule fails to apply.
 
-Parse the DOM tree. Extract computed styles where possible (note: `web_fetch` doesn't run JS, so computed styles often have to be inferred from CSS analysis rather than computed). Detect section conventions.
+Extracts from each page:
+- **Semantic section tree** (header, nav, main, section, article, aside, footer + ARIA roles)
+- **Computed styles** on probe elements (body, h1-h3, hero, CTA, card, nav, footer)
+- **Text blocks** (for legal-boundary check)
+- **Image URLs** (for asset-carryover detection)
+- **Used colors** (sampled, for palette comparison)
 
-### Step 3 — Fetch the build page
+### Step 4 — Run the three diffs
 
-Same procedure for the client's build URL. If it's a `next dev` localhost URL, this assumes the verification environment can reach localhost — confirm with operator. For Vercel / Netlify previews and production URLs, standard `web_fetch` works.
+1. **Structural:** section count, tag distribution, heading hierarchy comparison
+2. **Stylistic:** computed-style property comparison on matched probes + palette/font
+   comparison against dossier tokens. Policy applied to determine which gaps are "within policy."
+3. **Pattern presence:** keyword-match expected patterns against build DOM headings,
+   classes, and probe results
 
-### Step 4 — Read the composition doc
+### Step 5 — Run the legal-boundary check
 
-Load the composition doc from Step 2 of the emulate tactic. This tells the skill which patterns were intentionally selected for emulation — which is what the build SHOULD match, regardless of what the reference also has.
+Per [[strategy-custom-coded-nextjs-via-ai-with-competitor-inspiration#The three pillars — none of these is optional|Pillar 3]]:
+1. **Text overlap:** 20-word sliding window exact match between reference and build text
+2. **Image carryover:** URL pathname comparison of all `<img>` src attributes
 
-If the composition doc doesn't exist, the skill can still run, but everything in the reference becomes "expected to be present" — which often produces a noisy gap report. Recommend writing the composition doc.
+False positives are expected; the report lists candidates for operator review.
 
-### Step 5 — Run the three diffs
+### Step 6 — Write the report
 
-For each axis (structural, stylistic, pattern), produce the gap list. Apply the brand-differentiation policy to stylistic gaps. Annotate each gap with severity + fix suggestion.
+Outputs a markdown gap report + JSON sidecar per `references/gap-report-contract.md`.
+Exit code 0 = PASS, 1 = NEEDS-WORK, 2 = fatal error.
 
-### Step 6 — Run the asset-carryover check
+---
 
-Per the legal boundary in [[strategy-custom-coded-nextjs-via-ai-with-competitor-inspiration#The three pillars — none of these is optional|Pillar 3]] — patterns are legal, assets are not. The skill scans the build for any verbatim copy text or asset paths from the reference. Any match is a bug.
+## Framework-agnostic gate
 
-Procedure:
+The engine works on **any rendered build** that Playwright can load:
 
-1. Extract all visible text content from the reference page (excluding navigation, footer boilerplate, common phrases)
-2. Extract all visible text content from the build
-3. Run an exact-string match; any match longer than ~20 words is reported as a potential asset carryover
-4. Extract image URLs; flag any image URL from the reference that appears in the build
+- Next.js (App Router, Pages Router)
+- WordPress (PHP-rendered)
+- Static HTML/CSS
+- Any SPA (React, Vue, Svelte)
+- Server-rendered frameworks (Rails, Django, Laravel)
+- App webviews
 
-False positives (e.g., common SEO phrases) are expected; the report lists candidates for the operator to review, not automatically-flagged bugs.
-
-### Step 7 — Write the report
-
-Write the gap report file. Include all four sections with the specifics. Output the file path so the operator (and Claude Code, in the next iteration) can find it.
+The gate is "is it renderable + capturable?" — not "is it React." The old restriction
+("do not use for WordPress / non-React") is removed as of v1.0.
 
 ---
 
@@ -167,25 +220,18 @@ Write the gap report file. Include all four sections with the specifics. Output 
 The skill must:
 
 - Run in under 5 minutes for a single-page diff
-- Run in under 20 minutes for a "all Core 30 pages" diff
 - Produce a report Claude Code can act on directly (specific selectors, specific values, specific fix suggestions)
-- Cite the reference dossier and composition doc when making claims (so the operator can verify the comparison baseline)
+- Compare against real computed styles, not source CSS (the hub-and-nav-build lesson)
 - Distinguish severity properly — `critical` gaps shouldn't be drowned out by `minor` gaps
 
 ---
 
-## Future implementation notes
+## Reference files
 
-When this skill gets implemented:
-
-- **The structural diff** is the most automatable. Parse both DOMs; compute a tree-edit distance; report differences. Library options: `lxml` for parsing, custom tree-walker for diff. ~200 lines of code.
-- **The stylistic diff** is harder. Without a headless browser running both pages, computed styles are unavailable. Fallback: parse CSS files and approximate computed styles per element. Better: integrate with Playwright or Puppeteer to get real computed styles.
-- **The pattern diff** is the hardest. Requires a pattern taxonomy + a classifier that maps DOM nodes to pattern names. Likely Claude-driven for the foreseeable future, with a growing taxonomy reference file.
-- **The asset-carryover check** is straightforward text matching. Use `difflib` or similar; tune the threshold (20 words) based on real false-positive rates.
-- **Output format** — markdown gap report; consider also writing a structured JSON sidecar so Claude Code can parse the gap list programmatically.
-- **Iteration support** — when this skill is run multiple times in an iteration cycle, it should optionally compare against the PREVIOUS gap report to show progress (gaps closed, gaps remaining, new gaps introduced). Useful for keeping iteration cycles short.
-
-The implementation work is a follow-up project. This spec captures what the skill should do.
+| File | Purpose |
+|---|---|
+| `scripts/diff_build_vs_reference.mjs` | Playwright-based diff engine |
+| `references/gap-report-contract.md` | Output contract (markdown + JSON sidecar schema) |
 
 ---
 
