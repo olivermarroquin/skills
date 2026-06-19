@@ -672,6 +672,8 @@ Per the [[vault-stewardship-principles]]:
    - `quick_ref_localized_items[<service-slug>][]` (6-8 entries)
    - `most_common_problem_paragraph[<service-slug>]`
    - `specific_problems_neighborhood_phrase[<service-slug>]`
+   - `ev_neighborhood_phrase[<service-slug>]` — per-service neighborhood framing (DA2 depth-parity)
+   - `distance_phrase[<service-slug>]` — per-service distance/drive-time framing (DA2 depth-parity)
    - `ev_charger_homes_phrase` (electrical-domain only)
    - `housing_patterns[].symptoms` per pattern in the Tier 2 brief
 

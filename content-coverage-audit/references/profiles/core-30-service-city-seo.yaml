@@ -613,6 +613,10 @@ profile:
     inventory_source: "{{project_base}}/admin-extracts/competitor-research/{{competitor_slug}}-teardown/data"
     diff_against: output_set
     expansion_signal: true
+    # DA3: pre-computed architecture diff feed from competitor-architecture-diff skill.
+    # When this file exists, L3 merges its proposals into the expansion backlog
+    # instead of re-deriving them from raw URL inventories.
+    architecture_diff_feed: "skills/content-coverage-audit/references/feeds/{{competitor_slug}}-architecture-diff.json"
 
   # --- Severity thresholds ---
   severity_thresholds:

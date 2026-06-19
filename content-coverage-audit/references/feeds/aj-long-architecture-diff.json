@@ -1,0 +1,107 @@
+{
+  "lens_3_expansion": {
+    "total_proposals": 9,
+    "high_priority_count": 6,
+    "backlog": [
+      {
+        "rank": 1,
+        "proposal_name": "HowTo structured data on service-city pages",
+        "type": "new-section",
+        "evidence": [
+          "AJ Long Electric emits HowTo schema with explicit steps on every service-city page"
+        ],
+        "priority": "high",
+        "source_collection": "competitor-architecture-diff",
+        "competitor_signal": true
+      },
+      {
+        "rank": 2,
+        "proposal_name": "Issues-by-home-era section on service-city pages",
+        "type": "new-section",
+        "evidence": [
+          "AJ Long Electric neighborhood pages explicitly tie issues to housing era"
+        ],
+        "priority": "high",
+        "source_collection": "competitor-architecture-diff",
+        "competitor_signal": true
+      },
+      {
+        "rank": 3,
+        "proposal_name": "Neighborhood-specific problem callouts in service-city pages",
+        "type": "new-section",
+        "evidence": [
+          "AJ Long Electric neighborhood pages call out specific issues per neighborhood with housing-style variants"
+        ],
+        "priority": "high",
+        "source_collection": "competitor-architecture-diff",
+        "competitor_signal": true
+      },
+      {
+        "rank": 4,
+        "proposal_name": "Problem-cluster Q&A blocks on service-city pages",
+        "type": "new-section",
+        "evidence": [
+          "AJ Long Electric problem pages have 5+ FAQ items per specific problem with safety steps and cost ranges"
+        ],
+        "priority": "medium",
+        "source_collection": "competitor-architecture-diff",
+        "competitor_signal": true
+      },
+      {
+        "rank": 5,
+        "proposal_name": "SpeakableSpecification schema for voice search / AI Overviews",
+        "type": "new-section",
+        "evidence": [
+          "AJ Long Electric emits SpeakableSpecification on every page type \u2014 marks content for voice assistants and AI citation"
+        ],
+        "priority": "high",
+        "source_collection": "competitor-architecture-diff",
+        "competitor_signal": true
+      },
+      {
+        "rank": 6,
+        "proposal_name": "Dedicated problem/symptom pages",
+        "type": "new-artifact-type",
+        "evidence": [
+          "AJ Long Electric has 13 dedicated problem pages \u2014 each targets a specific symptom query"
+        ],
+        "priority": "high",
+        "source_collection": "competitor-architecture-diff",
+        "competitor_signal": true
+      },
+      {
+        "rank": 7,
+        "proposal_name": "Dedicated neighborhood pages",
+        "type": "new-artifact-type",
+        "evidence": [
+          "AJ Long Electric has 219 dedicated neighborhood pages \u2014 massive geo-surface coverage"
+        ],
+        "priority": "high",
+        "source_collection": "competitor-architecture-diff",
+        "competitor_signal": true
+      },
+      {
+        "rank": 8,
+        "proposal_name": "Educational guide pages",
+        "type": "new-artifact-type",
+        "evidence": [
+          "AJ Long Electric has 13 guide pages covering costs, planning, and how-to content"
+        ],
+        "priority": "medium",
+        "source_collection": "competitor-architecture-diff",
+        "competitor_signal": true
+      },
+      {
+        "rank": 9,
+        "proposal_name": "Blog content strategy",
+        "type": "new-artifact-type",
+        "evidence": [
+          "AJ Long Electric has a blog hub with posts"
+        ],
+        "priority": "medium",
+        "source_collection": "competitor-architecture-diff",
+        "competitor_signal": true
+      }
+    ]
+  }
+}

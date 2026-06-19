@@ -1,0 +1,108 @@
+profile_id: ev-aj-long-core30
+description: >
+  Architecture diff of AJ Long Electric (winning DMV competitor) vs our
+  Core-30 page structure for EV Electric Services. First application of
+  the competitor-architecture-diff engine.
+competitor_slug: aj-long
+competitor_name: AJ Long Electric
+competitor_domain: ajlongelectric.com
+
+teardown_base: "~/workspace/second-brain/04_projects/clients/_active/ev-electric-services/admin-extracts/competitor-research/aj-long-teardown"
+
+our_output_set:
+  page_types:
+    - name: service-city-landing
+      description: "Core 30 service×city pages — one per service+city combination"
+      count: 30
+      sections:
+        - hero (H1 eyebrow + H2 heading + subheading + 2 CTAs + image)
+        - what-it-means (left-aligned 2-col + Quick Reference accordion sidebar)
+        - why-city-homeowners (3 housing-stock pattern cards)
+        - specific-problems (6-8 scenario cards)
+        - our-process (5-6 numbered steps)
+        - transparent-pricing (rate sheet)
+        - about-owner (credentials + photo + review callout)
+        - neighborhoods-we-serve (5-10 neighborhoods + Google Maps)
+        - related-services (5 cross-links)
+        - faq (8 Q&As matching FAQPage schema)
+        - final-cta (phone-first)
+      schema:
+        - LocalBusiness
+        - Service
+        - FAQPage
+        - AggregateRating
+  section_types:
+    - quick-reference-accordion
+    - housing-pattern-cards
+    - scenario-cards
+    - numbered-process-steps
+    - pricing-rate-sheet
+    - neighborhood-list-with-map
+    - faq-accordion
+
+data_sources:
+  - name: city-data-jsons
+    path: "~/workspace/repos/ai-agency-core/scripts/data/cities/*.json"
+    provides:
+      - neighborhoods (name + blurb per neighborhood, 5-10 per city)
+      - housing_patterns (title + neighborhood_examples + context_paragraph + symptoms, 3 per city)
+      - geographic_anchor_paragraph
+      - quick_ref_localized_items (per service)
+      - most_common_problem_paragraph (per service)
+      - specific_problems_neighborhood_phrase (per service)
+  - name: service-data-jsons
+    path: "~/workspace/repos/ai-agency-core/scripts/data/services/*.json"
+    provides:
+      - problem_cards (6-8 per service)
+      - process_steps
+      - pricing_items
+      - faq_items (8 per service)
+  - name: intersection-briefs
+    path: "~/workspace/second-brain/05_shared-intelligence/research-briefs/intersections/*.md"
+    provides:
+      - localized FAQ themes
+      - review themes
+      - localized keywords
+      - competitor audit per intersection
+
+# Schema sample slug → page type mapping for extracted schemas.
+# Keys are the extracted file slugs (without .schema.json); values are page types.
+# The engine uses these first, then falls back to heuristic slug-name inference.
+schema_samples:
+  home: homepage
+  service-base-panel: service-base
+  svc-city-ev-burke: service-city
+  svc-city-panel-fairfax: service-city
+  problem-burning-outlet: problem-page
+  neighborhood-mantua: neighborhood-page
+  guide-panel-upgrade: guide-page
+  blog-permit-costs: blog-post
+  costs-page: core-page
+  city-servicearea-fairfax: core-page
+
+# Supportability overrides: maps expansion candidate names to data sources.
+# The engine checks whether the named data_source exists in data_sources above.
+# Candidates not listed here default to "needs-new-data".
+supportability_overrides:
+  neighborhood-page:
+    data_source: city-data-jsons
+    detail: "neighborhoods (name + blurb, 5-10 per city) + housing_patterns"
+  issues-by-home-era:
+    data_source: city-data-jsons
+    detail: "housing_patterns[].symptoms — 3 eras per city with symptoms"
+  neighborhood-specific-problems:
+    data_source: city-data-jsons
+    detail: "specific_problems_neighborhood_phrase + neighborhoods[].blurb"
+  problem-cluster-qa:
+    data_source: service-data-jsons
+    detail: "problem_cards (6-8 per service) + faq_items"
+  howto-schema:
+    data_source: service-data-jsons
+    detail: "process_steps (5-6 per service) — already on-page, just needs HowTo schema"
+  guide-page:
+    data_source: intersection-briefs
+    detail: "localized FAQ themes + review themes + competitor audit data"
+
+ranking_profile: content-expansion-ev
+cca_feed_path: "~/workspace/skills/content-coverage-audit/references/feeds/aj-long-architecture-diff.json"
+output_dir: "~/workspace/repos/ev-electric-services/.kos/architecture-diffs"
