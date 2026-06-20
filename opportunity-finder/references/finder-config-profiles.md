@@ -155,11 +155,17 @@ keeper_route: "~/workspace/skills/ (capability home) + vault map (engine, per [O
 special_note: "engine applies the §11 safety+trust gate (no malicious code / license / maintained / not typosquat)"
 ```
 
-## Profile #4 — MCP / connector (`[OR-5]`, STUB)
+## Profile #4 — MCP / connector (`[OR-5]`, ACTIVE v1.0)
+
+> **Activated `[OR-5]` 2026-06-20** (config-only, no `SKILL.md` edit). The engine half + the §11 **strict**
+> account-scope safety gate live in `[[profile-mcp-connector]]`; this is the discovery half. Worked example used
+> **Lane A** (operator-picked the official DataForSEO MCP). ⚠️ The Claude connector-registry MCP lane was
+> **unreachable in-session** (returned empty) — logged, not silently substituted; working lanes = WebSearch /
+> web-fetch over open MCP indexes / Claude-in-Chrome. Keep the `profile:` slug in sync with the engine config.
 
 ```yaml
 profile: mcp-connector
-default_category: "a connector category, e.g. data/analytics connectors"
+default_category: "SEO / search-data connectors for Claude"   # worked example: DataForSEO MCP (2026-06-20)
 default_window: "12 months"
 lanes: [B, C, D]
 lane_sources:

@@ -136,7 +136,12 @@ reasons, never silently dropped.
 
 ---
 
-## Profile #4 — MCP / connector (`[OR-5]`, STUB — inherits this engine)
+## Profile #4 — MCP / connector (`[OR-5]`, ACTIVE v1.0 — full config in `[[profile-mcp-connector]]`)
+
+> **Built `[OR-5]` 2026-06-20.** Full config + the §11 **strict** safety+trust gate logic (`safety-trust-strict`,
+> account-scope bar) + integration-map routing live in the dedicated file `references/profile-mcp-connector.md`.
+> Proven end-to-end (config-only, no `SKILL.md` edit) on the **official DataForSEO MCP server** — see
+> `[[teardown-2026-06-20-dataforseo-mcp]]` + the gate run in `[[_safety-trust-gate-log]]`.
 
 Same engine; lanes point at the Claude connector registry / OpenAI-GPT directories / MCP indexes; **highest safety
 bar** (§11) because connectors touch accounts and data; destination is a vault-integration map + idea-factory money
@@ -144,7 +149,7 @@ sparks for Oliver's Claude/ChatGPT accounts.
 
 ```yaml
 profile: mcp-connector
-first_run_slice: "<a connector category, e.g. data/analytics connectors>"
+first_run_slice: "SEO / search-data connectors for Claude"   # worked example: DataForSEO MCP (2026-06-20)
 lanes: [A, B, C, D]
 extra_fields: ["account-scopes-touched", "data-access-surface", "auth-model"]
 special_gate: safety-trust-strict   # §11 highest bar: account + data exfiltration scrutiny strictest of all profiles
