@@ -133,7 +133,12 @@ funded-startup candidates, disjoint from the product set). Re-confirmed at the `
 
 ---
 
-## Profile #3 — open-source AI skill / repo (`[OR-4]`, STUB)
+## Profile #3 — open-source AI skill / repo (`[OR-4]`, ACTIVE v1.0)
+
+> **Activated `[OR-4]` 2026-06-19** (config-only, no `SKILL.md` edit). The engine half + the §11 safety gate live in
+> `[[profile-open-source-skill]]`; this is the discovery half. Worked example used **Lane A** (operator-picked
+> `claude-task-master`); Lanes B/C/D framing below is ready for the finder's `oss-skill` runs. Keep the `profile:` slug
+> in sync with the engine config.
 
 ```yaml
 profile: oss-skill

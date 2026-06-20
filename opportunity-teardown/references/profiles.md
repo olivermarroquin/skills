@@ -109,7 +109,11 @@ level-up, money layer, and build/buy/use decision are **unchanged** — they com
 
 ---
 
-## Profile #3 — open-source AI skill / repo (`[OR-4]`, STUB — inherits this engine)
+## Profile #3 — open-source AI skill / repo (`[OR-4]`, ACTIVE v1.0 — full config in `[[profile-open-source-skill]]`)
+
+> **Built `[OR-4]` 2026-06-19.** Full config + the §11 safety+trust gate logic + capability-home routing live in the
+> dedicated file `references/profile-open-source-skill.md`. Proven end-to-end (config-only, no `SKILL.md` edit) on
+> **`claude-task-master`** — see `[[teardown-2026-06-19-claude-task-master]]` + the gate run in `[[_safety-trust-gate-log]]`.
 
 Same engine; lanes point at GitHub / skill directories / awesome-lists; **safety + trust gate ON** (§11); destination
 is a **capability home** (the `skills/` library + vault enhancement), not idea-factory by default.
