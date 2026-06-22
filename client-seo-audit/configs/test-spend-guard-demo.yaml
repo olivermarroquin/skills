@@ -1,0 +1,24 @@
+# Spend guard demonstration config
+# Budget intentionally set to $0.03 — enough for ~1 API call.
+# A full_audit would cost ~$0.15+, so the guard MUST halt mid-run.
+
+client:
+  slug: "test-spend-guard-demo"
+  name: "Spend Guard Demo Client"
+  domain: "spendguarddemo.example.com"
+  gbp_name: "Spend Guard Demo"
+
+target_keywords:
+  - "plumber fairfax va"
+  - "emergency plumber fairfax"
+  - "drain cleaning fairfax"
+
+competitors:
+  - domain: "competitor1.example.com"
+    name: "Competitor 1"
+
+location:
+  name: "Fairfax,Virginia,United States"
+  language_code: "en"
+
+budget_usd: 0.03

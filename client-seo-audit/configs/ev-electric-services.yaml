@@ -1,0 +1,38 @@
+# EV Electric Services — SEO audit config
+# Source: second-brain/04_projects/clients/_active/ev-electric-services/
+
+client:
+  slug: "ev-electric-services"
+  name: "EV Electric Services"
+  domain: "evelectric.pro"
+  gbp_name: "EV-Electric Services"
+
+target_keywords:
+  - "electrician fairfax va"
+  - "ev charger installation fairfax"
+  - "electrical repair fairfax va"
+  - "panel upgrade fairfax va"
+  - "emergency electrician fairfax"
+  - "light fixture installation fairfax"
+  - "electrical troubleshooting fairfax"
+  - "electrician vienna va"
+  - "electrician mclean va"
+  - "residential electrician northern virginia"
+
+competitors:
+  - domain: "ajlongelectric.com"
+    name: "AJ Long Electric"
+  - domain: "mrelectricoffairfax.com"
+    name: "Mr. Electric of Fairfax"
+  - domain: "rootelectric.com"
+    name: "Root Electric"
+  - domain: "absolute-electric.com"
+    name: "Absolute Electric"
+  - domain: "kolbelectric.com"
+    name: "Kolb Electric"
+
+location:
+  name: "Fairfax,Virginia,United States"
+  language_code: "en"
+
+budget_usd: 2.00

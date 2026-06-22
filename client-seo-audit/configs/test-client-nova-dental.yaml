@@ -1,0 +1,34 @@
+# Non-electrician proof: throwaway dental practice config
+# Demonstrates the skill works for ANY local service business from config alone.
+# Zero EV/S&H values anywhere in this file.
+
+client:
+  slug: "test-client-nova-dental"
+  name: "NoVA Dental Care"
+  domain: "novadental.example.com"
+  gbp_name: "NoVA Dental Care"
+
+target_keywords:
+  - "dentist fairfax va"
+  - "emergency dentist fairfax"
+  - "teeth whitening fairfax va"
+  - "dental implants fairfax"
+  - "family dentist fairfax va"
+
+competitors:
+  - domain: "fairfaxdentalcare.com"
+    name: "Fairfax Dental Care"
+  - domain: "smilesfairfax.com"
+    name: "Smiles of Fairfax"
+
+location:
+  name: "Fairfax,Virginia,United States"
+  language_code: "en"
+
+# Tight budget — proof only, not a real client
+budget_usd: 0.50
+
+operations:
+  - ranking_snapshot
+  - keyword_serps
+  - backlink_profile

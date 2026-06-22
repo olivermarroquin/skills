@@ -1,0 +1,39 @@
+{
+  "_meta": {
+    "description": "Estimated per-call costs for DataForSEO MCP endpoints. Conservative upper bounds from published pricing. Used by spend guard to pre-check budget before each call.",
+    "source": "DataForSEO pricing page + API documentation, validated against OR-5 teardown",
+    "last_verified": "2026-06-22",
+    "currency": "USD"
+  },
+  "costs": {
+    "mcp__dataforseo__serp_organic_live_advanced": 0.002,
+    "mcp__dataforseo__dataforseo_labs_google_ranked_keywords": 0.05,
+    "mcp__dataforseo__dataforseo_labs_google_domain_rank_overview": 0.02,
+    "mcp__dataforseo__dataforseo_labs_google_keyword_overview": 0.02,
+    "mcp__dataforseo__dataforseo_labs_google_serp_competitors": 0.05,
+    "mcp__dataforseo__dataforseo_labs_google_keywords_for_site": 0.05,
+    "mcp__dataforseo__dataforseo_labs_google_keyword_suggestions": 0.05,
+    "mcp__dataforseo__dataforseo_labs_google_related_keywords": 0.05,
+    "mcp__dataforseo__backlinks_summary": 0.02,
+    "mcp__dataforseo__backlinks_bulk_pages_summary": 0.02,
+    "mcp__dataforseo__backlinks_referring_domains": 0.04,
+    "mcp__dataforseo__backlinks_bulk_backlinks": 0.02,
+    "mcp__dataforseo__backlinks_bulk_referring_domains": 0.02,
+    "mcp__dataforseo__backlinks_bulk_ranks": 0.02,
+    "mcp__dataforseo__backlinks_bulk_spam_score": 0.02,
+    "mcp__dataforseo__backlinks_anchors": 0.04,
+    "mcp__dataforseo__backlinks_backlinks": 0.04,
+    "mcp__dataforseo__backlinks_competitors": 0.04,
+    "mcp__dataforseo__backlinks_domain_pages_summary": 0.02,
+    "mcp__dataforseo__backlinks_timeseries_summary": 0.02,
+    "mcp__dataforseo__backlinks_timeseries_new_lost_summary": 0.02,
+    "mcp__dataforseo__on_page_instant_pages": 0.01,
+    "mcp__dataforseo__on_page_content_parsing": 0.01,
+    "mcp__dataforseo__on_page_lighthouse": 0.02,
+    "mcp__dataforseo__kw_data_google_ads_search_volume": 0.05,
+    "mcp__dataforseo__kw_data_google_trends_explore": 0.01,
+    "mcp__dataforseo__dataforseo_labs_search_intent": 0.02
+  },
+  "default_cost": 0.05,
+  "_note": "For any endpoint not listed, use default_cost as the conservative estimate."
+}

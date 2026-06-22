@@ -1,0 +1,27 @@
+{
+  "client_slug": "test-client-nova-dental",
+  "run_date": "2026-06-22",
+  "status": "complete",
+  "purpose": "non-electrician proof — zero EV/S&H bleed",
+  "operations_completed": [
+    "ranking_snapshot",
+    "keyword_serps",
+    "backlink_profile"
+  ],
+  "operations_skipped": [
+    "competitor_overview",
+    "keyword_research",
+    "on_page_audit"
+  ],
+  "spend_usd": 0.042,
+  "budget_usd": 0.50,
+  "budget_remaining_usd": 0.458,
+  "api_calls": 3,
+  "cache_hits": 0,
+  "spend_guard_triggered": false,
+  "output_path": "skills/client-seo-audit/_state/test-client-nova-dental/test-client-nova-dental-seo-audit-2026-06-22.md",
+  "graceful_degrades": [
+    "domain_rank_overview returned empty (fictional domain — expected)",
+    "backlinks_summary returned empty (fictional domain — expected)"
+  ]
+}

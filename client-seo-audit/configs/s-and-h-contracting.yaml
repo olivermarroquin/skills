@@ -1,0 +1,36 @@
+# S&H Contracting — SEO audit config
+# Source: second-brain/04_projects/clients/_active/s-and-h-contracting/
+
+client:
+  slug: "s-and-h-contracting"
+  name: "S&H Contracting Unlimited LLC"
+  domain: "shcontractingunlimited.com"
+  gbp_name: "S&H Contracting Unlimited LLC"
+
+target_keywords:
+  - "electrician woodbridge va"
+  - "emergency electrician woodbridge va"
+  - "panel upgrade woodbridge va"
+  - "ev charger installation woodbridge"
+  - "electrician alexandria va"
+  - "24/7 electrician northern virginia"
+  - "electrical troubleshooting woodbridge"
+  - "light fixture installation woodbridge"
+  - "residential electrician woodbridge va"
+  - "commercial electrical contractor woodbridge"
+
+competitors:
+  - domain: "rootelectric.com"
+    name: "Root Electric"
+  - domain: "ajlongelectric.com"
+    name: "AJ Long Electric"
+  - domain: "mrelectricoffairfax.com"
+    name: "Mr. Electric of Fairfax"
+  - domain: "absolute-electric.com"
+    name: "Absolute Electric"
+
+location:
+  name: "Woodbridge,Virginia,United States"
+  language_code: "en"
+
+budget_usd: 2.00

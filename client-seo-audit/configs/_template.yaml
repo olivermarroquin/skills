@@ -1,0 +1,51 @@
+# client-seo-audit config template
+# Copy this file to <client-slug>.yaml and fill in all REQUIRED fields.
+# Zero hardcoded client values — everything comes from this file.
+
+# === Client identity (REQUIRED) ===
+client:
+  slug: ""                    # kebab-case identifier, e.g. "acme-plumbing"
+  name: ""                    # display name, e.g. "Acme Plumbing Co."
+  domain: ""                  # root domain without protocol, e.g. "acmeplumbing.com"
+  gbp_name: ""                # Google Business Profile name (for local pack matching)
+
+# === Target keywords (REQUIRED, ≥3) ===
+# These are the keywords you want to track rankings for.
+# Include service + city combinations for local SEO.
+target_keywords:
+  - ""
+  - ""
+  - ""
+
+# === Competitors (REQUIRED, ≥1) ===
+# Domains to benchmark against. Ideally 3-5 for a meaningful teardown.
+competitors:
+  - domain: ""
+    name: ""
+  - domain: ""
+    name: ""
+
+# === Location (REQUIRED for local-SEO) ===
+# DataForSEO location_name format: "City,Region,Country"
+# For national: just "United States"
+location:
+  name: ""                    # e.g. "Fairfax,Virginia,United States"
+  language_code: "en"
+
+# === Budget (REQUIRED) ===
+# Per-audit spend cap in USD. The seo-data-wrapper halts when this would be exceeded.
+# Typical full audit with 10 keywords + 3 competitors ≈ $0.50-1.50
+budget_usd: 2.00
+
+# === Operations (OPTIONAL — defaults to all) ===
+# Uncomment to run only specific operations:
+# operations:
+#   - ranking_snapshot
+#   - keyword_serps
+#   - backlink_profile
+#   - competitor_overview
+#   - keyword_research
+#   - on_page_audit
+
+# === Output (OPTIONAL) ===
+# output_dir: ""              # defaults to skills/client-seo-audit/_state/<slug>/

@@ -1,0 +1,50 @@
+{
+  "client_slug": "test-spend-guard-demo",
+  "run_date": "2026-06-22",
+  "status": "halted_by_spend_guard",
+  "purpose": "spend guard demonstration — proves the cap actually halts execution",
+  "operations_completed": [
+    "ranking_snapshot (partial — domain_rank_overview only)"
+  ],
+  "operations_skipped_by_spend_guard": [
+    "ranking_snapshot (ranked_keywords — $0.05 would exceed $0.03 cap)",
+    "keyword_serps (3 keywords × $0.002 = $0.006)",
+    "backlink_profile ($0.02)",
+    "competitor_overview ($0.02)",
+    "keyword_research ($0.07)",
+    "on_page_audit ($0.01)"
+  ],
+  "spend_log": [
+    {
+      "call_number": 1,
+      "endpoint": "dataforseo_labs_google_domain_rank_overview",
+      "estimated_cost_usd": 0.02,
+      "cumulative_usd": 0.02,
+      "result": "empty (fictional domain)",
+      "status": "completed"
+    },
+    {
+      "call_number": 2,
+      "endpoint": "dataforseo_labs_google_ranked_keywords",
+      "estimated_cost_usd": 0.05,
+      "would_bring_cumulative_to": 0.07,
+      "budget_usd": 0.03,
+      "status": "BLOCKED_BY_SPEND_GUARD",
+      "reason": "SPEND_GUARD_HALT: $0.02 spent + $0.05 next call = $0.07 > $0.03 budget. Call not made."
+    }
+  ],
+  "spend_usd": 0.02,
+  "budget_usd": 0.03,
+  "budget_remaining_usd": 0.01,
+  "api_calls_made": 1,
+  "api_calls_blocked": 1,
+  "cache_hits": 0,
+  "spend_guard_triggered": true,
+  "spend_guard_details": {
+    "trigger_point": "Before call #2 (ranked_keywords)",
+    "spent_at_trigger": 0.02,
+    "next_call_cost": 0.05,
+    "would_exceed_by": 0.04,
+    "action": "HALT — all remaining operations skipped, partial results returned"
+  }
+}

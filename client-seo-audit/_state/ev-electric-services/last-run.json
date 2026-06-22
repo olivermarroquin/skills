@@ -1,0 +1,34 @@
+{
+  "client_slug": "ev-electric-services",
+  "run_date": "2026-06-22",
+  "status": "complete",
+  "operations_completed": [
+    "ranking_snapshot",
+    "keyword_serps",
+    "backlink_profile",
+    "competitor_overview",
+    "keyword_research",
+    "on_page_audit"
+  ],
+  "operations_skipped": [],
+  "spend_usd": 0.146,
+  "budget_usd": 2.00,
+  "budget_remaining_usd": 1.854,
+  "api_calls": 7,
+  "cache_hits": 0,
+  "spend_guard_triggered": false,
+  "output_path": "skills/client-seo-audit/_state/ev-electric-services/ev-electric-services-seo-audit-2026-06-22.md",
+  "graceful_degrades": [],
+  "findings_summary": {
+    "organic_keywords_total": 2,
+    "organic_keywords_top_10": 0,
+    "organic_etv": 0.29,
+    "domain_rank": 0,
+    "backlinks": 0,
+    "referring_domains": 0,
+    "local_pack_appearances": 1,
+    "issues_found": 10,
+    "critical_issues": 3,
+    "content_briefs": 3
+  }
+}
