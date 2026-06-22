@@ -1,15 +1,17 @@
 ---
 name: reviewer-orchestrator
-version: 1.0
-description: Separate-session control plane that auto-dispatches independent peer-reviewers in parallel for producer chats, removing manual reviewer-spawning while preserving true session-independence. Phase 1 = operator-triggered on an explicit ready-for-review list; Phase 2/3 deferred.
+version: 2.0
+description: Separate-session control plane that auto-dispatches independent peer-reviewers in parallel for producer chats, removing manual reviewer-spawning while preserving true session-independence. Phase 1 = operator-triggered on an explicit ready-for-review list; Phase 2 = auto-watch event-log polling loop with operator dispatch-plan gate; Phase 3 deferred.
 created: 2026-06-22
-updated: 2026-06-22
+updated: 2026-06-22T19:00Z
 status: active
 depends-on: [gate-peer-reviewer, independent-reviewer-mandate]
 tags: [skill, review-gate, rgh, rgh-9, reviewer-orchestrator, parallel-review, automation, independent-review]
 ---
 
-# Reviewer Orchestrator (v1.0)
+# Reviewer Orchestrator (v2.0)
+
+> **v2.0 changelog (2026-06-22)** — Phase 2: auto-watch event-log polling loop. The orchestrator now watches `_event-log.md` for new `ready-for-review` rows on a configurable cadence (default 60s). Each tick: grep → cross-check markers → report. When unreviewed items are found, builds the dispatch manifest and presents the dispatch plan — operator confirmation at Step 4 still required (no silent auto-dispatch). Per-tick sleep model with operator intervention points between every cycle. Only runs while the Claude Code session is active (not a daemon — that's RGH-3/Hermes). Built by [RGH-9-P2].
 
 > **v1.0 changelog (2026-06-22)** — Initial build. Phase 1: operator-triggered dispatch of independent peer-reviewers in parallel. Composes RGH-5's independent-reviewer-dispatch + the gate's session-independence check. Standalone skill (not vault-orchestrator Mode 7 — see Design Decisions). Dispatched reviewers inherit the orchestrator's session_id (≠ each producer's session_id), passing the `log-review-pass.py` independence check (CR-045 / RGH-8). Built by [RGH-9].
 
@@ -26,6 +28,8 @@ A **separate-session control plane** that auto-dispatches independent peer-revie
 - "Run the reviewer-orchestrator"
 - "Auto-review [list of sessions/handoffs]"
 - "Review what's ready"
+- "Watch for reviews" / "Start watching" (Phase 2 — starts the polling loop)
+- "Watch every 30s" / "Watch every 5m" (Phase 2 — starts with custom cadence)
 
 ### Indirect triggers
 
@@ -44,6 +48,23 @@ The handoff proposed Mode 7 as cleanest, but:
 4. **SKILL.md size.** vault-orchestrator is ~1560 lines; adding review-dispatch would make it unwieldy.
 
 Decision approved at Gate 1 (plan + design review, 2026-06-22).
+
+### Per-tick sleep model (Phase 2)
+
+The polling loop uses **conversational turns, not a monolithic Bash loop script.** Each tick is a discrete cycle:
+
+1. **Grep** `_event-log.md` for `ready-for-review` rows.
+2. **Cross-check** against `.review-gate/state/` for existing PASS markers.
+3. **Report** findings (or "nothing new") to the operator.
+4. If items found → present the dispatch plan (Step 4 gate fires). Operator approves/edits/aborts.
+5. If nothing found → issue a single `sleep <cadence>` Bash call. When it returns, run the next tick.
+
+This means:
+- The operator has a **natural intervention point between every cycle** — they can say "stop watching," change the cadence, or give other instructions.
+- **Ctrl+C on the sleep** also works as an immediate interrupt.
+- The watcher is **not a daemon** — it only runs while the Claude Code session is active. Background/unattended watching is RGH-3/Hermes territory.
+
+Decision approved at Gate 2 (design review, 2026-06-22).
 
 ### Independence mechanism
 
@@ -149,11 +170,98 @@ For each completed review, append an event-log row:
 <timestamp> | <files> | reviewer-orchestrator-dispatched-review | <orchestrator-chat-id> | [RGH-9] Independent review dispatched by reviewer-orchestrator: <producer_chat_id> verdict <PASS|BLOCKING>, <N> passes, <M> catches. Reviewer session <orchestrator_session> ≠ producer session <producer_session>.
 ```
 
-## Phase 2 — Auto-watch event-log (DEFERRED)
+## Phase 2 — Auto-watch event-log (SHIPPED v2.0)
 
-**Trigger to build:** Phase 1 proves on ≥2 real producers with zero mechanism failures.
+**Trigger met:** Phase 1 proved on ≥2 real producers (BTF-1 session 835d38fb + WF session 5e76d787) with zero mechanism failures (v1.0 shipped + closed pass 300).
 
-Phase 2 adds a polling loop: the orchestrator watches `_event-log.md` for new `ready-for-review` rows on a configurable cadence (default: check every 60s while active). When it finds unreviewed items, it builds the manifest and dispatches — still with operator confirmation at the dispatch-plan gate (Step 4).
+Phase 2 adds a polling loop: the orchestrator watches `_event-log.md` for new `ready-for-review` rows on a configurable cadence (default: check every 60s while active). When it finds unreviewed items, it builds the manifest and dispatches — still with operator confirmation at the dispatch-plan gate (Step 4). See "Per-tick sleep model" in Design Decisions for the execution mechanism.
+
+### Step W1 — Enter watch mode
+
+The operator says "watch for reviews" (or a variant — see triggers). Optionally specify a cadence: "watch every 30s," "watch every 5m." Default: 60s.
+
+Announce entry:
+```
+Watcher active. Cadence: <N>s. Checking _event-log.md for ready-for-review rows.
+Say "stop watching" to exit. Say "watch every <N>s" to change cadence.
+```
+
+Initialize watcher state:
+- `cadence_seconds` — polling interval (default 60)
+- `tick_count` — starts at 0
+- `last_seen_line_count` — line count of `_event-log.md` at watcher start (optimization: only grep new lines on subsequent ticks)
+- `dispatched_sessions` — set of producer sessions already dispatched this watch session (prevents re-dispatch within the same loop)
+
+### Step W2 — Tick: scan for unreviewed items
+
+Each tick runs the same logic as Phase 1 Step 1 (build the review manifest), with these additions:
+
+1. **Grep** `_event-log.md` for rows matching the tab-delimited pattern `\tready-for-review\t` (exact field match — avoids false positives from rows like `peer-review-started` that contain the substring `ready-for-review` in prose).
+2. For each match, extract: `chat_id`, `producer_session`, `files`, `gate_tier` (default `full`), `handoff_path` (if present).
+3. **Cross-check** against `.review-gate/state/<producer_session>-reviewed.jsonl` — skip items that already have a PASS marker with `reviewer_type: independent`.
+4. **Skip** items whose `producer_session` is in `dispatched_sessions` (already dispatched this watch session).
+5. **Result:** a list of unreviewed items (may be empty).
+
+**Optimization:** on ticks after the first, only scan lines added since `last_seen_line_count` (use `tail -n +<last_seen_line_count>` before grepping). Update `last_seen_line_count` to the current line count after each tick.
+
+### Step W3 — Report tick result
+
+**If no unreviewed items:**
+```
+Tick <N>: no new ready-for-review items. Next check in <cadence>s.
+```
+Then proceed to Step W5 (sleep).
+
+**If unreviewed items found:**
+```
+Tick <N>: found <M> unreviewed item(s):
+- <chat_id_1> (session <session_1>, <file_count> files, tier <tier>)
+- <chat_id_2> (session <session_2>, <file_count> files, tier <tier>)
+...
+Building dispatch plan.
+```
+Then proceed to Step W4 (dispatch flow).
+
+### Step W4 — Dispatch flow (reuses Phase 1 Steps 2–8)
+
+This is the same as Phase 1:
+
+1. **Step 2** — Pre-allocate CR ID ranges.
+2. **Step 3** — Render the dispatch plan.
+3. **Step 4** — **Operator confirms the dispatch plan.** No reviewers fire until approved. This is the no-silent-dispatch guarantee.
+4. **Step 5** — Dispatch reviewers in parallel (Agent tool).
+5. **Step 6** — Collect results + render summary.
+6. **Step 7** — Surface any BLOCKING verdicts.
+7. **Step 8** — Append event-log rows.
+
+After dispatch completes (or if the operator says `abort` at Step 4), add the relevant producer sessions to `dispatched_sessions`. This prevents re-detecting the same items on the next tick — both dispatched and explicitly aborted items are suppressed for the remainder of this watch session. Then proceed to Step W5 (sleep for the next tick).
+
+### Step W5 — Sleep and loop
+
+Issue a single Bash call:
+```bash
+sleep <cadence_seconds>
+```
+
+When the sleep completes, increment `tick_count` and return to Step W2.
+
+**Operator intervention points:**
+- During the sleep, the operator can interrupt (Ctrl+C) — the orchestrator sees the interruption and asks: "Sleep interrupted. Stop watching, change cadence, or continue?"
+- Between any tick, the operator can say:
+  - `"stop watching"` → exit the loop, announce: "Watcher stopped after <N> ticks."
+  - `"watch every <M>s"` / `"slow down to 2m"` / `"speed up to 30s"` → update `cadence_seconds`, acknowledge, continue.
+  - Any other instruction → pause the loop, handle the instruction, then ask: "Resume watching?"
+
+### Step W6 — Exit watch mode
+
+When the operator says "stop watching" (or the session ends naturally):
+
+```
+Watcher stopped after <N> ticks. Summary:
+- Ticks completed: <N>
+- Items dispatched: <M> (sessions: <list>)
+- Items still unreviewed: <K> (if any remain)
+```
 
 ## Phase 3 — Bind to Mode 6 wave-close (DEFERRED)
 
@@ -174,6 +282,10 @@ Phase 3 wires into vault-orchestrator Mode 6's Step 10 wave-close: when a wave c
 5. **Agent sub-agents may produce shallower reviews than full separate-session reviewers.** The Agent tool dispatches a sub-agent with a single prompt — it runs autonomously without operator paste-back loops. This ensures session-independence (the mechanism) but not review depth (the adversarial rigor). For high-stakes artifacts, a full separate-session running review (operator relays each producer output, reviewer disk-verifies step-by-step per mandate Phase R) remains the gold standard. The orchestrator-dispatched review is best suited for: re-verification of already-reviewed artifacts, fast-path tier files, and parallel batch reviews where mechanism-independence matters more than maximum adversarial depth.
 
 6. **Session ID inheritance is version-dependent.** Confirmed on CC v2.1.85 (2026-06-12). Re-verify after Claude Code upgrades — if Agent tool stops inheriting parent session_id, the independence mechanism breaks silently. The `log-review-pass.py` rejection check is the safety net (it will reject same-session attempts), but the orchestrator becomes unable to clear the gate.
+
+7. **Watcher is session-scoped, not a daemon (Phase 2).** The polling loop only runs while the Claude Code session is active. If the operator closes the session or the conversation compresses past the watcher state, the loop stops. Background/unattended watching is RGH-3/Hermes territory. The watcher is best suited for: operator working sessions where multiple producers are in flight and reviews should be dispatched as they land.
+
+8. **Watcher deduplication is per-session (Phase 2).** The `dispatched_sessions` set prevents re-dispatching within a single watch session. If the orchestrator session restarts, it re-scans from scratch — but the cross-check against `.review-gate/state/` markers prevents duplicate reviews (items with existing PASS markers are skipped). The only gap: if a reviewer was dispatched but hasn't yet written its marker, a new orchestrator session could re-dispatch. Mitigated by the operator dispatch-plan gate (Step 4) — the operator sees "already dispatched by prior session" context.
 
 ## Related
 
