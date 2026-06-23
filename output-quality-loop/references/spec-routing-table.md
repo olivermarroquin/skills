@@ -71,6 +71,38 @@ Notes:
 - Sources #6 and #7 are conceptually overlapping — SEO primer §D names the tactics, marketing primer §G explains the underlying content discipline. Both are loaded because the checklist (source #8) cites both as its parent specs.
 - For Core 30 pages produced by `scaffold-core-30-page.py`, the routing assumes the page slug parses cleanly. If the slug doesn't end in a known city-slug or the prefix doesn't match a known service-slug template, surface "spec routing failed: page slug doesn't decompose into known service + city" before attempting evaluation.
 
+### Restaurant fixed-list page
+
+Page slug matches a known page in `profiles/restaurant/page-model.json` (e.g. `home`, `menu`, `about`, `location-hours`, `cuisine`, `reserve-order`). Page output lives in `output/<client>/` as `<slug>.html` + `<slug>-schema.json` + `<slug>-draft-v1.md`. The detector reads the slug from the filename or the page model's `pages[].slug` field.
+
+Spec sources to load (four required + one optional):
+
+1. **Client data file** (required) — `repos://ai-agency-core/scripts/data/client-<client-slug>.json`
+   - Drives: business name, contact info, hours, address, cuisine types, menu data, reservation/ordering URLs, brand colors, owner info.
+   - Missing → hard requirement miss.
+
+2. **Restaurant profile files** (required) — `repos://ai-agency-core/scripts/profiles/restaurant/`
+   - `page-model.json` — declares the page set, roles, and section assignments.
+   - `schema-template.json` — drives JSON-LD structure (Restaurant type, hasMenu, potentialAction).
+   - `config-schema.json` — required/optional field declarations.
+   - Missing → hard requirement miss.
+
+3. **Plain-language conventions** (required) — `vault://_meta/plain-language-conventions.md`
+   - Drives: voice rules, readability.
+
+4. **Restaurant verify profile** (required) — `repos://ai-agency-core/scripts/profiles/verify-restaurant-page.json`
+   - Drives: schema-coverage checks (Restaurant type, condition-gated Menu/ReserveAction/OrderAction).
+
+5. **House-voice personality file** (optional, per-client) — `vault://04_projects/clients/_active/<client-slug>/personality-<client-slug>.md`
+   - Drives: client-voice-match dimension.
+   - Missing → skip voice-match; not a defect.
+
+Notes:
+
+- Restaurant pages are NOT matrix (no service × city). The page model is a fixed list of 6 conversion-funnel pages. Evaluation checks per-page section completeness against the page-model's declared sections, NOT against service/city data.
+- Schema evaluation must verify condition-gated blocks: hasMenu only on menu page (when menu_url configured), potentialAction only on reserve-order page (when accepts_reservations/accepts_online_orders configured). Use the recursive type extractor (CR-079 fix).
+- PLACEHOLDER content markers (`PLACEHOLDER data — real content needed from client`) are expected in scaffold output and should NOT be flagged as defects — they're intentional markers for operator authoring.
+
 ### Perplexity-refinement output
 
 Spec sources to load:

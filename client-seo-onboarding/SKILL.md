@@ -1,10 +1,12 @@
 ---
 name: client-seo-onboarding
-version: 1.8
-description: One-Cowork-message entry point for onboarding a brand-new SEO client end-to-end. v1.1 wraps the v1.0 11-step pipeline (research → author data → verify WP → scaffold → imagery → publish → index → internal links → report) with three load-bearing additions — per-step `output-quality-loop` integration (Mode 1 EVALUATE + Mode 4 AUTO-RESEARCH + Mode 5 AUTO-APPROVE per artifact), multi-chat wave decomposition baked into the plan-bullet opening (scope-estimation gate computes hours + chat count + wave shape before any work fires), and the AI-surface reachability matrix that replaces "Cowork can't reach X" framing with concrete per-surface paths (Perplexity Sonar + OpenAI + Gemini + Anthropic Claude all working today via tier-3 carve-out; AI Overviews via Claude in Chrome). Triggers on phrases like "process this new client," "onboard this client for SEO," "run client-seo-onboarding on <slug>," "kick off the Core 30 build for <client>," "set up <client> end to end," "ingest these meeting notes and start the onboarding," or any time the operator hands over meeting notes + an intake form + a client slug and wants the full Core 30 pipeline run. Also use to resume a partially-completed onboarding when the operator says "pick up <slug>'s onboarding where we left off" — the skill detects the state file at 04_projects/clients/_active/<slug>/_state/onboarding.json and continues from the last completed step (or last in-progress wave for multi-chat runs).
+version: 1.9
+description: One-Cowork-message entry point for onboarding a brand-new SEO client end-to-end. v1.9 adds business-type routing (BTF-3): reads business_type from client config and routes each step to the correct flags/mode — electrician (matrix, Axes A/B/C/D) or restaurant (fixed-list, Axis N). ONE path, not a fork. v1.1 wraps the v1.0 11-step pipeline (research → author data → verify WP → scaffold → imagery → publish → index → internal links → report) with three load-bearing additions — per-step `output-quality-loop` integration (Mode 1 EVALUATE + Mode 4 AUTO-RESEARCH + Mode 5 AUTO-APPROVE per artifact), multi-chat wave decomposition baked into the plan-bullet opening (scope-estimation gate computes hours + chat count + wave shape before any work fires), and the AI-surface reachability matrix that replaces "Cowork can't reach X" framing with concrete per-surface paths (Perplexity Sonar + OpenAI + Gemini + Anthropic Claude all working today via tier-3 carve-out; AI Overviews via Claude in Chrome). Triggers on phrases like "process this new client," "onboard this client for SEO," "run client-seo-onboarding on <slug>," "kick off the Core 30 build for <client>," "set up <client> end to end," "ingest these meeting notes and start the onboarding," or any time the operator hands over meeting notes + an intake form + a client slug and wants the full Core 30 pipeline run. Also use to resume a partially-completed onboarding when the operator says "pick up <slug>'s onboarding where we left off" — the skill detects the state file at 04_projects/clients/_active/<slug>/_state/onboarding.json and continues from the last completed step (or last in-progress wave for multi-chat runs).
 ---
 
-# Client SEO Onboarding (orchestrator skill, v1.8)
+# Client SEO Onboarding (orchestrator skill, v1.9)
+
+> **v1.9 changelog (2026-06-23, [BTF-3] business-type routing)** — Added `## Business-type routing` section. The orchestrator now reads `business_type` from the client config at Step 1 and routes each type-divergent step to the correct flags/mode via a per-step routing table. Electrician uses the matrix model (service×city, Axes A/B/C/D). Restaurant uses the fixed-list model (6 pages from page-model.json, Axis N cross-page linking). ALL underlying scripts were parameterized in BTF-3 Slices 1-2: `scaffold-client-data.py --business-type`, `scaffold-city-data.py --business-type/--href-prefix`, `generate-imagery-prompts.py --service-prompts-file`, `generate-and-distribute-heroes.py --service-prompts-file`, `insert-internal-links.py --business-type`, `scaffold-page.py` matrix_section_sequence from profile (CR-072). Honest limits: restaurant brief templates, imagery prompt files, and fixed-list `--apply` mode not yet authored. No other behavior change for existing electrician clients.
 
 > **v1.8 changelog (2026-06-17, [DA1] content-coverage-audit)** — New Step 2b: `content-coverage-audit` skill wired as a research-wave gate between Step 2 (research briefs) and Step 3 (data-file generation). Runs three-lens coverage analysis (utilization / coverage-gaps-asymmetry / expansion) via profile-driven engine; emits `G-coverage` gate verdict (registered in gate-type-registry). Blocking on variant-missing-parity-field (the DA2 silent-degrade class); advisory on unused high-richness fields and expansion opportunities. **Graceful fallback:** if `skills/content-coverage-audit/SKILL.md` is not on disk, step skips with a warning — does not block the pipeline. No other behavior change.
 
@@ -57,6 +59,51 @@ If you find yourself about to write "Cowork can't reach X," stop. Consult the ma
 - A single ad-hoc page on an already-onboarded client. Use `scaffold-core-30-page.py` + `publish-core-30-page.py` directly.
 - A non-WordPress client (Squarespace, custom-coded site, Wix). This skill assumes WordPress + Elementor + AIOSEO + LiteSpeed. Custom-coded clients need a separate orchestrator that doesn't exist yet — surface this and stop.
 - A client refresh / rebuild on an existing slug where the operator wants to overwrite past work. The skill is non-destructive by default; for refreshes use `refresh-cached-image.py` and per-script `--overwrite` flags directly.
+
+## Business-type routing (BTF-3, v1.9)
+
+The orchestrator supports multiple business types through ONE path, not forks. At Step 1 (Ingest), read `business_type` from the client config (`data/client-<slug>.json`). All subsequent steps use this value to select the correct flags, modes, and profiles. No step should hardcode electrician assumptions.
+
+### Type detection
+
+```
+business_type = client_config["business_type"]  # "electrician", "restaurant", etc.
+page_model = profile["page_model"]["page_generation"]  # "matrix" or "fixed-list"
+```
+
+### Per-step routing table
+
+| Step | Universal | Matrix (electrician) | Fixed-list (restaurant) |
+|---|---|---|---|
+| 1 — Ingest | ✓ | — | — |
+| 2 — Research briefs | | service + city + intersection briefs | client-fact brief only (no service×city matrix) |
+| 2b — Coverage audit | ✓ | — | — |
+| 3 — Author data files | | `scaffold-client-data.py --business-type electrician` + service JSONs + city JSONs | `scaffold-client-data.py --business-type restaurant` (no service/city data files) |
+| 4 — Verify WP | ✓ | — | — |
+| 5 — Bulk scaffold | | `scaffold-page.py --client <slug> --service <svc> --city <city> --position <N>` (one call per service×city) | `scaffold-page.py --client <slug>` (one call, generates all fixed-list pages) |
+| 6 — Imagery prompts | | `generate-imagery-prompts.py` with built-in electrician SERVICE_FALLBACK_ACTIONS | `generate-imagery-prompts.py --service-prompts-file profiles/<type>/assets/service-prompts.json` |
+| 6b — Hero generation | | `generate-and-distribute-heroes.py` with built-in electrician SERVICE_PROMPTS | `generate-and-distribute-heroes.py --service-prompts-file profiles/<type>/assets/hero-prompts.json` |
+| 7 — Pause | ✓ | — | — |
+| 8 — Resume per page | | N×M pages from build-order | 6 fixed pages from page-model.json |
+| 9 — Indexing | ✓ | — | — |
+| 10 — Internal links | | `insert-internal-links.py --business-type electrician` (Axes A/B/C/D) | `insert-internal-links.py --business-type restaurant` (Axis N cross-page + D semantic) |
+| 11 — Final report | ✓ | — | — |
+
+### Routing rules
+
+1. **At Step 1:** read `business_type` and `page_generation` from the client config + profile. Log both to the execution log. Include in the plan-bullet opening: "Business type: <type> (<page_model> model)."
+2. **At any step that routes:** use the per-step routing table above. Never fall through to the electrician path by default — if `business_type` is unknown, surface "Unknown business type '<type>'. Add a profile at profiles/<type>/ before proceeding." and stop.
+3. **Scope estimation:** for fixed-list types, compute scope from the page-model's `pages[]` count (e.g., 6 pages for restaurant) instead of the service×city matrix. Research-wave scope is smaller (no intersection briefs).
+4. **Build-order:** matrix types use `_build-order.md` (service×city prioritization). Fixed-list types skip build-order — page order comes from the profile's `pages[]` array.
+5. **Research briefs (Step 2):** matrix types produce service + city + intersection briefs. Fixed-list types produce a client-fact brief and optionally a cuisine/location brief (operator-directed). The brief templates live at `research-briefs/_template-<type>-*.md`.
+6. **Data files (Step 3):** matrix types scaffold service JSONs + city JSONs. Fixed-list types scaffold only the client JSON (`--business-type <type>`). The `CREDENTIALS_CHECKLIST` is filtered by type (universal items for all; trade-specific items for electrician only).
+7. **Imagery (Step 6/6b):** pass `--service-prompts-file` pointing to the type profile's `assets/` dir. If the prompts file doesn't exist, surface "No service prompts file for <type>. Author profiles/<type>/assets/service-prompts.json before running imagery." and pause.
+
+### Honest limits (v1.9)
+
+- Restaurant brief templates (`_template-restaurant-service-brief.md`, etc.) do not yet exist. Step 2 for restaurant requires operator-authored brief content, not automated research.
+- `--apply` mode in `insert-internal-links.py` for fixed-list types is not implemented (the apply function assumes the `evp-related-grid` HTML container). Axis N proposals are propose-only; the operator applies manually.
+- Restaurant imagery prompt files (`profiles/restaurant/assets/service-prompts.json`, `hero-prompts.json`) do not yet exist. Step 6/6b for restaurant requires creative direction from the operator.
 
 ## Scope-estimation gate (run first)
 
