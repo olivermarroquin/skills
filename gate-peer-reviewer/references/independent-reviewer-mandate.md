@@ -1,9 +1,9 @@
 ---
 type: reference
 skill: gate-peer-reviewer
-skill-version: 3.8
+skill-version: 3.9
 created: 2026-06-16
-updated: 2026-06-16
+updated: 2026-06-23
 purpose: fixed-mandate for the independent adversarial reviewer — loaded from disk by the dispatch, not authored by the producer
 immutable: true
 tags: [reference, independent-review, adversarial-reviewer, mandate, review-gate, rgh-5, capstone]
@@ -28,6 +28,21 @@ tags: [reference, independent-review, adversarial-reviewer, mandate, review-gate
 > the producer's last step — it backstops the running review, it does not replace it. A
 > close-out-only review is acceptable only on low-stakes, non-state-changing work where there is
 > no intermediate producer output worth verifying step-by-step.
+
+---
+
+## 0. Register your session FIRST (RGH-11 — avoids the gate-skip loop)
+
+**Before you run any verification Bash, register this session as a reviewer.** The review gate (RGH-11) exempts a reviewer session's read-only Bash (greps, `find`, `shasum`, `python3 -c`, test runs) ONLY if a role-marker exists for your session. Without it, every read-only command you run re-triggers the Stop hook and forces an operator `gate-skip` on every output — the regress.
+
+Run this once, at the start. Your `<your-session-id>` appears in any gate-block message (under `--session`); `<producer-session>` is the session you are reviewing:
+
+```
+python3 ~/workspace/repos/ai-agency-core/scripts/mandatory-review-gate/register-reviewer-session.py \
+  --session <your-session-id> --reviewing-session <producer-session>
+```
+
+This is SAFE and is NOT a producer bypass: the marker grants ONLY scoped read-only-Bash exemption — any Write/Edit deliverable still gates regardless of role. If you were dispatched by the **reviewer-orchestrator**, this is already done for you and you can skip it. **Never ask the operator for repeated `gate-skip`s for read-only commands — register once instead.** (`--reviewing-session` only needs to differ from your own session id.)
 
 ---
 
