@@ -1,0 +1,93 @@
+{
+  "_comment": "DUPLICABILITY PROOF — demonstrates the lsa-setup skill works for a non-electrician trade. This is a fictional plumber in the same DC/MD/VA market. Every field exercises the engine without electrician-specific assumptions.",
+
+  "client_slug": "example-plumber",
+  "business_name_exact": "Acme Plumbing Solutions LLC",
+  "trade": "plumber",
+  "owner_name": "Jane Rodriguez",
+  "owner_email": "jane@acmeplumbing-example.com",
+
+  "license": {
+    "number": "PLB-2024-EXAMPLE",
+    "state": "VA",
+    "issuer": "Virginia DPOR",
+    "category": "Master Plumber",
+    "scope_notes": "Residential and commercial"
+  },
+
+  "insurance": {
+    "carrier": "State Farm",
+    "policy_number": "SF-EXAMPLE-001",
+    "coverage_amount": "$1,000,000",
+    "expiry": "2027-03-15",
+    "acord25_on_file": true,
+    "business_name_matches": true
+  },
+
+  "technicians": [
+    {
+      "name": "Carlos Mendez",
+      "background_check_status": "passed",
+      "background_check_date": "2026-01-10"
+    },
+    {
+      "name": "David Kim",
+      "background_check_status": "passed",
+      "background_check_date": "2026-02-22"
+    }
+  ],
+
+  "gbp": {
+    "verified": true,
+    "profile_url": "https://maps.google.com/?cid=example-plumber"
+  },
+
+  "service_area": {
+    "zip_codes": [
+      "22101", "22102", "22031", "22030",
+      "20814", "20815", "20816", "20817"
+    ],
+    "description": "McLean, Fairfax, Bethesda — Northern Virginia + Montgomery County MD"
+  },
+
+  "job_types": {
+    "enabled": [
+      "Drain Cleaning",
+      "Water Heater Installation",
+      "Water Heater Repair",
+      "Toilet Repair",
+      "Faucet Repair",
+      "Pipe Repair",
+      "Sewer Line Repair",
+      "Emergency Plumbing"
+    ],
+    "high_value": [
+      "Water Heater Installation",
+      "Sewer Line Repair",
+      "Pipe Repair"
+    ]
+  },
+
+  "budget": {
+    "monthly_usd": 300,
+    "weekly_pacing": "even"
+  },
+
+  "response": {
+    "who_answers": "Jane Rodriguez (owner)",
+    "target_seconds": 180
+  },
+
+  "hours": [
+    { "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], "opens": "07:00", "closes": "19:00" },
+    { "days": ["Saturday"], "opens": "08:00", "closes": "14:00" }
+  ],
+
+  "lsa_account": {
+    "url": "",
+    "created_date": "",
+    "verification_complete_date": "",
+    "go_live_date": "",
+    "badge_status": "pending"
+  }
+}

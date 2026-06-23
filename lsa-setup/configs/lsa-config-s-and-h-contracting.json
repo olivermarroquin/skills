@@ -1,0 +1,82 @@
+{
+  "_comment": "LSA setup config for S&H Contracting Unlimited. Operator-gathered fields (license.number, insurance.*, technicians, owner_email) are blank until collected. Pre-filled from client-s-and-h-contracting.json where possible.",
+
+  "client_slug": "s-and-h-contracting",
+  "business_name_exact": "S&H Contracting Unlimited",
+  "trade": "electrician",
+  "owner_name": "Mohammed Salahuddin",
+  "owner_email": "",
+
+  "license": {
+    "number": "",
+    "state": "VA",
+    "issuer": "Virginia DPOR",
+    "category": "Master Electrician",
+    "scope_notes": ""
+  },
+
+  "insurance": {
+    "carrier": "",
+    "policy_number": "",
+    "coverage_amount": "$1,000,000",
+    "expiry": "",
+    "acord25_on_file": false,
+    "business_name_matches": false
+  },
+
+  "technicians": [],
+
+  "gbp": {
+    "verified": true,
+    "profile_url": "https://maps.google.com/?cid=s-and-h-contracting"
+  },
+
+  "service_area": {
+    "zip_codes": [
+      "22124", "22039", "22003", "22101", "22102",
+      "22193", "22192", "22191", "22060",
+      "22150", "22151", "22152", "22153"
+    ],
+    "description": "Oakton, Fairfax Station, Alexandria, McLean, Woodbridge, Springfield — Northern Virginia core + extended radius"
+  },
+
+  "job_types": {
+    "enabled": [
+      "Electrical Panel Upgrade",
+      "EV Charger Installation",
+      "Electrical Troubleshooting",
+      "Outlet Installation & Repair",
+      "Light Fixture Installation",
+      "Smoke & Carbon Monoxide Detector",
+      "Electrical Wiring",
+      "Emergency Electrical Service"
+    ],
+    "high_value": [
+      "Electrical Panel Upgrade",
+      "EV Charger Installation",
+      "Electrical Wiring"
+    ]
+  },
+
+  "budget": {
+    "monthly_usd": 300,
+    "weekly_pacing": "even"
+  },
+
+  "response": {
+    "who_answers": "Mohammed Salahuddin (owner)",
+    "target_seconds": 300
+  },
+
+  "hours": [
+    { "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], "opens": "00:00", "closes": "23:59" }
+  ],
+
+  "lsa_account": {
+    "url": "",
+    "created_date": "",
+    "verification_complete_date": "",
+    "go_live_date": "",
+    "badge_status": "pending"
+  }
+}

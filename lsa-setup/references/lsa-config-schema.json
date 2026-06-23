@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "lsa-config-schema",
+  "title": "LSA Setup Per-Client Config",
+  "description": "Configuration shape for the lsa-setup skill. One file per client at skills/lsa-setup/configs/lsa-config-<client_slug>.json. Zero hardcoded values in the skill engine — everything comes from this config.",
+  "type": "object",
+  "required": [
+    "client_slug",
+    "business_name_exact",
+    "trade",
+    "owner_name",
+    "owner_email",
+    "license",
+    "insurance",
+    "technicians",
+    "gbp",
+    "service_area",
+    "job_types",
+    "budget",
+    "response",
+    "hours"
+  ],
+  "properties": {
+    "client_slug": {
+      "type": "string",
+      "description": "Matches the client slug used across the system (e.g., 'ev-electric-services')."
+    },
+    "business_name_exact": {
+      "type": "string",
+      "description": "Exact legal business name. Must match the insurance certificate AND the LSA account name character-for-character. Mismatches cause verification rejection."
+    },
+    "trade": {
+      "type": "string",
+      "description": "LSA trade category (e.g., 'electrician', 'plumber', 'hvac', 'roofer', 'locksmith'). Must be in Google's supported LSA category list."
+    },
+    "owner_name": {
+      "type": "string",
+      "description": "Full legal name of the business owner. Used for background check."
+    },
+    "owner_email": {
+      "type": "string",
+      "description": "Google account email used for LSA signup. Should match the GBP owner account."
+    },
+    "license": {
+      "type": "object",
+      "required": ["state", "issuer", "category"],
+      "properties": {
+        "number": {
+          "type": "string",
+          "description": "License number. Blank until operator gathers from client."
+        },
+        "state": {
+          "type": "string",
+          "description": "State abbreviation (e.g., 'VA', 'MD', 'DC')."
+        },
+        "issuer": {
+          "type": "string",
+          "description": "Issuing authority (e.g., 'Virginia DPOR')."
+        },
+        "category": {
+          "type": "string",
+          "description": "License category (e.g., 'Master Electrician', 'Master Plumber')."
+        },
+        "scope_notes": {
+          "type": "string",
+          "description": "Any scope limitations (e.g., 'residential only'). Must match LSA categories selected."
+        }
+      }
+    },
+    "insurance": {
+      "type": "object",
+      "required": ["coverage_amount", "acord25_on_file", "business_name_matches"],
+      "properties": {
+        "carrier": {
+          "type": "string",
+          "description": "Insurance company name."
+        },
+        "policy_number": {
+          "type": "string",
+          "description": "Policy number."
+        },
+        "coverage_amount": {
+          "type": "string",
+          "description": "Coverage amount (minimum '$1,000,000')."
+        },
+        "expiry": {
+          "type": "string",
+          "format": "date",
+          "description": "Policy expiration date (YYYY-MM-DD). Track for renewal."
+        },
+        "acord25_on_file": {
+          "type": "boolean",
+          "description": "True when the ACORD-25 certificate has been collected."
+        },
+        "business_name_matches": {
+          "type": "boolean",
+          "description": "True when the name on the cert exactly matches business_name_exact."
+        }
+      }
+    },
+    "technicians": {
+      "type": "array",
+      "description": "Every technician who performs jobs under this LSA account. Each needs an individual background check, renewed annually.",
+      "items": {
+        "type": "object",
+        "required": ["name", "background_check_status"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "background_check_status": {
+            "type": "string",
+            "enum": ["not_started", "pending", "in_progress", "passed", "failed"],
+            "description": "Track per technician through the verification lifecycle."
+          },
+          "background_check_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Date background check was initiated or passed. Renewal due 12 months later."
+          }
+        }
+      }
+    },
+    "gbp": {
+      "type": "object",
+      "required": ["verified"],
+      "properties": {
+        "verified": {
+          "type": "boolean",
+          "description": "GBP must be verified before LSA setup can proceed (mandatory since Nov 2024)."
+        },
+        "profile_url": {
+          "type": "string",
+          "description": "Google Maps URL for the business profile."
+        }
+      }
+    },
+    "service_area": {
+      "type": "object",
+      "required": ["zip_codes"],
+      "properties": {
+        "zip_codes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "ZIP codes to target. TIGHT — off-area leads are not creditable since 2024."
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable service area description for operator reference."
+        }
+      }
+    },
+    "job_types": {
+      "type": "object",
+      "required": ["enabled", "high_value"],
+      "properties": {
+        "enabled": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "All LSA job-type categories to enable."
+        },
+        "high_value": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Subset of enabled — the premium job types to weight toward."
+        }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "required": ["monthly_usd", "weekly_pacing"],
+      "properties": {
+        "monthly_usd": {
+          "type": "number",
+          "description": "Monthly LSA budget in USD."
+        },
+        "weekly_pacing": {
+          "type": "string",
+          "enum": ["even", "manual"],
+          "description": "'even' = Google distributes evenly across weeks. 'manual' = operator sets weekly caps."
+        }
+      }
+    },
+    "response": {
+      "type": "object",
+      "required": ["who_answers", "target_seconds"],
+      "properties": {
+        "who_answers": {
+          "type": "string",
+          "description": "Who receives and responds to LSA leads."
+        },
+        "target_seconds": {
+          "type": "number",
+          "description": "Target response time in seconds. Google rewards fast responders."
+        }
+      }
+    },
+    "hours": {
+      "type": "array",
+      "description": "Business hours. Mirrors the client JSON hours shape.",
+      "items": {
+        "type": "object",
+        "required": ["days", "opens", "closes"],
+        "properties": {
+          "days": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "opens": { "type": "string" },
+          "closes": { "type": "string" }
+        }
+      }
+    },
+    "lsa_account": {
+      "type": "object",
+      "description": "Populated during Phase 3+. Not required at config creation time.",
+      "properties": {
+        "url": { "type": "string" },
+        "created_date": { "type": "string", "format": "date" },
+        "verification_complete_date": { "type": "string", "format": "date" },
+        "go_live_date": { "type": "string", "format": "date" },
+        "badge_status": {
+          "type": "string",
+          "enum": ["pending", "verified", "suspended"]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "_comment": "LSA setup config for EV Electric Services. Operator-gathered fields (license.number, insurance.*, technicians, owner_email) are blank until collected. Pre-filled from client-ev-electric-services.json where possible.",
+
+  "client_slug": "ev-electric-services",
+  "business_name_exact": "EV Electric Services",
+  "trade": "electrician",
+  "owner_name": "Ahmad Shaban",
+  "owner_email": "",
+
+  "license": {
+    "number": "",
+    "state": "VA",
+    "issuer": "Commonwealth of Virginia, Department of Professional and Occupational Regulation",
+    "category": "Master Electrician",
+    "scope_notes": ""
+  },
+
+  "insurance": {
+    "carrier": "",
+    "policy_number": "",
+    "coverage_amount": "$1,000,000",
+    "expiry": "",
+    "acord25_on_file": false,
+    "business_name_matches": false
+  },
+
+  "technicians": [],
+
+  "gbp": {
+    "verified": true,
+    "profile_url": "https://maps.google.com/?cid=ev-electric-services"
+  },
+
+  "service_area": {
+    "zip_codes": [
+      "22031", "22030", "22027", "22180", "22181", "22182",
+      "22101", "22102", "22124", "22003", "22015",
+      "22041", "22042", "22043", "22044", "22046"
+    ],
+    "description": "Fairfax, Vienna, McLean, Oakton, Tysons, Falls Church, Burke, Annandale — core Fairfax County service area"
+  },
+
+  "job_types": {
+    "enabled": [
+      "Electrical Panel Upgrade",
+      "EV Charger Installation",
+      "Electrical Troubleshooting",
+      "Outlet Installation & Repair",
+      "Light Fixture Installation",
+      "Smoke & Carbon Monoxide Detector",
+      "Electrical Wiring",
+      "Emergency Electrical Service"
+    ],
+    "high_value": [
+      "Electrical Panel Upgrade",
+      "EV Charger Installation",
+      "Electrical Wiring"
+    ]
+  },
+
+  "budget": {
+    "monthly_usd": 300,
+    "weekly_pacing": "even"
+  },
+
+  "response": {
+    "who_answers": "Ahmad Shaban (owner)",
+    "target_seconds": 300
+  },
+
+  "hours": [
+    { "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], "opens": "08:00", "closes": "18:00" },
+    { "days": ["Saturday"], "opens": "09:00", "closes": "16:00" }
+  ],
+
+  "lsa_account": {
+    "url": "",
+    "created_date": "",
+    "verification_complete_date": "",
+    "go_live_date": "",
+    "badge_status": "pending"
+  }
+}
