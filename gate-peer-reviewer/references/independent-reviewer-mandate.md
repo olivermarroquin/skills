@@ -3,7 +3,7 @@ type: reference
 skill: gate-peer-reviewer
 skill-version: 3.9
 created: 2026-06-16
-updated: 2026-06-23
+updated: 2026-06-25
 purpose: fixed-mandate for the independent adversarial reviewer — loaded from disk by the dispatch, not authored by the producer
 immutable: true
 tags: [reference, independent-review, adversarial-reviewer, mandate, review-gate, rgh-5, capstone]
@@ -31,18 +31,22 @@ tags: [reference, independent-review, adversarial-reviewer, mandate, review-gate
 
 ---
 
-## 0. Register your session FIRST (RGH-11 — avoids the gate-skip loop)
+## 0. Register your session FIRST (RGH-11 + RGH-17A — avoids the gate-skip loop)
 
 **Before you run any verification Bash, register this session as a reviewer.** The review gate (RGH-11) exempts a reviewer session's read-only Bash (greps, `find`, `shasum`, `python3 -c`, test runs) ONLY if a role-marker exists for your session. Without it, every read-only command you run re-triggers the Stop hook and forces an operator `gate-skip` on every output — the regress.
 
-Run this once, at the start. Your `<your-session-id>` appears in any gate-block message (under `--session`); `<producer-session>` is the session you are reviewing:
+**If you were dispatched by `dispatch-reviewer.py` or the reviewer-orchestrator,** your registration command is in the dispatch prompt — just fill in your session ID and run it.
+
+**If you were hand-dispatched (operator pasted a bare prompt),** run this once at the start. Your `<your-session-id>` appears in the FIRST gate-block message (under `--session`) — run any trivial Bash command to trigger it, then register:
 
 ```
 python3 ~/workspace/repos/ai-agency-core/scripts/mandatory-review-gate/register-reviewer-session.py \
   --session <your-session-id> --reviewing-session <producer-session>
 ```
 
-This is SAFE and is NOT a producer bypass: the marker grants ONLY scoped read-only-Bash exemption — any Write/Edit deliverable still gates regardless of role. If you were dispatched by the **reviewer-orchestrator**, this is already done for you and you can skip it. **Never ask the operator for repeated `gate-skip`s for read-only commands — register once instead.** (`--reviewing-session` only needs to differ from your own session id.)
+**The gate-block message is the ONLY authoritative source for your session ID.** Do NOT use `gate-whoami.py` — it returns the most recently active session, which is usually the producer's, not yours.
+
+This is SAFE and is NOT a producer bypass: the marker grants ONLY scoped read-only-Bash exemption — any Write/Edit deliverable still gates regardless of role. **Never ask the operator for repeated `gate-skip`s for read-only commands — register once instead.** For reviews of Cowork-authored changes with no producer CC session, use `--operator-dispatched` instead of `--reviewing-session`.
 
 ---
 
@@ -118,7 +122,18 @@ When the producer signals its session is done, run the close-out sweep (Phases A
    - Check the producer's spawn prompt or the chat context for a handoff path
    - Read the handoff file
 
-3. **If a handoff has a `## Definition of Done (machine-checkable)` section:**
+3. **Inventory discovery (CR-104 / RGH-15C) — MANDATORY for multi-page web property reviews:**
+   For any review involving a web property (WordPress site, static site, etc.), you MUST
+   **discover the actual page inventory** from the canonical source BEFORE running any
+   slug-by-slug verification. Never assume slug patterns or guess page names.
+   - WordPress: `curl -s "https://<domain>/wp-json/wp/v2/pages?per_page=100" | python3 -m json.tool`
+   - Or use the producer's audit output / dirty ledger as the source of truth for what pages exist.
+   - If you cannot reach the API, read the producer's data files (JSON configs, sitemap).
+   - **Regression note:** This step was added after [G3-EV] (CR-104) where the reviewer assumed page
+     slugs, hit 404s, misclassified them as "bare" pages, and issued 4 false BLOCKING catches —
+     all retracted. The same class of error it had accused the producer of.
+
+4. **If a handoff has a `## Definition of Done (machine-checkable)` section:**
    Run the DoD manifest walk (Phase B). If no DoD section exists, flag it as a finding
    and proceed to Phase C.
 
