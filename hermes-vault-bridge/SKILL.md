@@ -1,19 +1,24 @@
 ---
 name: vault-bridge
-description: "Read the operator's Knowledge OS vault — the spawn-queue and active-chats tracker — and surface handoff rows that are ready to spawn but not yet in-flight. Use when the operator asks to run the vault bridge, check the vault handoff queue, or see what handoffs are ready to spawn. Level 1: read and surface only; never claims, spawns, or writes."
-version: 1.0.0
+description: "Read the operator's Knowledge OS vault — the spawn-queue and active-chats tracker — surface handoff rows that are ready to spawn but not yet in-flight, and write claim ledger + status digest + event log + action log to the Hermes outbox. Use when the operator asks to run the vault bridge, check the vault handoff queue, or see what handoffs are ready to spawn. Level 1: read, surface, and write to outbox only; never claims, spawns, writes to the live vault, or does git push."
+version: 2.0.0
 platforms: [linux]
 metadata:
   hermes:
-    tags: [vault, handoff, spawn-queue, knowledge-os, bridge, operator]
+    tags: [vault, handoff, spawn-queue, knowledge-os, bridge, operator, outbox, claim-ledger, observability]
     related_skills: []
 ---
 
-# Vault Bridge Skill (Level 1 — Read + Surface)
+# Vault Bridge Skill (Level 1 — Read + Surface + Outbox Write-Back)
 
 You are the vault bridge. Your job is to read the operator's Knowledge OS vault
 (synced to this box via git), find handoff rows that are ready to spawn but not
-yet in-flight, and surface them via Telegram. You do NOT take action on them.
+yet in-flight, surface them via Telegram, and write observability data to the
+Hermes outbox (claim ledger, status digest, event log, action log).
+
+You do NOT take autonomous action on the rows. You do NOT write to the live
+vault clone. You do NOT do git push. The outbox is the air-gap — the operator
+reviews and merges.
 
 ## How to run
 
@@ -23,18 +28,22 @@ Execute the bridge script. It auto-detects its environment:
 python3 ~/.hermes/skills/vault-bridge/bridge.py
 ```
 
-The script auto-detects the vault path and mode at startup:
+The script auto-detects the vault path, outbox path, and mode at startup:
 
+**Vault path:**
 1. `VAULT_BRIDGE_BASE` env var if set (explicit override), else
 2. `/workspace/vault-second-brain` if it exists (container — sandbox mode), else
 3. `/home/hermes/hermes-data/vault/second-brain` (host — host mode)
 
-Mode is tied to the detected path:
-- **sandbox** (container): read-only, no git pull (host cron syncs; deploy key
-  not available per I23). Freshness = `.git/FETCH_HEAD` mtime, 7h threshold.
-- **host**: git pull on stale. Freshness = commit age, 15min threshold.
+**Outbox path:**
+1. `VAULT_BRIDGE_OUTBOX` env var if set (explicit override), else
+2. `/workspace/hermes-outbox` if it exists (container — writable mount), else
+3. `/home/hermes/hermes-data/hermes-outbox` (host)
 
-Override with `VAULT_BRIDGE_BASE` and `VAULT_BRIDGE_MODE` env vars if needed.
+Mode is tied to the detected vault path:
+- **sandbox** (container): read-only vault, no git pull (host cron syncs; deploy
+  key not available per I23). Freshness = `.git/FETCH_HEAD` mtime, 7h threshold.
+- **host**: git pull on stale. Freshness = commit age, 15min threshold.
 
 ## What happens
 
@@ -56,17 +65,28 @@ The script will:
 
 4. **Cross-reference** — filter out queued rows that are already in-flight.
 
-5. **Read referenced handoff files** — for context on each queued row.
+5. **Claim ledger check** — load `hermes-outbox/_meta/handoffs/_hermes-claimed.jsonl`
+   and skip rows already surfaced (idempotency — AC-8).
 
-6. **Read event log** — last ~50 rows of `_meta/_event-log.md` for freshness.
+6. **Read referenced handoff files** — for context on each queued row.
 
-7. **Output** — a formatted message listing ready rows (or "no new rows").
+7. **Read event log** — last ~50 rows of `_meta/_event-log.md` for freshness.
+
+8. **Write to outbox** (all writes go to hermes-outbox/, never the vault):
+   - Append new claims to `_meta/handoffs/_hermes-claimed.jsonl` (D-L)
+   - Write status digest to `_meta/handoffs/_hermes-status.md` (D-M)
+   - Append event to `_meta/_event-log-hermes.md` (D-M)
+   - Append action log entries to `_hermes-bridge-actions.jsonl` (D-N)
+
+9. **Output** — a formatted message listing ready rows (or "no new rows") +
+   write-back confirmation.
 
 ## What you do with the output
 
 Send the script's stdout output verbatim as a Telegram message to the operator.
-Relay the ENTIRE stdout block — it starts with 🔵 and contains the row list.
-Do not summarize, paraphrase, or omit any part of it.
+Relay the ENTIRE stdout block — it starts with a blue circle and contains the
+row list + write-back confirmation. Do not summarize, paraphrase, or omit any
+part of it.
 
 The action log (every file read, every operation) is written to
 `/tmp/hermes-vault-bridge.log` — NOT to stderr or stdout. You do not need
@@ -76,12 +96,13 @@ If the script exits with a stale-vault message, send that message instead.
 
 ## What you must NOT do
 
-- Do NOT write any files (no outbox, no claim ledger, no status updates)
 - Do NOT take autonomous action on any rows (no claiming, no spawning)
 - Do NOT read files outside the script's built-in allowlist
-- Do NOT modify the vault clone in any way (git pull is the only git operation)
+- Do NOT write to the live vault clone in any way
+- Do NOT do git push
 
-These capabilities ship in future waves. This is Level 1: read and surface only.
+The outbox is the air-gap. The operator reviews and merges outbox content into
+the live vault on the Mac side.
 
 ## Invocation
 
@@ -104,9 +125,9 @@ run the vault bridge
 
 | Code | Meaning |
 |---|---|
-| 0 | Success — message printed to stdout |
+| 0 | Success — message printed to stdout, outbox updated |
 | 1 | Error — could not read required files |
-| 2 | Stale vault — git pull failed, no data read |
+| 2 | Stale vault — git pull failed, no data read, no outbox writes |
 
 ## Installation
 
@@ -121,44 +142,42 @@ chmod 644 /home/hermes/.hermes/skills/vault-bridge/SKILL.md
 chmod 755 /home/hermes/.hermes/skills/vault-bridge/bridge.py
 ```
 
-### 2. Mount the vault clone into the container
+### 2. Mount the vault clone into the container (read-only)
 
-Hermes runs skills inside a rootless-Docker sandbox. The vault clone lives on
-the host at `/home/hermes/hermes-data/vault/second-brain/` but is NOT mounted
-by default. The deploy key (`~/.ssh/hermes-vault-deploy-key`) must NOT be
-mounted (I23 — keep secrets out of the container).
+Already done in Wave 2. The vault clone is mounted read-only at
+`/workspace/vault-second-brain` via a systemd `.mount` unit.
 
-The container's workspace bind mount (`…/sandboxes/docker/default/workspace`
-→ `/workspace`) inherits host bind mounts placed under the workspace source
-directory. Use a systemd `.mount` unit to make it durable and ordered before
-Hermes starts.
+### 3. Mount the outbox into the container (read-write)
+
+The outbox lives on the host at `/home/hermes/hermes-data/hermes-outbox/` but
+is NOT mounted by default. It must be writable from inside the container.
 
 **Step 1 — Create the mount point:**
 ```bash
-mkdir -p /home/hermes/.hermes/sandboxes/docker/default/workspace/vault-second-brain
+mkdir -p /home/hermes/.hermes/sandboxes/docker/default/workspace/hermes-outbox
 ```
 
 **Step 2 — Create the systemd mount unit:**
 
 Generate the correct unit filename on the box (don't hand-write it):
 ```bash
-UNIT_NAME=$(systemd-escape -p --suffix=mount /home/hermes/.hermes/sandboxes/docker/default/workspace/vault-second-brain)
+UNIT_NAME=$(systemd-escape -p --suffix=mount /home/hermes/.hermes/sandboxes/docker/default/workspace/hermes-outbox)
 echo "Unit filename: $UNIT_NAME"
 ```
 
-Then create the unit file:
+Then create the unit file (use the generated filename):
 ```bash
-cat > /etc/systemd/system/home-hermes-\\x2ehermes-sandboxes-docker-default-workspace-vault\\x2dsecond\\x2dbrain.mount << 'EOF'
+cat > "/etc/systemd/system/${UNIT_NAME}" << 'EOF'
 [Unit]
-Description=Vault clone bind mount for Hermes bridge skill
+Description=Outbox bind mount for Hermes bridge skill (rw)
 Before=hermes.service
 After=local-fs.target
 
 [Mount]
-What=/home/hermes/hermes-data/vault/second-brain
-Where=/home/hermes/.hermes/sandboxes/docker/default/workspace/vault-second-brain
+What=/home/hermes/hermes-data/hermes-outbox
+Where=/home/hermes/.hermes/sandboxes/docker/default/workspace/hermes-outbox
 Type=none
-Options=bind,ro
+Options=bind
 
 [Install]
 WantedBy=multi-user.target
@@ -168,32 +187,42 @@ EOF
 **Step 3 — Enable and start:**
 ```bash
 systemctl daemon-reload
-systemctl enable --now home-hermes-\\x2ehermes-sandboxes-docker-default-workspace-vault\\x2dsecond\\x2dbrain.mount
+systemctl enable --now "${UNIT_NAME}"
 ```
 
 **Step 4 — Verify:**
 ```bash
-mount | grep vault-second-brain
-ls /home/hermes/.hermes/sandboxes/docker/default/workspace/vault-second-brain/_meta/handoffs/_spawn-queue.md
+mount | grep hermes-outbox
+ls /home/hermes/.hermes/sandboxes/docker/default/workspace/hermes-outbox/_meta/handoffs/_hermes-claimed.jsonl
 ```
 
-In-container path: `/workspace/vault-second-brain`
-Set `VAULT_BRIDGE_BASE=/workspace/vault-second-brain` in the run command.
+In-container path: `/workspace/hermes-outbox`
 
 **Note:** The container must be rebuilt after the mount is in place (Hermes
 auto-rebuilds after ~5 min idle per `lifetime_seconds`, or force with
-`docker rm` on the sandbox container). The deploy key stays on the host only
-— never mounted into the container (I23).
+`docker rm` on the sandbox container). The outbox mount is read-write;
+the vault mount remains read-only; the deploy key stays on the host only (I23).
 
-### 3. Restart and verify
+### 4. Create symlink for box-side action log path (optional)
+
+The action log primary copy lives inside the outbox at
+`hermes-outbox/_hermes-bridge-actions.jsonl`. If you want the expected host
+path to work too:
 
 ```bash
+sudo -u hermes ln -sf /home/hermes/hermes-data/hermes-outbox/_hermes-bridge-actions.jsonl /home/hermes/hermes-data/hermes-bridge-actions.jsonl
+```
+
+### 5. Restart and verify
+
+```bash
+# Force container rebuild to pick up the new mount:
+docker rm -f $(docker ps -q --filter name=hermes) 2>/dev/null || true
 systemctl restart hermes
 ```
 
 Verify the skill is discoverable by sending "run the vault bridge" via
-Telegram. Live skill discovery does not depend on `.skills_prompt_snapshot.json`
-(that file is a stale dump, not the live source).
+Telegram. The output should now include a write-back confirmation line.
 
 ## Troubleshooting
 
@@ -201,8 +230,9 @@ Telegram. Live skill discovery does not depend on `.skills_prompt_snapshot.json`
   and the deploy key at `~/.ssh/hermes-vault-deploy-key`.
 - **"could not read spawn queue"** — the vault clone may be missing or
   corrupted. Check `/home/hermes/hermes-data/vault/second-brain/` exists.
-- **Empty results** — all queued rows may already be in-flight. Check the
-  active chats tracker.
-- **Skill not in prompt snapshot** — the skill was placed but not registered.
-  Restart Hermes (`systemctl restart hermes`). If still missing, investigate
-  the local skill discovery mechanism.
+- **Empty results** — all queued rows may already be in-flight or claimed.
+  Check the claim ledger: `cat hermes-outbox/_meta/handoffs/_hermes-claimed.jsonl`
+- **Outbox write failures** — check the outbox mount is active:
+  `mount | grep hermes-outbox`. Check permissions on hermes-outbox/.
+- **Skill not in prompt snapshot** — restart Hermes. If still missing,
+  investigate the local skill discovery mechanism.

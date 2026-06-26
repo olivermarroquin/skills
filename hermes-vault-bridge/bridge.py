@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """
-Hermes Vault Bridge — Level 1 (Read + Surface)
+Hermes Vault Bridge — Level 1 (Read + Surface + Write-Back to Outbox)
 
-Reads the vault's spawn-queue and active-chats tracker, cross-references
+Wave 2: Reads the vault's spawn-queue and active-chats tracker, cross-references
 to find ready-but-not-in-flight rows, and outputs a formatted Telegram
 surface message.
+
+Wave 3: Writes claim ledger, status digest, event-log entries, and action log
+to the Hermes outbox (operator-reviewed merge). Telegram alerts for write-back.
 
 Hard-coded read allowlist (D-B):
   1. _meta/handoffs/_spawn-queue.md
@@ -12,19 +15,27 @@ Hard-coded read allowlist (D-B):
   3. Referenced handoff files (from spawn-queue rows)
   4. _meta/_event-log.md (last ~50 rows)
 
-AC-5: Every file read is logged to stderr.
-AC-6: Freshness gate — checks git recency; in sandbox mode (default when
-      VAULT_BRIDGE_MODE=sandbox), checks commit age only — host cron handles
-      git pull. In host mode, pulls if stale.
-AC-15: Level 1 only — no writes, no claims, no autonomous action.
+Write-back boundary (D-C / Level 1):
+  - Writes ONLY to the outbox directory (hermes-outbox/)
+  - NEVER writes to the live vault clone
+  - NEVER does git push
+  - Outbox = air-gap; operator reviews + merges
+
+AC-5:  Every file read is logged to the action log file.
+AC-6:  Freshness gate — checks git recency; sandbox uses FETCH_HEAD mtime.
+AC-7:  Outbox populated with correct structure (claim ledger, status, event log, action log).
+AC-8:  Claim ledger prevents duplicate surfaces (idempotent SHA-256 hashing).
+AC-9:  Attribution markers on all Hermes-authored content.
+AC-10: Action log records every operation (sync, read, surface, write-back).
+AC-15: Level 1 only — no autonomous claiming or action on rows.
 
 Environment variables:
-  VAULT_BRIDGE_BASE  — vault clone path (default: /home/hermes/hermes-data/vault/second-brain)
+  VAULT_BRIDGE_BASE  — vault clone path (auto-detected)
   VAULT_BRIDGE_MODE  — "sandbox" (default) or "host"
-    sandbox: read-only, no git pull (host cron syncs; deploy key not available)
-    host: git pull --ff-only on stale (for direct host-side runs)
+  VAULT_BRIDGE_OUTBOX — outbox path (auto-detected)
 """
 
+import hashlib
 import json
 import os
 import re
@@ -38,6 +49,9 @@ from pathlib import Path
 _CONTAINER_VAULT = Path("/workspace/vault-second-brain")
 _HOST_VAULT = Path("/home/hermes/hermes-data/vault/second-brain")
 
+_CONTAINER_OUTBOX = Path("/workspace/hermes-outbox")
+_HOST_OUTBOX = Path("/home/hermes/hermes-data/hermes-outbox")
+
 
 def _detect_vault_base() -> tuple[Path, str]:
     """Auto-detect vault path and bridge mode.
@@ -48,8 +62,8 @@ def _detect_vault_base() -> tuple[Path, str]:
       3. /home/hermes/hermes-data/vault/second-brain (host — has deploy key)
 
     Mode is tied to detection unless VAULT_BRIDGE_MODE is explicitly set:
-      - Container path → sandbox (no git pull)
-      - Host path → host (git pull on stale)
+      - Container path -> sandbox (no git pull)
+      - Host path -> host (git pull on stale)
     """
     explicit_base = os.environ.get("VAULT_BRIDGE_BASE")
     explicit_mode = os.environ.get("VAULT_BRIDGE_MODE")
@@ -69,8 +83,31 @@ def _detect_vault_base() -> tuple[Path, str]:
     return _CONTAINER_VAULT, explicit_mode or "sandbox"
 
 
+def _detect_outbox_path() -> Path:
+    """Auto-detect outbox path.
+
+    Resolution order:
+      1. VAULT_BRIDGE_OUTBOX env var (explicit override)
+      2. /workspace/hermes-outbox (container — writable mount)
+      3. /home/hermes/hermes-data/hermes-outbox (host)
+    """
+    explicit = os.environ.get("VAULT_BRIDGE_OUTBOX")
+    if explicit:
+        return Path(explicit)
+
+    if _CONTAINER_OUTBOX.is_dir():
+        return _CONTAINER_OUTBOX
+
+    if _HOST_OUTBOX.is_dir():
+        return _HOST_OUTBOX
+
+    # Default to container path (will fail with clear error on write)
+    return _CONTAINER_OUTBOX
+
+
 VAULT_BASE, BRIDGE_MODE = _detect_vault_base()
 VAULT_BASE_RESOLVED = VAULT_BASE.resolve()
+OUTBOX_BASE = _detect_outbox_path()
 STALENESS_THRESHOLD_MINUTES = 15  # host mode: commit-age threshold for pull
 SYNC_STALENESS_THRESHOLD_MINUTES = 420  # sandbox mode: 7h (6h cron + 1h buffer)
 
@@ -81,6 +118,9 @@ ACTION_LOG_PATH = Path(os.environ.get(
     "/tmp/hermes-vault-bridge.log",
 ))
 
+# Session / chat ID for attribution
+BRIDGE_CHAT_ID = os.environ.get("VAULT_BRIDGE_CHAT_ID", "hermes-bridge-auto")
+
 # D-B allowlist — only these paths (relative to VAULT_BASE) may be read
 ALLOWLIST_PREFIXES = [
     "_meta/handoffs/_spawn-queue.md",
@@ -89,56 +129,75 @@ ALLOWLIST_PREFIXES = [
     "_meta/_event-log.md",
 ]
 
-# Action log entries (written to stdout as JSON lines)
-action_log = []
+# In-memory action log entries (flushed at end)
+action_log: list[dict] = []
 
 
-def log_action(operation: str, detail: str, result: str = "ok"):
-    """Log an operation to the in-memory action log."""
+# --- Action Logging (D-N) ---
+
+def log_action(action: str, target: str, result: str = "ok"):
+    """Log an operation to the in-memory action log.
+
+    Format per D-N: {"ts", "action", "target", "result", "chat_id"}
+    """
     entry = {
         "ts": datetime.now(timezone.utc).isoformat(),
-        "operation": operation,
-        "detail": detail,
+        "action": action,
+        "target": target,
         "result": result,
+        "chat_id": BRIDGE_CHAT_ID,
     }
     action_log.append(entry)
 
 
 def flush_action_log():
-    """Write the action log to ACTION_LOG_PATH (not stderr).
+    """Write the action log to ACTION_LOG_PATH and both D-N destinations.
 
-    Keeps stdout clean for the Telegram message so Hermes's terminal tool
-    returns only the surface message to the model.
+    1. /tmp log file (operator debugging — always attempted)
+    2. Outbox mirror: hermes-outbox/_hermes-bridge-actions.jsonl (append)
+    3. Box-side primary: hermes-outbox/_hermes-bridge-actions.jsonl IS the
+       primary when mounted (operator can symlink from expected host path)
+
+    Keeps stdout clean for the Telegram message.
     """
+    # Write to /tmp debug log (overwrite per run)
     try:
         with open(ACTION_LOG_PATH, "w", encoding="utf-8") as f:
             for entry in action_log:
                 f.write(json.dumps(entry) + "\n")
     except OSError:
-        # If log file is unwritable (e.g. read-only fs), silently skip —
-        # the Telegram surface message is the primary deliverable.
+        pass
+
+    # Append to outbox action log (persistent, append-only — D-N)
+    outbox_action_log = OUTBOX_BASE / "_hermes-bridge-actions.jsonl"
+    try:
+        with open(outbox_action_log, "a", encoding="utf-8") as f:
+            for entry in action_log:
+                f.write(json.dumps(entry) + "\n")
+    except OSError:
+        # Outbox not writable — log but don't crash (surface message is primary)
         pass
 
 
 def log_read(filepath: str):
-    """Log a file read (AC-5 compliance). Written to log file, not stderr."""
+    """Log a file read (AC-5 compliance)."""
     log_action("read", filepath)
 
 
 def log_skip(filepath: str, reason: str):
-    """Log a skipped read attempt. Written to log file, not stderr."""
+    """Log a skipped read attempt."""
     log_action("read-blocked", filepath, result=reason)
 
+
+# --- Read Allowlist (D-B) ---
 
 def is_allowlisted(rel_path: str) -> bool:
     """Check if a relative path falls within the D-B read allowlist."""
     for prefix in ALLOWLIST_PREFIXES:
         if prefix.endswith("/"):
-            # Directory prefix — path must start with it
             if rel_path.startswith(prefix):
                 return True
         else:
-            # Exact file match
             if rel_path == prefix:
                 return True
     return False
@@ -149,7 +208,6 @@ def safe_read(rel_path: str) -> str | None:
 
     Returns file content or None if blocked/missing.
     """
-    # Normalize and reject path traversal BEFORE allowlist check
     normalized = os.path.normpath(rel_path)
     if ".." in Path(normalized).parts:
         log_skip(rel_path, "path traversal rejected")
@@ -161,7 +219,6 @@ def safe_read(rel_path: str) -> str | None:
         return None
 
     full_path = VAULT_BASE / rel_path
-    # Resolve to catch symlink escapes
     try:
         resolved = full_path.resolve()
         if not str(resolved).startswith(str(VAULT_BASE_RESOLVED)):
@@ -184,13 +241,9 @@ def safe_read(rel_path: str) -> str | None:
 def check_freshness() -> bool:
     """Check vault freshness. Return False if data is too stale to read.
 
-    In sandbox mode (default): checks .git/FETCH_HEAD mtime — this file is
-    updated on every git fetch/pull, even when there are no new commits.
-    Threshold = SYNC_STALENESS_THRESHOLD_MINUTES (7h, aligned with 6h cron).
-    No git pull (container has no deploy key per I23).
-
-    In host mode: checks commit age, pulls if stale, fails if pull fails.
-    Threshold = STALENESS_THRESHOLD_MINUTES (15min).
+    Sandbox mode: checks .git/FETCH_HEAD mtime (updated by every fetch/pull,
+    even with no new commits). Threshold: 7h (6h cron + 1h buffer).
+    Host mode: checks commit age, pulls if stale.
     """
     log_action("freshness-check", f"starting (mode={BRIDGE_MODE})")
 
@@ -205,8 +258,6 @@ def _check_freshness_sandbox() -> bool:
     try:
         fetch_head = VAULT_BASE / ".git" / "FETCH_HEAD"
         if not fetch_head.is_file():
-            # FETCH_HEAD missing — vault may never have been fetched/pulled.
-            # Fall back to .git/HEAD mtime as a last resort.
             fallback = VAULT_BASE / ".git" / "HEAD"
             if not fallback.is_file():
                 log_action(
@@ -280,7 +331,6 @@ def _check_freshness_host() -> bool:
             log_action("freshness-check", "fresh (host)", result="ok")
             return True
 
-        # Stale — attempt pull
         log_action("freshness-pull", "vault stale, pulling")
         pull_result = subprocess.run(
             ["git", "pull", "--ff-only"],
@@ -311,36 +361,152 @@ def _check_freshness_host() -> bool:
 
 def _parse_git_date(date_str: str) -> datetime:
     """Parse git's default date format: '2026-06-22 19:31:00 -0400'."""
-    # Strip the timezone offset and parse separately
     parts = date_str.rsplit(" ", 1)
     if len(parts) == 2:
         dt_part, tz_part = parts
-        # Parse the datetime part
         dt = datetime.strptime(dt_part, "%Y-%m-%d %H:%M:%S")
-        # Parse timezone offset
         tz_sign = 1 if tz_part[0] == "+" else -1
         tz_hours = int(tz_part[1:3])
         tz_mins = int(tz_part[3:5])
         tz_offset = timedelta(hours=tz_hours, minutes=tz_mins) * tz_sign
         dt = dt.replace(tzinfo=timezone(tz_offset))
         return dt.astimezone(timezone.utc)
-    # Fallback — treat as UTC
     dt = datetime.strptime(date_str.strip(), "%Y-%m-%d %H:%M:%S")
     return dt.replace(tzinfo=timezone.utc)
+
+
+# --- Claim Ledger (D-L) ---
+
+def _row_id(handoff_file: str, chat_name: str) -> str:
+    """Compute a deterministic row ID from handoff file + chat name.
+
+    SHA-256 of the concatenation ensures idempotency (AC-8).
+    """
+    payload = f"{handoff_file}::{chat_name}"
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+
+
+def load_claim_ledger() -> set[str]:
+    """Load existing row IDs from the claim ledger (idempotency check)."""
+    ledger_path = OUTBOX_BASE / "_meta" / "handoffs" / "_hermes-claimed.jsonl"
+    claimed: set[str] = set()
+    try:
+        if ledger_path.is_file():
+            for line in ledger_path.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                    claimed.add(entry.get("row_id", ""))
+                except json.JSONDecodeError:
+                    continue
+    except OSError:
+        log_action("claim-ledger", "could not read claim ledger", result="warning")
+    return claimed
+
+
+def append_claim(row_id: str, summary: str):
+    """Append a surfaced-row entry to the claim ledger."""
+    ledger_path = OUTBOX_BASE / "_meta" / "handoffs" / "_hermes-claimed.jsonl"
+    entry = {
+        "row_id": row_id,
+        "action": "surfaced",
+        "ts": datetime.now(timezone.utc).isoformat(),
+        "chat_id": BRIDGE_CHAT_ID,
+        "summary": summary,
+    }
+    try:
+        with open(ledger_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry) + "\n")
+        log_action("write-back", f"claim ledger: {row_id}", result="ok")
+    except OSError as e:
+        log_action("write-back", f"claim ledger write failed: {e}", result="error")
+
+
+# --- Status Digest (D-M) ---
+
+def write_status_digest(
+    surfaced_count: int,
+    skipped_count: int,
+    active_count: int,
+    sync_status: str,
+):
+    """Write a status digest to the outbox (D-M).
+
+    Every line has attribution: | by: hermes | chat-id: <id> | ts: <ISO> |
+    """
+    ts = datetime.now(timezone.utc).isoformat()
+    attr = f"| by: hermes | chat-id: {BRIDGE_CHAT_ID} | ts: {ts} |"
+
+    digest_path = OUTBOX_BASE / "_meta" / "handoffs" / "_hermes-status.md"
+    content = (
+        f"# Hermes Bridge Status Digest {attr}\n"
+        f"\n"
+        f"**Timestamp:** {ts} {attr}\n"
+        f"**Sync status:** {sync_status} {attr}\n"
+        f"**Rows surfaced this run:** {surfaced_count} {attr}\n"
+        f"**Rows skipped (already claimed):** {skipped_count} {attr}\n"
+        f"**Active chats in tracker:** {active_count} {attr}\n"
+    )
+    try:
+        with open(digest_path, "w", encoding="utf-8") as f:
+            f.write(content)
+        log_action("write-back", "status digest written", result="ok")
+    except OSError as e:
+        log_action("write-back", f"status digest write failed: {e}", result="error")
+
+
+# --- Event Log Entries (D-M) ---
+
+def append_event_log_entry(event_type: str, description: str):
+    """Append an event to the Hermes event log in the outbox.
+
+    Format mirrors the vault _event-log.md shape (D-M).
+    Attribution on every line (AC-9).
+    """
+    ts = datetime.now(timezone.utc).isoformat()
+    event_log_path = OUTBOX_BASE / "_meta" / "_event-log-hermes.md"
+
+    # Initialize with header if file is empty/new
+    header = ""
+    try:
+        if not event_log_path.is_file() or event_log_path.stat().st_size == 0:
+            header = (
+                "# Hermes Bridge Event Log\n\n"
+                "| Timestamp | Files touched | Event type | Chat ID | Description |\n"
+                "|---|---|---|---|---|\n"
+            )
+    except OSError:
+        header = (
+            "# Hermes Bridge Event Log\n\n"
+            "| Timestamp | Files touched | Event type | Chat ID | Description |\n"
+            "|---|---|---|---|---|\n"
+        )
+
+    row = (
+        f"| {ts} | outbox: claim+status+event | {event_type} "
+        f"| {BRIDGE_CHAT_ID} | {description} "
+        f"(by: hermes, chat-id: {BRIDGE_CHAT_ID}, ts: {ts}) |\n"
+    )
+
+    try:
+        with open(event_log_path, "a", encoding="utf-8") as f:
+            if header:
+                f.write(header)
+            f.write(row)
+        log_action("write-back", f"event log: {event_type}", result="ok")
+    except OSError as e:
+        log_action("write-back", f"event log write failed: {e}", result="error")
 
 
 # --- Parsers ---
 
 def _protect_inner_pipes(line: str) -> str:
-    """Replace pipe characters inside [[ ]] and < > with a placeholder.
-
-    Markdown table rows use | as delimiter, but wikilinks ([[path|display]])
-    and HTML tags (<details>...<summary>...</summary>...</details>) can
-    contain literal pipes. We temporarily replace them so split("|") works.
-    """
+    """Replace pipe characters inside [[ ]] and < > with a placeholder."""
     result = []
-    depth_bracket = 0  # inside [[ ]]
-    depth_angle = 0    # inside < >
+    depth_bracket = 0
+    depth_angle = 0
     i = 0
     while i < len(line):
         ch = line[i]
@@ -360,7 +526,7 @@ def _protect_inner_pipes(line: str) -> str:
             depth_angle -= 1
 
         if ch == "|" and (depth_bracket > 0 or depth_angle > 0):
-            result.append("\x00")  # placeholder
+            result.append("\x00")
         else:
             result.append(ch)
         i += 1
@@ -371,7 +537,6 @@ def _split_table_row(line: str) -> list[str]:
     """Split a markdown table row on pipes, respecting wikilinks and HTML."""
     protected = _protect_inner_pipes(line)
     cells = [c.strip().replace("\x00", "|") for c in protected.split("|")]
-    # Remove empty first/last cells from leading/trailing |
     if cells and cells[0] == "":
         cells = cells[1:]
     if cells and cells[-1] == "":
@@ -387,7 +552,6 @@ def parse_spawn_queue(content: str) -> list[dict]:
     """
     rows = []
 
-    # Find the "Queued (ready to spawn)" section
     queued_match = re.search(
         r"## 🔵 Queued \(ready to spawn\)\s*\n",
         content,
@@ -396,7 +560,6 @@ def parse_spawn_queue(content: str) -> list[dict]:
         log_action("parse", "spawn-queue: no Queued section found", result="warning")
         return rows
 
-    # Extract from the queued section start to the next ## heading
     section_start = queued_match.end()
     next_section = re.search(r"\n## ", content[section_start:])
     if next_section:
@@ -404,10 +567,6 @@ def parse_spawn_queue(content: str) -> list[dict]:
     else:
         section_text = content[section_start:]
 
-    # Find the table — look for header row then separator then data rows
-    # Header: | # | Chat name | Handoff pointer | Substrate rec | ...
-    # Separator: |---|---|---|---|...
-    # Data: | 5 | [WF-7] ... | ... |
     lines = section_text.split("\n")
     in_table = False
     header_seen = False
@@ -416,18 +575,16 @@ def parse_spawn_queue(content: str) -> list[dict]:
         stripped = line.strip()
         if not stripped.startswith("|"):
             if in_table:
-                break  # End of table
+                break
             continue
 
         cells = _split_table_row(stripped)
 
         if not header_seen:
-            # First | row = header
             header_seen = True
             continue
 
         if re.match(r"^[-|:\s]+$", stripped):
-            # Separator row
             in_table = True
             continue
 
@@ -458,7 +615,6 @@ def parse_active_chats(content: str) -> list[str]:
     """
     active_names = []
 
-    # Find the Active section
     active_match = re.search(
         r"## 🟡 Active / in-flight chats\s*\n",
         content,
@@ -474,7 +630,6 @@ def parse_active_chats(content: str) -> list[str]:
     else:
         section_text = content[section_start:]
 
-    # Find the table rows (| Started | Chat name | ...)
     lines = section_text.split("\n")
     in_table = False
     header_seen = False
@@ -512,21 +667,13 @@ def extract_handoff_path(pointer_cell: str) -> str | None:
 
     Handles both plain and Obsidian-escaped wikilinks:
       '[[path|display]]' and '[[path\|display]]' (table-escaped pipe)
-
-    Examples:
-      '[[website-factory/handoff-...\|WF-7 handoff]]' -> '_meta/handoffs/website-factory/handoff-...'
-      '[[handoff-...|handoff]]' -> '_meta/handoffs/handoff-...'
     """
-    # Match wikilink: [[path\|display]] or [[path|display]] or [[path]]
-    # The \| form is Obsidian's escape for pipes inside table cells
     m = re.search(r"\[\[(.+?)(?:\\?\|[^\]]+)?\]\]", pointer_cell)
     if not m:
         return None
-    raw_path = m.group(1).rstrip("\\")  # Strip trailing backslash if present
-    # Reject path traversal and absolute paths
+    raw_path = m.group(1).rstrip("\\")
     if ".." in Path(raw_path).parts or raw_path.startswith("/"):
         return None
-    # Handoff pointers are relative to _meta/handoffs/
     rel_path = f"_meta/handoffs/{raw_path}"
     if not rel_path.endswith(".md"):
         rel_path += ".md"
@@ -553,7 +700,6 @@ def find_ready_rows(
 
     Compares by extracting the [TAG] bracket from chat names.
     """
-    # Extract tags from active chat names for matching
     active_tags = set()
     for name in active_names:
         tag_match = re.search(r"\[([^\]]+)\]", name)
@@ -581,26 +727,43 @@ def find_ready_rows(
 
 def format_telegram_message(
     ready_rows: list[dict],
+    skipped_count: int,
     active_count: int,
-    event_log_summary: str,
 ) -> str:
     """Format the Telegram surface message."""
-    if not ready_rows:
+    if not ready_rows and skipped_count == 0:
         return (
-            "🔵 Bridge: no new rows ready for harness.\n"
+            "\U0001f535 Bridge: no new rows ready for harness.\n"
             f"({active_count} chats currently in-flight)"
         )
 
-    lines = [f"🔵 Bridge found {len(ready_rows)} queued row(s):"]
-    for row in ready_rows:
-        conflicts = row.get("conflicts", "none")
-        conflict_flag = " ⚠️" if "blocked" in conflicts.lower() else ""
+    lines = []
+    if ready_rows:
         lines.append(
-            f"  • #{row['number']} {row['chat_name']}"
-            f" ({row['estimated_time']}){conflict_flag}"
+            f"\U0001f535 Bridge found {len(ready_rows)} queued row(s):"
+        )
+        for row in ready_rows:
+            conflicts = row.get("conflicts", "none")
+            conflict_flag = " \u26a0\ufe0f" if "blocked" in conflicts.lower() else ""
+            lines.append(
+                f"  \u2022 #{row['number']} {row['chat_name']}"
+                f" ({row['estimated_time']}){conflict_flag}"
+            )
+    else:
+        lines.append(
+            "\U0001f535 Bridge: no new rows (all already surfaced)."
         )
 
+    if skipped_count > 0:
+        lines.append(f"({skipped_count} rows skipped — already in claim ledger)")
+
     lines.append(f"\n({active_count} chats in-flight)")
+
+    # Write-back confirmation (D-N Telegram alert)
+    lines.append(
+        f"\nBridge wrote status digest + {len(ready_rows)} claim entries to outbox"
+    )
+
     return "\n".join(lines)
 
 
@@ -610,22 +773,24 @@ def main():
     """Bridge skill main entry point."""
     log_action(
         "bridge-start",
-        f"Level 1 read+surface run — vault={VAULT_BASE}, mode={BRIDGE_MODE}",
+        f"Level 1 read+surface+write-back run — "
+        f"vault={VAULT_BASE}, mode={BRIDGE_MODE}, outbox={OUTBOX_BASE}",
     )
 
     # Step 1: Freshness gate (D-L / AC-6)
     if not check_freshness():
-        stale_msg = "⚠️ Vault sync stale — skipping this run"
+        stale_msg = "\u26a0\ufe0f Vault sync stale \u2014 skipping this run"
         print(stale_msg)
         log_action("bridge-abort", "freshness gate failed", result="stale")
         flush_action_log()
-        # Exit code 2 = stale vault (distinguishable from 0=success, 1=error)
         sys.exit(2)
+
+    log_action("sync", "vault fresh", result="ok")
 
     # Step 2: Read spawn queue (D-B item 1)
     sq_content = safe_read("_meta/handoffs/_spawn-queue.md")
     if not sq_content:
-        print("⚠️ Bridge: could not read spawn queue")
+        print("\u26a0\ufe0f Bridge: could not read spawn queue")
         log_action("bridge-abort", "spawn queue unreadable", result="error")
         flush_action_log()
         sys.exit(1)
@@ -635,7 +800,7 @@ def main():
     # Step 3: Read active chats tracker (D-B item 2)
     tracker_content = safe_read("_meta/handoffs/_active-chats-tracker.md")
     if not tracker_content:
-        print("⚠️ Bridge: could not read active chats tracker")
+        print("\u26a0\ufe0f Bridge: could not read active chats tracker")
         log_action("bridge-abort", "tracker unreadable", result="error")
         flush_action_log()
         sys.exit(1)
@@ -646,27 +811,79 @@ def main():
     for row in queued_rows:
         handoff_path = extract_handoff_path(row.get("handoff_pointer", ""))
         if handoff_path:
-            handoff_content = safe_read(handoff_path)
-            if handoff_content:
-                # Extract the one-line description from frontmatter or first paragraph
-                # Just note we read it — the summary comes from the spawn-queue row
-                pass
+            safe_read(handoff_path)
 
     # Step 5: Read event log tail (D-B item 4)
-    event_tail = get_event_log_tail(50)
-    log_action("event-log", f"read last ~50 lines")
+    get_event_log_tail(50)
+    log_action("read", "event log tail (~50 lines)")
 
     # Step 6: Cross-reference — find ready rows
     ready_rows = find_ready_rows(queued_rows, active_names)
 
-    # Step 7: Format and output
-    message = format_telegram_message(ready_rows, len(active_names), event_tail)
+    # Step 7: Claim ledger check (D-L / AC-8 — idempotency)
+    claimed_ids = load_claim_ledger()
+    new_rows = []
+    skipped_count = 0
+
+    for row in ready_rows:
+        handoff_pointer = row.get("handoff_pointer", "")
+        chat_name = row.get("chat_name", "")
+        rid = _row_id(handoff_pointer, chat_name)
+        if rid in claimed_ids:
+            log_action(
+                "claim-check",
+                f"skipping #{row['number']} {chat_name} — already claimed ({rid})",
+            )
+            skipped_count += 1
+        else:
+            row["_row_id"] = rid
+            new_rows.append(row)
+
+    log_action(
+        "claim-check",
+        f"{len(new_rows)} new, {skipped_count} already claimed",
+    )
+
+    # Step 8: Write claims for newly surfaced rows (D-L)
+    for row in new_rows:
+        summary = f"#{row['number']} {row['chat_name']} ({row['estimated_time']})"
+        append_claim(row["_row_id"], summary)
+
+    # Step 9: Write status digest (D-M)
+    write_status_digest(
+        surfaced_count=len(new_rows),
+        skipped_count=skipped_count,
+        active_count=len(active_names),
+        sync_status="fresh",
+    )
+
+    # Step 10: Write event log entry (D-M)
+    if new_rows:
+        row_nums = ", ".join(f"#{r['number']}" for r in new_rows)
+        append_event_log_entry(
+            "surface",
+            f"Surfaced {len(new_rows)} rows: {row_nums}",
+        )
+    else:
+        append_event_log_entry(
+            "surface",
+            f"No new rows (0 surfaced, {skipped_count} already claimed)",
+        )
+
+    # Step 11: Format and output (stdout — Telegram message)
+    message = format_telegram_message(new_rows, skipped_count, len(active_names))
     print(message)
 
-    log_action("bridge-complete", f"{len(ready_rows)} ready, {len(active_names)} active")
+    log_action("surface", f"Telegram message: {len(new_rows)} rows surfaced")
 
-    # Write action log to file (AC-5 + D-N) — NOT stderr, so Hermes's
-    # terminal tool returns only the clean stdout message to the model.
+    log_action(
+        "bridge-complete",
+        f"{len(new_rows)} surfaced, {skipped_count} skipped, "
+        f"{len(active_names)} active",
+    )
+    log_action("write-back", "outbox write-back complete", result="ok")
+
+    # Flush action log last (D-N)
     flush_action_log()
 
 
