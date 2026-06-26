@@ -3,7 +3,7 @@ type: reference
 name: LSA management benchmarks
 description: Key performance benchmarks for LSA management decisions — CPL, book rate, response time. Sourced from the 2026-06-06 LSA economics research + Blue Grid Media Feb 2026 dataset.
 created: 2026-06-25
-updated: 2026-06-25
+updated: 2026-06-26
 tags: [reference, lsa, benchmarks, cpl, book-rate]
 ---
 
@@ -66,9 +66,15 @@ budget problem.
 
 | Job type | Typical revenue (DC metro) | CPL at $75–$90 | Leads to break even |
 |---|---|---|---|
-| Electrical panel upgrade | $2,400–$3,500 | $75–$90 | <1 booked job |
-| EV charger install | $1,200–$2,500 | $75–$90 | ~1 booked job |
-| General electrical | $200–$800 | $75–$90 | 1–3 booked jobs |
+| Electrical panel upgrade | $2,400–$3,500 ¹ | $75–$90 | <1 booked job |
+| EV charger install | $1,200–$2,500 ² | $75–$90 | ~1 booked job |
+| General electrical | $200–$800 ² | $75–$90 | 1–3 booked jobs |
+
+¹ Sourced from Homeyou + ProMatcher Fairfax, VA pricing data (cited in
+`[[research-2026-06-06-lsa-economics-dc-md-va-electrical]]`).
+² Operator estimates based on DC-metro market experience. Not from the
+cited research source — treat as planning approximations, not benchmarked
+figures.
 
 **Key insight:** One booked panel upgrade or EV charger install pays for
 several months of LSA spend at $300/month. The math works because the jobs

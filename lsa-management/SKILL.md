@@ -18,7 +18,7 @@ clients: [ev-electric-services, s-and-h-contracting]
 depends-on: [lsa-setup]
 unblocks: []
 created: 2026-06-25
-updated: 2026-06-25
+updated: 2026-06-26
 tags: [skill, lsa, local-services-ads, management, lead-rating, reporting, ads, client-growth, sop]
 ---
 
