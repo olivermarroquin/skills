@@ -1,9 +1,9 @@
 ---
 type: reference
 skill: gate-peer-reviewer
-skill-version: 3.7
+skill-version: 3.9
 created: 2026-06-15
-updated: 2026-06-16
+updated: 2026-07-02
 gate-type: G-chat-close
 registry-discipline: append-only — every operator-caught gap becomes a new OC row, incident cited
 supersedes-drafts:
@@ -359,6 +359,80 @@ the enforcement check that closes "instructed but not enforced." Pairs with `[[_
 
 ---
 
+### OC-18: Task-definition — decision-need alignment (D1) — [PR-1]
+
+**Check:** The execution log's opening names the operator's decision-need, and the
+deliverable answers it (not just produces an artifact).
+
+**Procedure:**
+1. Read the execution log's first section / purpose statement.
+2. Read the originating handoff's purpose / "why" section.
+3. Verify the deliverable addresses the decision-need, not just the literal artifact.
+4. Missing purpose statement → WARN. Deliverable that answers only the artifact → WARN.
+
+**Severity:** WARN (judgment-dependent; upgraded to BLOCKING when a capability gap forced a
+weaker method — see OC-19).
+
+**Seed incident:** [A2] indexation — operator's decision-need was "why aren't pages indexed";
+deliverable was a count + `site:` check that couldn't answer the question. See
+[[productization-readiness-spec]] §D1.
+
+**Built by:** [PR-1] productization-readiness system (2026-07-02).
+
+---
+
+### OC-19: Capability-gap surfacing (D2) — [PR-1]
+
+**Check:** Any weaker-method substitution is registered as a CG-### entry in
+`[[_capability-gap-register]]` AND surfaced in the headline / close summary.
+
+**Procedure:**
+1. Grep execution log for substitution language: `"weaker"`, `"fallback"`, `"workaround"`,
+   `"limitation"`, `"blocked"`, `"couldn't use"`, `"not available"`, `"insufficient scope"`,
+   `"missing credential"`, `"API not accessible"`.
+2. For each hit, verify a matching CG-### entry exists in
+   `second-brain/_meta/handoffs/_capability-gap-register.md`.
+3. Verify the CG-### id appears in the first 20 lines of the execution log OR in the
+   event-log close row.
+4. Missing CG entry → BLOCKING. Missing headline surfacing → BLOCKING.
+
+**Seed incident:** [A2] — URL-Inspection API auth-scope gap buried as a limitation note;
+CG-001 registered retroactively. See [[productization-readiness-spec]] §D2.
+
+**Built by:** [PR-1] productization-readiness system (2026-07-02).
+
+---
+
+### OC-20: Productization-DoD completeness (B1–B6) — Productize-tier only — [PR-1]
+
+**Check:** A Productize-tier run has all six DoD items (B1–B6) present and substantive.
+
+**Procedure:**
+1. Confirm run tier = Productize (from execution log `**Tier:**` line or tracker row).
+2. For each B-item, run the machine-checkable signal grep:
+   - **B1 (repeatable steps):** execution log has `## Steps` / `## Procedure` / `## What Happened`
+     with ≥3 numbered/bulleted items.
+   - **B2 (engine/config split):** grep for `engine/config`, `Engine / config`, `config split`,
+     `client-specific`, `instance-specific`, `reusable engine` in exec log + SKILL.md.
+   - **B3 (config schema):** a table or YAML/JSON block with ≥2 named fields in SKILL.md or
+     exec log.
+   - **B4 (2nd-instance verdict):** grep for `2nd-instance`, `second instance`, `duplicab`,
+     `2nd-client`, `proven on`, `non-electrician proof`, `2nd-vertical` with an explicit
+     PASS/FAIL or named gap.
+   - **B5 (safety/quality rules):** grep for `safety`, `failure mode`, `quality rule`, `guard`,
+     `cross-contamination`, `leak` with ≥1 named failure mode + mitigation.
+   - **B6 (skill-candidacy verdict):** grep for `skill-candidacy`, `skill candidacy`,
+     `worth productizing`, `skill verdict` with explicit Yes/No.
+3. Any missing item → BLOCKING (for Productize-tier).
+4. Non-Productize tiers → skip (report `skipped (tier: Capture-only/Throwaway)`).
+
+**Seed incident:** [PR-1] founding — every prior Productize-class run lacked one or more of
+B2–B6 until the operator manually pushed for them. See [[productization-readiness-spec]] §B.
+
+**Built by:** [PR-1] productization-readiness system (2026-07-02).
+
+---
+
 ## B. Per-chat-type profiles (classification → check set)
 
 ### Classification logic
@@ -375,17 +449,19 @@ OC-7 (event-log completeness), OC-8 (Closing Protocol compliance), OC-9 (handoff
 diff), OC-11 (silent-skip sweep), OC-12 (per-deliverable existence), OC-15 (frontmatter
 freshness), OC-16 (commit-staging audit — **deferred at step-0 time**; runs at commit-time
 via pre-push hook or RGH-5 post-commit dispatch; see OC-16 trigger-timing note), OC-17
-(firing-tracker row present — **BLOCKING**; promoted 2026-06-19 per CR-040; advisory-only on Cowork).
+(firing-tracker row present — **BLOCKING**; promoted 2026-06-19 per CR-040; advisory-only on Cowork),
+OC-18 (task-definition decision-need alignment — **WARN**; [PR-1]),
+OC-19 (capability-gap surfacing — **BLOCKING** when substitution detected; [PR-1]).
 
 ### Profile table
 
 | Profile | Identifying signals | Adds (on top of universal) | Expected artifacts (disk-verified) |
 |---|---|---|---|
 | **planning / decision** | handoff tagged planning/strategy; PROVISION run; decision slate | OC-1, OC-2, OC-3, OC-4, OC-5, OC-6 | decision record · exec log · PROVISION'd handoffs + queue rows + tracker rows · punchlist/Hot-decisions rows for owner-dependent items |
-| **build** (pages/sites/tools/skills) | code/artifact production; publishes; repo edits | OC-1, OC-2, OC-5, OC-6, OC-10, OC-13 | exec log · per-task build-log entries · pattern candidates noted · live-verify evidence · zero-hardcoded proof where DoD names it |
+| **build** (pages/sites/tools/skills) | code/artifact production; publishes; repo edits | OC-1, OC-2, OC-5, OC-6, OC-10, OC-13, OC-20 (Productize-tier only) | exec log · per-task build-log entries · pattern candidates noted · live-verify evidence · zero-hardcoded proof where DoD names it · B1–B6 productization items (Productize-tier) |
 | **research / extraction** (VIS, teardowns, deep-research) | source ingestion; dossiers; briefs | OC-1, OC-2, OC-5, OC-13 | source notes/dossier with retained raw evidence · intel-routing fields · quality-loop verdicts · synthesis cross-links |
 | **production-fire / deployment** | live-state changes (publish, GSC, DNS, cache, payments) | OC-1, OC-2, OC-3, OC-5, OC-6 + full 6-item KCA | exec log with live-verification evidence · `_deployment-status.md` ledger sync · D-rows for every surprise |
-| **skill-build** | creates/bumps a skill | OC-1, OC-2, OC-10 | SKILL.md + references on disk · version paperwork · second-config/second-target proof where DoD names it · toolkit-reuse-map sync · lesson file |
+| **skill-build** | creates/bumps a skill | OC-1, OC-2, OC-10, OC-20 (Productize-tier only) | SKILL.md + references on disk · version paperwork · second-config/second-target proof where DoD names it · toolkit-reuse-map sync · lesson file · B1–B6 productization items (Productize-tier) |
 | **micro** (single small artifact, <30 min, no state flips) | trivial edits | universal checks only (fast-path) | the artifact itself |
 
 ---
@@ -408,6 +484,12 @@ via pre-push hook or RGH-5 post-commit dispatch; see OC-16 trigger-timing note),
 - Unarmed recurring recommendation with a named excuse (OC-6)
 - Cosmetic protocol drift — count off by one (OC-8)
 - 1-2 stale `updated:` frontmatter fields (OC-15)
+- Missing decision-need purpose statement (OC-18 — judgment-dependent)
+- Missing Productization-DoD items for non-Productize tier (OC-20 — skipped)
+
+### BLOCKING (gate does not pass) — [PR-1] additions
+- Weaker-method substitution without CG entry or headline surfacing (OC-19)
+- Missing Productization-DoD item (B1–B6) for Productize-tier run (OC-20)
 
 ### Verdict mapping to return contract
 - Zero catches → `PASS`

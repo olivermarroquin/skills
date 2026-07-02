@@ -3,7 +3,7 @@ type: reference
 skill: gate-peer-reviewer
 skill-version: 3.9
 created: 2026-06-16
-updated: 2026-06-25
+updated: 2026-07-02
 purpose: fixed-mandate for the independent adversarial reviewer — loaded from disk by the dispatch, not authored by the producer
 immutable: true
 tags: [reference, independent-review, adversarial-reviewer, mandate, review-gate, rgh-5, capstone]
@@ -224,6 +224,39 @@ For build chats, also run the Layer-A checks:
 - **OC-15: Frontmatter freshness** — updated dates correct
 - **OC-16: Commit staging audit** — only this chat's files staged
 
+**[PR-1] additions — run on ALL chats:**
+- **OC-18: Task-definition — decision-need alignment.** Does the deliverable answer the
+  operator's decision-need (not just produce the artifact)? WARN if missing purpose statement.
+- **OC-19: Capability-gap surfacing.** If the run used a weaker method (grep for substitution
+  language in the execution log), verify a CG-### entry exists in
+  `_meta/handoffs/_capability-gap-register.md` AND the CG id appears in the headline/close
+  summary. Missing → BLOCKING.
+
+**[PR-1] additions — Productize-tier only:**
+- **OC-20: Productization-DoD completeness (B1–B6).** Verify all six items are present and
+  substantive per the machine-checkable signals in
+  `[[productization-readiness-spec]]` §B. Missing item → BLOCKING.
+
+### Phase D2 — Tier confirmation ([PR-1] — every chat)
+
+1. **Read the run's tier** from the execution log (`**Tier:**` line) or tracker row.
+2. **Verify the tier matches the work:**
+   - A Productize-tier run that only debugged a one-off → should be Capture-only (catch: Process).
+   - A Capture-only run that built a reusable engine → should be Productize (catch: Process).
+   - A Throwaway run that made architectural decisions → should be Capture-only (catch: Process).
+3. **If the producer did NOT propose a tier,** apply the default per
+   [[productization-readiness-spec]] §A and note it as a finding.
+4. **Record the tier in your firing-tracker row** (`Tier` column).
+
+### Phase D3 — Catch→check ratchet verification ([PR-1] — every chat that closes a CR)
+
+For any `CR-###` being marked "Applied" or "Resolved" this run:
+1. Verify it meets one of: **(a)** converted into a deterministic check (name the OC-###,
+   RGH-18 check, or RGH-19 check), OR **(b)** explicit operator-approved "can't-be-deterministic"
+   exception recorded in the CR row.
+2. A CR closed without either → BLOCKING. The ratchet prevents the same miss from recurring.
+3. See [[productization-readiness-spec]] §F for the full rule.
+
 ### Phase E — Convergence loop
 
 **A single review pass has blind spots.** After completing Phases B–D:
@@ -269,7 +302,7 @@ Schema:
     "converged": true | false
   },
   "cost_usd": 0.0,
-  "mandate_version": "1.2",
+  "mandate_version": "1.3",
   "mandate_path": "skills/gate-peer-reviewer/references/independent-reviewer-mandate.md"
 }
 ```
@@ -339,8 +372,14 @@ python3 ~/workspace/repos/ai-agency-core/scripts/mandatory-review-gate/log-revie
 
 ## 7. Version
 
-- **Mandate version:** 1.2
+- **Mandate version:** 1.3
 - **Created by:** [RGH-5] independent-reviewer-dispatch (2026-06-16)
+- **v1.3 (2026-07-02):** [PR-1] productization-readiness additions — Phase D: added OC-18
+  (task-definition decision-need alignment), OC-19 (capability-gap surfacing), OC-20
+  (Productization-DoD B1–B6 completeness, Productize-tier only). Added Phase D2 (tier
+  confirmation — verify producer's tier proposal matches actual work). Added Phase D3
+  (catch→check ratchet verification — any CR being closed must have a matching deterministic
+  check or operator exception). See [[productization-readiness-spec]].
 - **v1.2 (2026-06-18):** Added Phase C item 7 — adversarial verification disciplines (run it,
   count it, vary the test data, probe escape hatches, diff result-vs-claim). Sourced from the
   first real-use evidence in the review-skill firing tracker: the producer's own in-session
