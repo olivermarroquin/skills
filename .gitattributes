@@ -1,0 +1,3 @@
+# Regression-test fixtures are frozen captures; ignore CRLF/LF churn so they
+# stop reappearing as phantom modifications.
+gate-peer-reviewer/references/regression-fixtures/** -text
