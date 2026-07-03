@@ -1,0 +1,85 @@
+{
+  "_comment": "Schema-sync profile for S&H Contracting Unlimited. Used by schema_sync_engine.py.",
+  "client_slug": "s-and-h-contracting",
+
+  "wordpress": {
+    "domain": "shcontractingunlimited.com",
+    "api_user": "oliver@keelworks.ai",
+    "api_password_env": "WP_APP_PASSWORD_SH",
+    "seo_plugin": "yoast"
+  },
+
+  "schema_config": {
+    "business_type_schema": "LocalBusiness",
+    "canonical_business_id": "https://shcontractingunlimited.com/#business",
+
+    "howto_step_selectors": [
+      {
+        "_comment": "S&H process-step pattern — same evp- design system as EV (shared design system)",
+        "combined_pattern": "evp-step-badge[^>]*>(\\d+)</div>.*?<h3[^>]*>(.*?)</h3>.*?<p[^>]*>(.*?)</p>"
+      }
+    ],
+
+    "speakable_css_selectors": [
+      ".evp-faq-list",
+      ".evp-process-list",
+      ".evp-hero-content h1",
+      ".evp-section h2"
+    ],
+
+    "skip_widget_patterns": ["ti-review-*"]
+  },
+
+  "pages": [
+    {"url": "https://shcontractingunlimited.com/", "class": "core-home", "wp_id": null, "store": "elementor_kw_jsonld"},
+    {"url": "https://shcontractingunlimited.com/about/", "class": "core-about", "wp_id": null, "store": "elementor_kw_jsonld"},
+    {"url": "https://shcontractingunlimited.com/contact/", "class": "core-contact", "wp_id": null, "store": "elementor_kw_jsonld"},
+
+    {"url": "https://shcontractingunlimited.com/electrical-troubleshooting/", "class": "hub", "wp_id": null, "store": "content_raw"},
+    {"url": "https://shcontractingunlimited.com/panel-upgrade/", "class": "hub", "wp_id": null, "store": "content_raw"},
+    {"url": "https://shcontractingunlimited.com/ev-charger-installation/", "class": "hub", "wp_id": null, "store": "content_raw"},
+    {"url": "https://shcontractingunlimited.com/light-fixture-installation/", "class": "hub", "wp_id": null, "store": "content_raw"},
+    {"url": "https://shcontractingunlimited.com/smoke-alarm-installation/", "class": "hub", "wp_id": null, "store": "content_raw"},
+    {"url": "https://shcontractingunlimited.com/outlet-installation/", "class": "hub", "wp_id": null, "store": "content_raw"},
+
+    {"url": "https://shcontractingunlimited.com/electrical-troubleshooting-oakton-va/", "class": "leaf", "wp_id": null, "store": "content_raw"},
+    {"url": "https://shcontractingunlimited.com/electrical-troubleshooting-fairfax-station-va/", "class": "leaf", "wp_id": null, "store": "content_raw"},
+    {"url": "https://shcontractingunlimited.com/electrical-troubleshooting-alexandria-va/", "class": "leaf", "wp_id": null, "store": "content_raw"},
+    {"url": "https://shcontractingunlimited.com/electrical-troubleshooting-mclean-va/", "class": "leaf", "wp_id": null, "store": "content_raw"},
+    {"url": "https://shcontractingunlimited.com/panel-upgrade-oakton-va/", "class": "leaf", "wp_id": null, "store": "content_raw"},
+    {"url": "https://shcontractingunlimited.com/panel-upgrade-fairfax-station-va/", "class": "leaf", "wp_id": null, "store": "content_raw"},
+    {"url": "https://shcontractingunlimited.com/panel-upgrade-alexandria-va/", "class": "leaf", "wp_id": null, "store": "content_raw"},
+    {"url": "https://shcontractingunlimited.com/panel-upgrade-mclean-va/", "class": "leaf", "wp_id": null, "store": "content_raw"},
+    {"url": "https://shcontractingunlimited.com/ev-charger-oakton-va/", "class": "leaf", "wp_id": null, "store": "content_raw"},
+    {"url": "https://shcontractingunlimited.com/ev-charger-fairfax-station-va/", "class": "leaf", "wp_id": null, "store": "content_raw"},
+    {"url": "https://shcontractingunlimited.com/ev-charger-alexandria-va/", "class": "leaf", "wp_id": null, "store": "content_raw"},
+    {"url": "https://shcontractingunlimited.com/ev-charger-mclean-va/", "class": "leaf", "wp_id": null, "store": "content_raw"},
+    {"url": "https://shcontractingunlimited.com/light-fixture-installation-oakton-va/", "class": "leaf", "wp_id": null, "store": "content_raw"},
+    {"url": "https://shcontractingunlimited.com/smoke-alarm-oakton-va/", "class": "leaf", "wp_id": null, "store": "content_raw"},
+    {"url": "https://shcontractingunlimited.com/outlet-installation-oakton-va/", "class": "leaf", "wp_id": null, "store": "content_raw"},
+    {"url": "https://shcontractingunlimited.com/light-fixture-installation-fairfax-station-va/", "class": "leaf", "wp_id": null, "store": "content_raw"},
+    {"url": "https://shcontractingunlimited.com/smoke-alarm-fairfax-station-va/", "class": "leaf", "wp_id": null, "store": "content_raw"},
+    {"url": "https://shcontractingunlimited.com/outlet-installation-fairfax-station-va/", "class": "leaf", "wp_id": null, "store": "content_raw"},
+    {"url": "https://shcontractingunlimited.com/light-fixture-installation-alexandria-va/", "class": "leaf", "wp_id": null, "store": "content_raw"},
+    {"url": "https://shcontractingunlimited.com/smoke-alarm-alexandria-va/", "class": "leaf", "wp_id": null, "store": "content_raw"},
+    {"url": "https://shcontractingunlimited.com/outlet-installation-alexandria-va/", "class": "leaf", "wp_id": null, "store": "content_raw"}
+  ],
+
+  "human_in_loop_steps": [
+    {
+      "step": "aggregate_rating_read",
+      "description": "Read the CURRENT Google review count + rating from the live GBP listing for S&H Contracting Unlimited. GBP is not headless-fetchable.",
+      "output_needed": "--rating <value> --count <value> args for the sync-rating command"
+    },
+    {
+      "step": "keelworks_jsonld_head_plugin_install",
+      "description": "The keelworks-jsonld-head plugin must be installed on shcontractingunlimited.com. Upload via WP Admin > Plugins > Add New > Upload Plugin.",
+      "prerequisite_for": "inject-lb command (Elementor pages)"
+    },
+    {
+      "step": "wp_page_ids",
+      "description": "S&H page WP IDs are not yet populated in this profile. Run: curl -s -u user:pass 'https://shcontractingunlimited.com/wp-json/wp/v2/pages?per_page=100&_fields=id,slug' to get them, then update this profile.",
+      "output_needed": "wp_id values for each page entry"
+    }
+  ]
+}

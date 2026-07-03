@@ -1,0 +1,54 @@
+{
+  "_comment": "Schema-sync profile for Asian Delight (2nd-client proof — restaurant type). PLACEHOLDER content status — not a live client. Used by schema_sync_engine.py to prove the engine works from config alone with zero code changes.",
+  "_content_status": "placeholder",
+  "client_slug": "asian-delight",
+
+  "wordpress": {
+    "domain": "asiandelightbaltimore.com",
+    "api_user": "oliver@keelworks.ai",
+    "api_password_env": "WP_APP_PASSWORD_AD",
+    "seo_plugin": "yoast"
+  },
+
+  "schema_config": {
+    "business_type_schema": "Restaurant",
+    "canonical_business_id": "https://asiandelightbaltimore.com/#business",
+
+    "howto_step_selectors": [],
+    "_howto_note": "Restaurants typically have no process steps. Empty = HowTo injection skipped.",
+
+    "speakable_css_selectors": [
+      ".menu-section",
+      ".restaurant-info h1",
+      ".faq-list",
+      "main h2"
+    ],
+
+    "skip_widget_patterns": ["ti-review-*"]
+  },
+
+  "pages": [
+    {"url": "https://asiandelightbaltimore.com/", "class": "core-home", "wp_id": null, "store": "elementor_kw_jsonld"},
+    {"url": "https://asiandelightbaltimore.com/menu/", "class": "core-menu", "wp_id": null, "store": "content_raw"},
+    {"url": "https://asiandelightbaltimore.com/about/", "class": "core-about", "wp_id": null, "store": "elementor_kw_jsonld"},
+    {"url": "https://asiandelightbaltimore.com/contact/", "class": "core-contact", "wp_id": null, "store": "elementor_kw_jsonld"}
+  ],
+
+  "human_in_loop_steps": [
+    {
+      "step": "aggregate_rating_read",
+      "description": "Read the CURRENT Google review count + rating from the live GBP listing for Asian Delight. GBP is not headless-fetchable.",
+      "output_needed": "--rating <value> --count <value> args for the sync-rating command"
+    },
+    {
+      "step": "keelworks_jsonld_head_plugin_install",
+      "description": "The keelworks-jsonld-head plugin must be installed on asiandelightbaltimore.com.",
+      "prerequisite_for": "inject-lb command (Elementor pages)"
+    },
+    {
+      "step": "site_not_yet_live",
+      "description": "Asian Delight site is not yet live (domain placeholder). This profile proves the engine handles a different business type (Restaurant) from config alone — zero code changes needed. Actual sync commands will fail until the site exists.",
+      "output_needed": "N/A — dry-run proof only"
+    }
+  ]
+}
