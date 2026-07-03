@@ -265,6 +265,39 @@ Notes:
 
 - Blueprints are system-architecture specs. The evaluation checks completeness (every named component has a description) and consistency (the components named in §1 reappear in §3's data-flow section).
 
+### Per-city content brief (differentiation brief)
+
+A per-city content brief drives 2–3 service pages for one city. File naming: `brief-<city>-city-content-*.md` in the client's `content-briefs/` folder. The brief has frontmatter `type: brief` with `city:` and `drives-pages:` fields.
+
+Spec sources to load (five required + one optional):
+
+1. **Blueprint — Content-brief excellence standard** (required) — `vault://05_shared-intelligence/blueprints/blueprint-content-brief-excellence-standard.md`
+   - Drives: the §7 data-utilization checklist, the three non-negotiables, the maximal section menu, the carry-forward mandate.
+   - Missing → hard requirement miss.
+
+2. **Workflow — Content-brief peer-review SOP** (required) — `vault://05_shared-intelligence/workflows/workflow-content-brief-peer-review.md`
+   - Drives: the 5 review checks, verdict thresholds, catch-logging steps.
+
+3. **Gate-peer-reviewer facts profile: research-brief** (required) — `skills://gate-peer-reviewer/references/facts-profiles/research-brief.yaml`
+   - Drives: `jurisdiction_determinant` (GPR-15) sub-checks, `city_county_alignment`, `utility_companies`, `client_business_name`, `client_owner_name`.
+
+4. **Deterministic pre-flight scripts** (required — run, don't re-implement):
+   - `repos://ai-agency-core/scripts/brief-preflight.py` (LU-T1) — §7 data-utilization checks + GPR-15 jurisdiction sub-checks.
+   - `repos://ai-agency-core/scripts/brief-citation-sweep.py` (LU-T2) — wikilink resolution + numeric-claim source attribution.
+   - Run both scripts; incorporate their pass/fail into the evaluation. A script FAIL = hard requirement miss.
+
+5. **Plain-language conventions** (required) — `vault://_meta/plain-language-conventions.md`
+
+6. **City data file** (optional) — `repos://ai-agency-core/scripts/data/cities/<city-slug>.json`
+   - Drives: ground-truth cross-check of jurisdiction, county, utility claims in the brief.
+   - Missing → flag but don't block (city JSON may not exist yet for new cities).
+
+Notes:
+
+- The deterministic scripts (LU-T1 + LU-T2) are the automated pre-pass. They run BEFORE the model-judgment evaluation. A script FAIL is a hard requirement miss — fix the brief before proceeding with model evaluation.
+- The GPR-15 jurisdiction sub-checks in `brief-preflight.py` close the CR-140 defect class deterministically. The model-judgment residue (are the named authorities the *correct* two for this city?) still requires the independent reviewer's web-verification.
+- Sibling-differentiation checks (< 40% word-similarity) are DoD-level, not OQL-level — they require the sibling brief to compare against, which is outside the single-artifact OQL scope.
+
 ### Scaffolded service/city/client JSON
 
 Spec sources to load:

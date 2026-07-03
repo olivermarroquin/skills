@@ -81,6 +81,49 @@ facts_profile:
       match_mode: exact
       severity: blocking
 
+    # Jurisdiction-determinant: ZIP→jurisdiction anti-pattern (GPR-15, CR-140)
+    # A brief that maps ZIP codes to permitting jurisdiction / AHJ is asserting
+    # a false determinant — ZIPs cross municipal/corporate-limit boundaries.
+    - fact_key: jurisdiction_determinant
+      ground_truth_source_path: "cities/{city_slug}.json"
+      ground_truth_field: null   # no single field — this is a structural check
+      required_in_sources: false  # fires only when the brief names 2+ authorities
+      extraction_surfaces:
+        - body_text
+      extraction_patterns: []     # mechanized by brief-preflight.py sub-checks below
+      match_mode: structural
+      severity: blocking
+      sub_checks:
+        # (a) Anti-pattern flag: any line co-locating a ZIP with a jurisdiction
+        #     term in a way that asserts ZIP determines the permitting office.
+        - id: zip_jurisdiction_anti_pattern
+          description: "Flag any brief line that maps a ZIP code to a permitting jurisdiction / AHJ (ZIPs cross corporate limits)"
+          pattern: '(?i)(?:zip|ZIP)\s*(?:code)?\s*\d{5}.*?(?:permit|jurisdiction|City of|County|AHJ|Code Admin|LDS|building official)|(?:permit|jurisdiction|AHJ|Code Admin|LDS|building official).*?(?:zip|ZIP)\s*(?:code)?\s*\d{5}'
+          deterministic: true
+          severity: blocking
+
+        # (b) Require a non-ZIP determinant when the brief names >=2 permitting
+        #     authorities for one city (corporate-limits / GIS / tax-bill test).
+        - id: require_non_zip_determinant
+          description: "When >=2 permitting authorities are named for one city, the brief must state a non-ZIP determinant (corporate-limits / GIS-parcel / tax-bill)"
+          required_determinant_terms:
+            - corporate.limits
+            - GIS
+            - parcel
+            - tax.bill
+            - town.limits
+            - zoning.approval
+          deterministic: true
+          severity: blocking
+
+        # (c) Cross-field ZIP-collision: a ZIP listed under one jurisdiction
+        #     must not also appear as another jurisdiction's office/neighborhood
+        #     address in the same brief (the 22035 self-contradiction class).
+        - id: zip_collision
+          description: "A ZIP under one jurisdiction must not also appear as another jurisdiction's office/neighborhood address"
+          deterministic: true
+          severity: blocking
+
   # This profile proves the mechanism is not SEO-specific:
   # - Same engine (ground-truth-value-cross-check procedure)
   # - Different artifact type (research brief, not HTML page)
