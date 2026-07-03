@@ -1,7 +1,7 @@
 ---
 type: reference
 skill: gate-peer-reviewer
-skill-version: 3.9
+skill-version: 4.0
 created: 2026-06-15
 updated: 2026-07-02
 gate-type: G-chat-close
@@ -431,6 +431,125 @@ B2–B6 until the operator manually pushed for them. See [[productization-readin
 
 **Built by:** [PR-1] productization-readiness system (2026-07-02).
 
+### OC-21: Execution-log substantive — [RGH-19]
+
+**Check:** Execution log exists, is non-empty (>100 chars body), has at least one required heading
+(`## What Happened` / `## Steps` / `## Procedure` / `## Decisions Made`), and has ≥3 list items.
+
+**Procedure:**
+1. Locate execution log (dirty-ledger file matching `execution-log`, or glob today's date).
+2. Verify body (after frontmatter) >100 chars.
+3. Verify ≥1 required heading present.
+4. Verify ≥3 bulleted/numbered list items under any heading.
+5. Any failure → BLOCKING.
+
+**Seed incident:** Repeated runs where exec log was either absent or a one-line stub — operator
+had to demand substance every time.
+
+**Built by:** [RGH-19] deterministic doc-completeness gate (2026-07-02).
+**Script:** `rgh19-doc-completeness.py` → `check_oc21_exec_log_substantive()`.
+
+### OC-22: Evidence-per-DoD-item — [RGH-19]
+
+**Check:** Every acceptance/DoD criterion in the handoff has a recorded result in the execution
+log — not an unbacked "trust me" claim.
+
+**Procedure:**
+1. Extract acceptance/DoD items from the handoff (checkbox or bullet items in `## Acceptance`
+   or `## Definition of Done`).
+2. For each criterion, search the execution log for key terms near an evidence marker
+   (PASS/FAIL/verified/confirmed/checked/count).
+3. Criterion without evidence → BLOCKING.
+
+**Seed incident:** A3 reviewer PASSED with "all criteria met" but no recorded dead-link-count
+evidence — the operator found it only by manual audit.
+
+**Built by:** [RGH-19] deterministic doc-completeness gate (2026-07-02).
+**Script:** `rgh19-doc-completeness.py` → `check_oc22_evidence_per_dod()`.
+
+### OC-23: Pattern-candidate tracking — [RGH-19]
+
+**Check:** Every "reusable: yes" marker in the execution log links to a promoted pattern file
+in `05_shared-intelligence/patterns/` or an explicit tracked deferral.
+
+**Procedure:**
+1. Grep exec log for `reusable.*yes` / `Reusable for future.*Yes`.
+2. For each match, check ±500 chars for a pattern link (`[[pattern-`) or deferral marker.
+3. Unlinked reusable-yes → BLOCKING.
+
+**Seed incident:** Multiple A3 patterns identified as reusable but never promoted — knowledge
+lost between sessions.
+
+**Built by:** [RGH-19] deterministic doc-completeness gate (2026-07-02).
+**Script:** `rgh19-doc-completeness.py` → `check_oc23_pattern_candidates()`.
+
+### OC-24: Catches-referenced — [RGH-19]
+
+**Check:** Every CR-### filed today (proxy for this run) appears in the execution log.
+
+**Procedure:**
+1. Scan `_review-gate-catch-register.md` for rows with today's date.
+2. Extract their CR-### IDs.
+3. Verify each appears in the execution log.
+4. Missing reference → BLOCKING.
+
+**Seed incident:** CRs filed during review but never mentioned in the execution log, making
+the run record incomplete for future reference.
+
+**Built by:** [RGH-19] deterministic doc-completeness gate (2026-07-02).
+**Script:** `rgh19-doc-completeness.py` → `check_oc24_catches_referenced()`.
+
+### OC-25: No-silent-deferrals — [RGH-19]
+
+**Check:** Every deferral/punchlist/TODO in the execution log points to a tracking surface
+(wikilink, CR-###, handoff, ticket, backlog).
+
+**Procedure:**
+1. Grep exec log for deferral markers (`deferred`, `punted`, `TODO`, `FIXME`, `future work`,
+   `not done`, `skipped`, `omitted`, `out of scope`).
+2. For each hit, check the line and ±2 lines for a tracking reference (`[[`, `CR-###`,
+   `handoff`, `ticket`, `tracked`, `registered`, `filed`).
+3. Silent deferral → BLOCKING.
+
+**Seed incident:** OC-11 (silent-skip sweep) was reviewer-judgment; this makes it deterministic
+code. Extends OC-11 for the execution-log surface.
+
+**Built by:** [RGH-19] deterministic doc-completeness gate (2026-07-02).
+**Script:** `rgh19-doc-completeness.py` → `check_oc25_no_silent_deferrals()`.
+
+### OC-26: Knowledge-capture-audit-ran — [RGH-19]
+
+**Check:** The 6-item knowledge capture audit checklist is recorded in the execution log.
+
+**Procedure:**
+1. Grep exec log for KCA markers (`knowledge capture audit`, `6-item`, checkbox items
+   for Lessons/Execution log/Event-log/State/Tool bugs/Patterns).
+2. Absence → BLOCKING.
+
+**Seed incident:** The KCA is required by `_handoff-run-standard` but was routinely skipped
+when not mechanically enforced.
+
+**Built by:** [RGH-19] deterministic doc-completeness gate (2026-07-02).
+**Script:** `rgh19-doc-completeness.py` → `check_oc26_kca_ran()`.
+
+### OC-27: Spec-vs-registry OC-number cross-check (CR-152 ratchet) — [RGH-19]
+
+**Check:** Every OC-N number referenced in spec/reference files matches a registered heading
+or table row in `omission-check-registry.md`. Mismatched numbers = BLOCKING.
+
+**Procedure:**
+1. Load the registry; extract all registered OC-N numbers from headings and table rows.
+2. Scan all `.md` files in `skills/gate-peer-reviewer/references/` (excluding the registry).
+3. For each OC-N reference in those specs, verify it exists in the registry.
+4. Mismatch → BLOCKING.
+
+**Seed incident:** CR-152 — `productization-readiness-spec.md` §G/§H used OC-17/18/19 while
+the registry used OC-18/19/20. Caught by independent reviewer, fixed R1. This check prevents
+recurrence.
+
+**Built by:** [RGH-19] deterministic doc-completeness gate (2026-07-02).
+**Script:** `rgh19-doc-completeness.py` → `check_oc27_spec_registry_crosscheck()`.
+
 ---
 
 ## B. Per-chat-type profiles (classification → check set)
@@ -451,17 +570,20 @@ freshness), OC-16 (commit-staging audit — **deferred at step-0 time**; runs at
 via pre-push hook or RGH-5 post-commit dispatch; see OC-16 trigger-timing note), OC-17
 (firing-tracker row present — **BLOCKING**; promoted 2026-06-19 per CR-040; advisory-only on Cowork),
 OC-18 (task-definition decision-need alignment — **WARN**; [PR-1]),
-OC-19 (capability-gap surfacing — **BLOCKING** when substitution detected; [PR-1]).
+OC-19 (capability-gap surfacing — **BLOCKING** when substitution detected; [PR-1]),
+OC-21 (exec-log substantive — **BLOCKING**; [RGH-19]),
+OC-25 (no-silent-deferrals — **BLOCKING**; [RGH-19]),
+OC-27 (spec-vs-registry OC cross-check — **BLOCKING**; [RGH-19]).
 
 ### Profile table
 
 | Profile | Identifying signals | Adds (on top of universal) | Expected artifacts (disk-verified) |
 |---|---|---|---|
 | **planning / decision** | handoff tagged planning/strategy; PROVISION run; decision slate | OC-1, OC-2, OC-3, OC-4, OC-5, OC-6 | decision record · exec log · PROVISION'd handoffs + queue rows + tracker rows · punchlist/Hot-decisions rows for owner-dependent items |
-| **build** (pages/sites/tools/skills) | code/artifact production; publishes; repo edits | OC-1, OC-2, OC-5, OC-6, OC-10, OC-13, OC-20 (Productize-tier only) | exec log · per-task build-log entries · pattern candidates noted · live-verify evidence · zero-hardcoded proof where DoD names it · B1–B6 productization items (Productize-tier) |
+| **build** (pages/sites/tools/skills) | code/artifact production; publishes; repo edits | OC-1, OC-2, OC-5, OC-6, OC-10, OC-13, OC-20 (Productize-tier only), OC-22, OC-23, OC-24, OC-26 | exec log · per-task build-log entries · pattern candidates noted · live-verify evidence · zero-hardcoded proof where DoD names it · B1–B6 productization items (Productize-tier) · evidence-per-DoD-item · CRs referenced |
 | **research / extraction** (VIS, teardowns, deep-research) | source ingestion; dossiers; briefs | OC-1, OC-2, OC-5, OC-13 | source notes/dossier with retained raw evidence · intel-routing fields · quality-loop verdicts · synthesis cross-links |
 | **production-fire / deployment** | live-state changes (publish, GSC, DNS, cache, payments) | OC-1, OC-2, OC-3, OC-5, OC-6 + full 6-item KCA | exec log with live-verification evidence · `_deployment-status.md` ledger sync · D-rows for every surprise |
-| **skill-build** | creates/bumps a skill | OC-1, OC-2, OC-10, OC-20 (Productize-tier only) | SKILL.md + references on disk · version paperwork · second-config/second-target proof where DoD names it · toolkit-reuse-map sync · lesson file · B1–B6 productization items (Productize-tier) |
+| **skill-build** | creates/bumps a skill | OC-1, OC-2, OC-10, OC-20 (Productize-tier only), OC-22, OC-23, OC-24, OC-26 | SKILL.md + references on disk · version paperwork · second-config/second-target proof where DoD names it · toolkit-reuse-map sync · lesson file · B1–B6 productization items (Productize-tier) · evidence-per-DoD-item · CRs referenced |
 | **micro** (single small artifact, <30 min, no state flips) | trivial edits | universal checks only (fast-path) | the artifact itself |
 
 ---
@@ -478,6 +600,13 @@ OC-19 (capability-gap surfacing — **BLOCKING** when substitution detected; [PR
 - Foreign-staged or omitted artifact in commit (OC-16)
 - Stale live reference after rename (OC-14)
 - Count exceeds source (OC-13)
+- Exec log absent or non-substantive (OC-21)
+- DoD item without recorded evidence (OC-22)
+- Reusable-yes without pattern link or deferral (OC-23)
+- CR filed this run not referenced in exec log (OC-24)
+- Silent deferral without tracking surface (OC-25)
+- Knowledge capture audit not recorded (OC-26)
+- OC-number mismatch between spec and registry (OC-27)
 
 ### WARN (pass with findings — fix before declaring done)
 - Stale memory (OC-4 — fix is one edit)

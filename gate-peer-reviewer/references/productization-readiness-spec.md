@@ -1,7 +1,7 @@
 ---
 type: reference
 skill: gate-peer-reviewer
-skill-version: 3.9
+skill-version: 4.0
 created: 2026-07-02
 updated: 2026-07-02
 purpose: The "automatable by default" standard — tier classifier, Productization-Readiness DoD (B1-B6), deliverable manifest template, gate extension spec for RGH-18/19, task-definition rules, catch→check ratchet. Built by [PR-1].
