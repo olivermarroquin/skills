@@ -1,9 +1,9 @@
 ---
 type: reference
 skill: reviewer-orchestrator
-skill-version: 1.0
+skill-version: 3.0
 created: 2026-06-22
-updated: 2026-06-22
+updated: 2026-07-03
 purpose: Prompt template and state contract for reviewer sub-agents dispatched by the reviewer-orchestrator. Each dispatched reviewer receives a filled copy of this template as its Agent prompt.
 tags: [reference, reviewer-orchestrator, dispatch, independent-review, rgh-9]
 ---
@@ -39,6 +39,20 @@ conflicts with it. If you cannot read it, STOP and report failure — do not pro
 - **Files to review:** {{files_list}}
 - **Gate tier:** {{gate_tier}}
 - **Gate ID:** {{gate_id}}
+
+## Deterministic pre-check context (v3.0)
+
+The orchestrator already ran RGH-18 (build-correctness) + RGH-19 (doc-completeness) deterministic
+checks BEFORE dispatching you. Both returned PASS (otherwise you would not have been dispatched).
+Their results:
+
+- **RGH-18:** {{rgh18_summary}}
+- **RGH-19:** {{rgh19_summary}}
+
+You do NOT need to re-run the deterministic checks. Focus your review on what deterministic checks
+CANNOT catch: content quality, insight correctness, architectural judgment, adversarial edge cases,
+and ground-truth verification against canonical sources. The deterministic layer verified structure
+and presence; you verify substance and correctness.
 
 ## Your dirty-ledger source
 
@@ -85,7 +99,7 @@ Schema:
     "converged": true | false
   },
   "cost_usd": 0.0,
-  "mandate_version": "1.2",
+  "mandate_version": "1.3",
   "mandate_path": "skills/gate-peer-reviewer/references/independent-reviewer-mandate.md"
 }
 ```
@@ -160,8 +174,9 @@ The dispatched reviewer may ONLY write to these paths:
 
 The reviewer MUST NOT write to:
 - Any producer artifact (read-only verification)
-- The event log (the orchestrator writes the event-log row)
+- The event log (the orchestrator writes the event-log row + handoff-bus row)
 - The active-chats tracker (the orchestrator or operator handles state transitions)
+- Reply files (the orchestrator generates producer-replies at Step 9)
 - Any file outside the zones above
 
 ## Failure modes
