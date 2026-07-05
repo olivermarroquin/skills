@@ -1,6 +1,8 @@
 # Closing Protocol Template
 
-This is the **canonical closing protocol** (a Step 0 paired-peer-review gate plus seven bookkeeping steps) that DECOMPOSE mode of the multi-chat-coordination skill appends verbatim to every generated handoff. It sits inside the prompt block of each handoff, between the Status section and the `--- end prompt ---` marker, so the chat consuming the handoff sees it as part of its own instructions.
+> **Canonical source (v2, 2026-07-05):** `~/workspace/second-brain/_meta/session-close-protocol.md` is the single source of truth for how sessions end. This template is the verbatim-inserted rendering of Path A (handoff-spawned close). If this file and the canonical doc ever disagree, the canonical doc wins and this template gets fixed. Design rationale: `second-brain/_meta/specs/session-end-protocol-v2-spec.md`.
+
+This is the **closing protocol rendering** (a Step 0 paired-peer-review gate plus bookkeeping steps) that DECOMPOSE mode of the multi-chat-coordination skill appends verbatim to every generated handoff. It sits inside the prompt block of each handoff, between the Status section and the `--- end prompt ---` marker, so the chat consuming the handoff sees it as part of its own instructions.
 
 The protocol exists because prior chats forgot to update the tracker, forgot to flip handoff `status:` to `consumed`, used `git add .` instead of staging files by name, mixed inline comments into command blocks the operator was supposed to copy-paste verbatim, or just declared "done" without doing the tracker and git work. Baking the protocol into every handoff closes those gaps automatically.
 
@@ -27,6 +29,12 @@ If this chat wrote/edited files, changed live or external state, or produced a d
 **Step 1 — Verify scope completion.**
 
 Walk back through the "What you're building" + "Files to create" sections above. For each named deliverable, confirm it exists on disk with non-placeholder content. If anything is incomplete or contains TODO/FILL markers that should have been filled, fix it before closing. Do not declare done with known gaps.
+
+**Step 1b — Quality + tier verification (the "best we could build" check).** *(Added v2, 2026-07-05 — see `~/workspace/second-brain/_meta/session-close-protocol.md`.)*
+
+- **PR-1 tier validation:** confirm the run's tier (Productize / Capture-only / Throwaway, recorded in the execution log). **Productize-tier runs cannot close** without all six DoD items on disk (repeatable steps, engine/config split, config schema, 2nd-instance-from-config verdict, safety/quality rules, skill-candidacy verdict) — see `~/workspace/skills/gate-peer-reviewer/references/productization-readiness-spec.md`.
+- **Artifact evaluation:** emit `[output-quality-loop:eval]` for every deliverable produced. At close-time evals, run Mode 4 auto-research regardless of verdict — benchmark against the strongest published version of the artifact type, not just the spec. A NEEDS-REVISION or FAIL verdict must be resolved or explicitly surfaced to the operator before close — never silently carried.
+- **Capability gaps:** if this run used a weaker method because the better one was blocked, register it in `~/workspace/second-brain/_meta/handoffs/_capability-gap-register.md` (CG-### row) AND state it in the close headline. Never bury a substitution in a limitations footnote.
 
 **Step 2 — Update this handoff's frontmatter (+ YAML re-check).**
 
@@ -74,6 +82,17 @@ Record whether the three review skills fired on this run and what they caught. T
 - **For every catch worth keeping, every "the gate fired but missed X," and every limitation hit**, append a `CR-###` row to `~/workspace/second-brain/_meta/handoffs/_review-gate-catch-register.md` (the living catch/limitation memory) and put the id in the tracker row's Register-refs column. Append as you went, not from end-of-run memory. The register's "what would close it" is the source for the tracker's "what would make it worth keeping."
 - Bump the firing tracker's frontmatter `last-change` (single-quote wrapper), then regenerate the Excel view: `python3 ~/workspace/second-brain/_meta/scripts/build-review-firing-xlsx.py`
 
+**Step 3c — Update the project door card (`_chat-status.md`).** *(Added v2, 2026-07-05 — MANDATORY. This feeds the roll-up chain: door cards → master-tracker-aggregator → master tracker → operations-planner → mission-control-dashboard. Skipping it silently breaks operator reporting.)*
+
+Edit the project's status digest at `~/workspace/second-brain/04_projects/<area>/<name>/_chat-status.md` (shape per `~/workspace/skills/multi-chat-coordination/references/project-status-digest-shape.md`):
+
+- Bump `updated` to today
+- Adjust counts: in-flight (this chat leaves it), ready-to-spawn / queued (anything you promoted or consumed)
+- Set `last-closed` + a one-line summary of what shipped
+- Resolve any open-decisions this chat settled
+
+If the project has no `_chat-status.md` yet, create it from the shape doc. Vault-meta work with no project home skips this step — state the skip explicitly, don't skip silently.
+
 **Step 4 — Verify YAML parses cleanly.**
 
 Run from the second-brain repo root:
@@ -117,6 +136,16 @@ Rules:
 - **One block per repo.** If this chat edited both `~/workspace/second-brain/` and `~/workspace/skills/`, give TWO blocks. Each block opens with its own `cd` + `rm -f .git/index.lock`.
 - **Multi-line commit messages OK** via `-m "..."` syntax — describe what landed concretely (skill name, references shipped, downstream unblocks, pattern candidates). Avoid filler.
 - **Never push.** Per CLAUDE.md "What NOT to Do Without Explicit Approval" — commits only; Oliver pushes.
+
+**Step 6b — Drift Sweep.** *(Added v2, 2026-07-05. Catch the mess at the door — runs BEFORE declaring done.)*
+
+1. `status: active` handoffs with no tracker row (orphans)
+2. Tracker rows pointing at consumed/missing handoffs (dangling)
+3. Consumed handoffs still sitting in active sections
+4. YAML parse check on every vault file with frontmatter you touched (beyond the Step 4 tracker check)
+5. `grep -nE '^\| ~~'` on the tracker — zero strikethrough pointers (re-verify after all moves)
+
+Scope the sweep to files/clusters this chat touched plus the tracker. Fix findings now or surface them explicitly in the close message — a silent skip is a defect.
 
 **Step 7 — Declare the chat done.**
 
