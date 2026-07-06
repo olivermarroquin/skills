@@ -22,9 +22,11 @@ No other transformation. The protocol body is the source of truth; DECOMPOSE doe
 
 This protocol is **mandatory**. Do not declare the chat complete or hand control back to the operator until every step below has been executed. The operator has had to instruct prior chats to do this manually — that's the friction this section closes.
 
-**Step 0 — Confirm the paired independent peer-review returned a PASS.**
+**Step 0 — Dispatch the `G-chat-close` omission-audit gate + confirm the paired independent peer-review returned a PASS.**
 
-If this chat wrote/edited files, changed live or external state, or produced a deliverable, it MUST be paired with an **independent peer-review chat running in a separate session** (per `~/workspace/second-brain/05_shared-intelligence/patterns/pattern-independent-peer-review-chat.md` and `~/workspace/second-brain/_meta/templates/template-peer-review-chat.md`). That reviewer verifies your outputs step-by-step as you produce them — not at the end — and hands the operator a paste-ready reply each turn. **You may NOT declare this chat done until the paired reviewer has returned an explicit PASS** (zero-new-catch round, tracker accurate, no unresolved blocking findings). You do not author or clear that verdict yourself — that is the reviewer's job (no self-gate). If the chat is genuinely exempt (pure planning / read-only / trivial single-line non-state edit), state the exemption explicitly here rather than skipping silently. An in-session Task sub-agent verdict does NOT satisfy this on state-changing work — it is at best the weaker convenience mode.
+First, dispatch the **`G-chat-close` omission-audit gate**: classify the chat per `~/workspace/skills/gate-peer-reviewer/references/omission-check-registry.md` §B, run the matched check set per §D, and fix or explicitly surface every finding BEFORE writing any closure rows below. Verdict must be PASS (or BLOCKING with all findings surfaced to the operator). *(F-1 fix 2026-07-05 — this requirement was in the canonical doc + tracker but missing here.)*
+
+Second: if this chat wrote/edited files, changed live or external state, or produced a deliverable, it MUST be paired with an **independent peer-review chat running in a separate session** (per `~/workspace/second-brain/05_shared-intelligence/patterns/pattern-independent-peer-review-chat.md` and `~/workspace/second-brain/_meta/templates/template-peer-review-chat.md`). That reviewer verifies your outputs step-by-step as you produce them — not at the end — and hands the operator a paste-ready reply each turn. **You may NOT declare this chat done until the paired reviewer has returned an explicit PASS** (zero-new-catch round, tracker accurate, no unresolved blocking findings). You do not author or clear that verdict yourself — that is the reviewer's job (no self-gate). If the chat is genuinely exempt (pure planning / read-only / trivial single-line non-state edit), state the exemption explicitly here rather than skipping silently. An in-session Task sub-agent verdict does NOT satisfy this on state-changing work — it is at best the weaker convenience mode.
 
 **Step 1 — Verify scope completion.**
 
@@ -46,9 +48,9 @@ Edit `<HANDOFF_FILE_PATH>`:
 
 **After editing, verify the handoff's OWN frontmatter still parses cleanly:**
 
-```
+\`\`\`
 python3 -c "import yaml, re; m = re.match(r'^---\n(.*?)\n---\n', open('<HANDOFF_FILE_PATH>').read(), re.DOTALL); yaml.safe_load(m.group(1)); print('OK')"
-```
+\`\`\`
 
 Expected output: `OK`. If it errors, the most common cause is an unquoted colon-space in the `purpose:` line, the `actual-deliverable:` line (if you put it in frontmatter — see above; prefer body blockquote), or an unwrapped apostrophe inside a single-quoted value (apostrophes inside single quotes must be doubled: `it''s`, `Catliff''s`). Re-wrap or move to body blockquote per `~/workspace/skills/multi-chat-coordination/references/handoff-frontmatter-spec.md`. The trap that bit `handoff-2026-05-26-anti-ai-slop-house-voice-skill.md` + `intel-routing-rollout/phase-2-deployment.md` (both broken until the 2026-05-28 sweep): prose values added directly to YAML frontmatter without single-quote wrapping. Body blockquote avoids the trap entirely; use it for `actual-deliverable:`.
 
@@ -56,8 +58,8 @@ Expected output: `OK`. If it errors, the most common cause is an unquoted colon-
 
 Edit `<TRACKER_PATH>`:
 
-- **Move** this chat's row from "Active / in-flight" to "Recently closed" with a full outcome paragraph (deliverables, decisions, gotchas, downstream unblocks, pattern candidates). The destination section is the canonical location — **do not** leave a strikethrough'd pointer in "Active / in-flight" per the move-don't-strikethrough rule established at the nineteenth-pass reorganization.
-- Add a scannable one-liner to "Recently completed (past 7 days)"
+- **Move** this chat's row from "Active / in-flight" into **`~/workspace/second-brain/_meta/handoffs/_recently-closed.md`'s "Recently closed chats" section** with a full outcome paragraph (deliverables, decisions, gotchas, downstream unblocks, pattern candidates). Both closure records land in `_recently-closed.md`, NOT the tracker — the split introduced 2026-06-03 by [T2-1]. *(F-2 fix 2026-07-05 — destination file was unnamed here.)* The destination is the canonical location — **do not** leave a strikethrough'd pointer in "Active / in-flight" per the move-don't-strikethrough rule established at the nineteenth-pass reorganization.
+- Add a scannable one-liner to `_recently-closed.md`'s "Recently completed (past 7 days)" section
 - If this chat cleared a downstream chat's blocker, **move** that downstream chat from Tier-2 or Tier-3 to "Ready to spawn next" — again, move, don't strikethrough
 - Update the section's callout-line item count (e.g., "1 chat currently in flight" → "0 chats currently in flight" when you remove the last in-flight row)
 - If the chat cleared any other chat's blocker, promote that chat by **moving** the row from queue → Ready-to-spawn. Delete the source row entirely. Do **NOT** leave a strikethrough pointer behind — the destination section is the canonical location.
@@ -169,12 +171,12 @@ Example closings from real chats that landed well:
 
 > Skill shipped + 5 reference files + regression tests PASS. **Nothing immediately blocked on this** — Phase 2 of output-quality-loop already in flight (running in parallel). Tracker's Ready-to-spawn section is empty; Tier-2 has 4 outputquality-loop phases gated on the in-flight work landing.
 
-Only after Step 0's paired-reviewer PASS (or stated exemption) AND all seven steps complete may you say the chat is done. The "what's next to spawn" line is what the operator actually reads and acts on — make it specific.
+Only after Step 0's paired-reviewer PASS (or stated exemption) AND all steps (0 through 7, including sub-steps 1b/3b/3c/6b) complete may you say the chat is done. The "what's next to spawn" line is what the operator actually reads and acts on — make it specific.
 ```
 
 ## Notes for the skill (not part of the inserted template)
 
-- The triple-backtick-wrapped Step 4 and Step 6 blocks above are escaped with `\`\`\`` inside this template file so the outer code fence works. When inserting into a generated handoff, restore them to plain triple backticks.
+- The triple-backtick-wrapped Step 2, Step 3, and Step 4 blocks above are escaped with `\`\`\`` inside this template file so the outer code fence works. When inserting into a generated handoff, restore them to plain triple backticks.
 - The `<HANDOFF_FILE_PATH>` substitution always uses the **absolute path** so the consuming chat doesn't need to compute it from context.
 - If a chat is consumed but no git-trackable files were touched (rare, but possible for tracker-only updates that fail the YAML check and revert), Step 6 still runs — produce the block for the tracker file alone.
 - If the operator opts into auto-spawn (out of scope for v1), this protocol would need a Step 8 — register the next chat as in-flight in the tracker. Not included in v1.
