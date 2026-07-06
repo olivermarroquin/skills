@@ -182,7 +182,7 @@ When a chat does run the per-project Opening Protocol, the steps mirror the mast
 5. Verify YAML parses.
 6. Begin work.
 
-Closing Protocol mirrors the master Closing Protocol's seven steps — flip handoff frontmatter to consumed, add "Actual deliverable" blockquote, move row to "Recently closed chats", add one-liner to "Recently completed", bump `last-change`, verify YAML, propose git commands. Both protocols additionally update the companion `_chat-status.md` digest (see [[project-status-digest-shape]] for the digest contract).
+Closing Protocol mirrors the master Closing Protocol (canonical: `~/workspace/second-brain/_meta/session-close-protocol.md`, v2 2026-07-05) — flip handoff frontmatter to consumed, add "Actual deliverable" blockquote, move row to "Recently closed chats", add one-liner to "Recently completed", bump `last-change`, verify YAML, propose git commands, plus the v2 additions: quality + tier verification (1b), the mandatory `_chat-status.md` door-card update (3c — see [[project-status-digest-shape]] for the digest contract), and the drift sweep (6b).
 
 ## YAML safety
 

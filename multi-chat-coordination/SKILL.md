@@ -727,7 +727,7 @@ The operator reads, picks. If they pick something other than rank 1, that's a si
 - `references/handoff-frontmatter-spec.md` — the frontmatter shape for handoff files
 - `references/project-subfolder-template.md` — the `_README.md` shape for new project subfolders (DECOMPOSE)
 - `references/drift-report-template.md` — the drift report format (AUDIT)
-- `references/closing-protocol-template.md` — the closing protocol DECOMPOSE inserts into every generated handoff (Step 0 paired-peer-review gate + seven bookkeeping steps)
+- `references/closing-protocol-template.md` — the closing protocol DECOMPOSE inserts into every generated handoff (Step 0 paired-peer-review gate + bookkeeping steps incl. v2 additions 1b quality/tier, 3c door card, 6b drift sweep). Canonical source since 2026-07-05: `~/workspace/second-brain/_meta/session-close-protocol.md` — if template and canonical doc disagree, the canonical doc wins.
 
 Mode 1 uses all five. Mode 2 uses tracker-row-shapes, handoff-frontmatter-spec, drift-report-template. Mode 3 uses tracker-row-shapes plus the operator's `MEMORY.md` for priority signals.
 
