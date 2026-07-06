@@ -1,0 +1,8 @@
+name: boot-health-check
+description: >-
+  Gateway startup health check (boot.md pattern). Inspects cron failures,
+  vault-sync freshness (FETCH_HEAD mtime > 7h = stale), and systemd service
+  health (hermes + hermes-dashboard). Posts a Telegram summary on issues found;
+  silent on all-clear.
+events:
+  - gateway:startup
