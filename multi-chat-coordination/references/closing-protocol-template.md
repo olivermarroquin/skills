@@ -172,6 +172,12 @@ Example closings from real chats that landed well:
 > Skill shipped + 5 reference files + regression tests PASS. **Nothing immediately blocked on this** — Phase 2 of output-quality-loop already in flight (running in parallel). Tracker's Ready-to-spawn section is empty; Tier-2 has 4 outputquality-loop phases gated on the in-flight work landing.
 
 Only after Step 0's paired-reviewer PASS (or stated exemption) AND all steps (0 through 7, including sub-steps 1b/3b/3c/6b) complete may you say the chat is done. The "what's next to spawn" line is what the operator actually reads and acts on — make it specific.
+
+**Mandatory final line of the declaration, verbatim format (added v2.1, 2026-07-06):**
+
+CLOSABLE: this chat can be closed now. Paired <reviewer|producer>: <already closed | still open — wait for its FINAL>.
+
+If you cannot write that line truthfully, the close is not finished — go back to the incomplete step. The operator closes tabs on this line and this line only; never make them ask "are we done here?"
 ```
 
 ## Notes for the skill (not part of the inserted template)
