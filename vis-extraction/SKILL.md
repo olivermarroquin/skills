@@ -3,9 +3,9 @@ name: vis-extraction
 description: Extract structured intelligence from videos, articles, transcripts, and other long-form content into Oliver's Knowledge OS vault. Triggers on phrases like "ingest this video," "extract this URL," "process this transcript," "pull and extract from a URL," "analyze this article," "ingest this source," "run VIS on this," or any time the user provides a YouTube URL, web article URL, or local transcript file and wants a structured source note plus extracted artifacts (tools, tactics, opportunities, content ideas) written into the second-brain vault. Also use when the user mentions adding a video/article/talk to their vault, or when they paste a URL with no other instruction in a Knowledge OS context. This is the primary path for converting external content into vault artifacts.
 ---
 
-# VIS Extraction Skill (v1.2)
+# VIS Extraction Skill (v1.3)
 
-The Video Intelligence System (VIS) extraction skill. Wraps the `transcript-pull.sh` script and the v3.2 extraction prompt into a single workflow. Pull a transcript, run extraction, write structured notes to the vault.
+The Video Intelligence System (VIS) extraction skill. Wraps the `transcript-pull.sh` and `social-pull.sh` scripts and the v3.3 extraction prompt into a single workflow. Pull a transcript, run extraction, write structured notes to the vault.
 
 **Critical behavior (read this before anything else):**
 - **Cache and dedup are first-class.** Before pulling a transcript, check the cache. Before running an extraction, check whether the source already exists in the vault. Don't silently re-extract or overwrite the user's calibrated work.
@@ -789,10 +789,13 @@ When invoked, follow these steps in order. Stop and ask the user only when expli
 
 The user gave you one of:
 - A YouTube URL (most common): `https://www.youtube.com/watch?v=...` or `https://youtu.be/...`
+- A social reel URL: Facebook (`facebook.com/reel/...`), Instagram (`instagram.com/reel/...`), TikTok (`tiktok.com/@user/video/...`), or YouTube Shorts (`youtube.com/shorts/...`)
 - An article URL: any other `https://` URL
 - A local file path: `/path/to/transcript.md` or similar — usually a previously-pulled transcript or an uploaded text file
 
 If the input is ambiguous (e.g., user said "ingest the latest one"), ask which URL or file they want.
+
+**Social reel detection:** If the URL matches a known social reel pattern (facebook.com/reel, instagram.com/reel, tiktok.com/@/video, youtube.com/shorts), route to `social-pull.sh` instead of `transcript-pull.sh`. Social reels require host-side execution (yt-dlp + ffmpeg + Whisper). The extraction prompt's "Short-form social reels" section applies — including the mandatory deep-feasibility investigation sub-phase and operator follow-ups.
 
 ### Step 2 — Identify the mode
 
@@ -817,7 +820,7 @@ cat /Users/olivermarroquin/workspace/skills/vis-extraction/prompts/extraction-pr
 cat /Users/olivermarroquin/workspace/second-brain/_meta/scoring-rubric.md
 ```
 
-The extraction prompt is v3.2. It defines Phase 0 (environment preflight) and Phases 1-8 (the extraction itself). The scoring rubric is canonical for tier/relevance/actionability/monetization values.
+The extraction prompt is v3.3. It defines Phase 0 (environment preflight) and Phases 1-8 (the extraction itself). The scoring rubric is canonical for tier/relevance/actionability/monetization values.
 
 ### Step 5 — Phase 0 environment preflight
 

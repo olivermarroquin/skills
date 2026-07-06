@@ -1,4 +1,4 @@
-# VIS Source Extraction — Prompt for Cowork (v3.2)
+# VIS Source Extraction — Prompt for Cowork (v3.3)
 
 This document tells Cowork how to extract structured KOS notes from a transcript file. It's read at the start of every extraction job. Treat it as authoritative — if the user's request and this document disagree, ask the user, don't guess.
 
@@ -109,6 +109,32 @@ Required tools: `curl` and the Python module `trafilatura` (in the active Python
 
 No environment preflight needed. Skip Phase 0 entirely; proceed to Step 6 (Pull) which will use the file-handling path of `transcript-pull.sh` (no network, no Python module, no yt-dlp).
 
+### Phase 0d — Social reel URLs (Facebook / Instagram / TikTok / YouTube Shorts)
+
+**This phase runs on the HOST machine (Claude Code in VS Code), not in the sandbox.** Social reels require `yt-dlp` + `ffmpeg` + `openai-whisper` — all installed host-side.
+
+Required tools: `yt-dlp`, `ffmpeg`, Python 3.12 with `openai-whisper`.
+
+1. **Check availability:**
+   ```bash
+   which yt-dlp && which ffmpeg && /opt/homebrew/bin/python3.12 -c "import whisper; print('whisper OK')"
+   ```
+   If all three exit 0, Phase 0d passes.
+
+2. **If any tool is missing, surface to operator.** Don't attempt silent install — the operator installed these deliberately. Hard-fail message:
+   ```
+   PHASE 0 HARD-FAIL: social-reel transcription requires yt-dlp + ffmpeg + openai-whisper on the host.
+   Missing: <list>
+   Install with: brew install yt-dlp ffmpeg && /opt/homebrew/bin/python3.12 -m pip install openai-whisper --break-system-packages
+   ```
+
+3. **Use `social-pull.sh` (not `transcript-pull.sh`) for the pull step.** The script lives at `skills/vis-extraction/scripts/social-pull.sh`. It handles download + Whisper transcription in one pass, outputting the standard markdown transcript shape.
+
+4. **Cookie handling.** If download fails with a login-required error for Facebook or Instagram content, surface the cookie-jar hint to the operator:
+   - Export browser cookies to Netscape format (browser extension: "Get cookies.txt LOCALLY")
+   - Re-run with `--cookies ~/cookies-facebook.txt` (or instagram)
+   - Never hardcode credentials. The cookie file is operator-managed.
+
 ### Why hard-fail is the right pattern here
 
 Silent degradation is the same anti-pattern that produced the original Phase 1 `current-goals.md` path-fix bug: a missing/misplaced file was treated as "no goals," propagating mis-calibrated suggestions into Phase 6 without surfacing the issue to the operator. The same anti-pattern would re-surface here: a missing `yt-dlp` (or `trafilatura`) would silently route to "operator pulls on host," which adds friction every run, decays without the operator noticing it's degrading, and trains the operator to manually pull as the default path even when the sandbox could in principle handle it.
@@ -181,6 +207,72 @@ For chunked extraction:
 - The final synthesis combines segment analyses into one source note + supporting notes
 - The source note's `Workflow breakdown` section can capture the full sequence across segments
 - Warn the user in the report: "synthesis across many segments may have lost some local nuance — re-check segment N if it seemed important"
+
+### Short-form social reels (< 500 words / < 90 seconds)
+
+When `source-type: social-reel` appears in the transcript frontmatter (produced by `social-pull.sh`), apply these calibrations:
+
+**Depth-calibration principle:** Short-form reels are claim-DENSE but evidence-THIN. A 30-60s clip asserts tools/tactics/strategies without showing how they actually work. Extraction must go BEYOND the clip — actively investigate each claim to determine whether and how it's actually possible.
+
+#### Step 1 — Claim extraction (during Phase 3)
+
+- Single-pass extraction (always — these are trivially short).
+- Extract **every concrete claim, tool name, and tactic** the creator asserts. Short-form packs these densely — don't miss any.
+- For each extracted item, record: (a) the verbatim claim, (b) the tool/technique/strategy named, (c) what the creator says it does.
+- Do NOT over-inflate thin content. If the reel is a single shallow tip with no depth, the source note should be correspondingly thin (Tier 3, minimal writeset). Don't pad.
+
+#### Step 2 — Deep-feasibility investigation (NEW sub-phase, runs after Phase 3 analysis, before Phase 6 writeset)
+
+**This is the load-bearing step.** For EACH extracted claim/tool/strategy from Step 1, perform an active investigation:
+
+1. **Web search.** Use WebSearch (or equivalent tool) to look up the named tool, technique, or strategy. Search for:
+   - The tool's official site / landing page (does it exist? what does it actually do?)
+   - Independent reviews, tutorials, or case studies showing it in action
+   - The specific mechanism/workflow the creator claims (is it real?)
+
+2. **Mechanism reconstruction.** Based on what the research found, write up HOW the tool/technique actually works in concrete steps. Not "it probably does X" — write the actual workflow a user would follow. If the research couldn't find the mechanism, say so explicitly.
+
+3. **Evidence links.** Record the URLs that informed your assessment. Every feasibility rating MUST cite at least one source. If no independent source was found, that itself is the evidence (for an "unsubstantiated" rating).
+
+4. **Assign feasibility rating AFTER the research:**
+   - **proven** — independent sources confirm the tool exists AND does what's claimed AND you reconstructed the concrete mechanism. Evidence: working product page + tutorial/review/case study.
+   - **plausible** — the tool exists and the mechanism makes theoretical sense, but no independent confirmation that it works as specifically claimed in the reel. Evidence: tool exists but claims are extrapolated.
+   - **unsubstantiated** — tool doesn't exist, or does something different from what's claimed, or no evidence of the claimed capability anywhere. Evidence: searched and found nothing / found contradictory info.
+
+**Tool availability note:** This sub-phase requires WebSearch. In substrates where WebSearch is available (Claude Code, Cowork with web access), run it directly. In substrates without web access, explicitly mark every claim as `unverified (no web access in this substrate)` and generate operator follow-up tasks for each — do NOT guess ratings from model knowledge alone, because model knowledge cannot confirm current tool existence or current feature sets. The operator follow-ups become the verification path.
+
+#### Step 3 — Source note structure (during Phase 7 write)
+
+In the source note, structure each claim/tool entry with these fields:
+
+```markdown
+### [Tool/Claim Name]
+
+**Creator's claim:** [What the reel asserts]
+**Mechanism:** [How it actually works — concrete steps from your research, or "Not independently confirmed" if research found nothing]
+**Evidence:** [URLs that informed the rating]
+**Feasibility:** proven / plausible / unsubstantiated
+```
+
+#### Step 4 — Operator follow-ups (mandatory section for social reels)
+
+Add a `## Operator follow-ups` section at the end of the source note. This section is ALWAYS present for social reels. Each entry states WHAT to do + WHY (the evidence gap it fills). Generate follow-ups for:
+
+- Every claim rated `unsubstantiated` — what specific search/action would resolve it
+- Every claim rated `plausible` — what would upgrade it to `proven`
+- Series detection — "Pull N more reels from creator @X — they serialize this topic; this clip is 1 of a set."
+- Longer-form content — "Search YouTube for `<creator> <topic>` — likely a longer walkthrough with real demonstration."
+- Bio/link checks — "Check creator's bio link for the actual tool or template named in the reel."
+
+**Never present an unsubstantiated reel claim as a validated tactic.** The whole reason the operator ingests reels is that the clip under-informs — the bias is investigate-further, not accept-at-face-value. Do NOT silently thin unsubstantiated claims — surface them with the gap clearly labeled and route the operator task to close the gap.
+
+#### Standard source note sections still apply
+
+Short-form reels are NOT exempt from the standard source note structure. The following sections from the full Phase 7 write spec still apply:
+- **Structured action items** — short-form reels frequently spawn experiments ("test this tool"), research tasks ("validate this claim"), and adoptions. Generate these per the standard format.
+- **Suggested judgments** — advisory tier/relevance/actionability/monetization values with reasoning. Frontmatter judgment fields stay empty.
+- **Related notes (wikilinks)** — parent context link + at least one peer artifact.
+- **Operator follow-ups** (the section above) is ADDITIONAL to Structured action items, not a replacement. Operator follow-ups are for evidence gaps the extraction couldn't close; Structured action items are for discrete actions the operator might take based on what WAS confirmed.
 
 ---
 
@@ -586,7 +678,9 @@ For each approved action:
 
 7. **Discussions section starts empty.** The template includes a Discussions section with a Dataview block that will auto-populate as discussions get created later. Leave the Dataview block in place — don't remove it, don't pre-create discussions, don't put text in the section beyond what the template provides.
 
-8. Set `status: ingested` (changes to `extracted` after the user reviews)
+8. **Related notes section (wikilinks).** Add a `## Related notes` section with slug-only `[[wikilinks]]` (no path prefix). Every source note must link to: (a) a parent context (the relevant domain MOC from `_meta/mocs/` or another uniquely-named anchor note in the domain folder — never `_README`, which is ambiguous across 200+ folders), and (b) at least one peer artifact (another source note, tool note, or pattern note on a related topic). Check the existing-note index from Phase 1 for candidates. If no peer exists, link a uniquely-named domain anchor and note "first source in this cluster."
+
+9. Set `status: ingested` (changes to `extracted` after the user reviews)
 
 ### New supporting notes
 
