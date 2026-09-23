@@ -3,7 +3,7 @@ type: reference
 skill: gate-peer-reviewer
 skill-version: 3.9
 created: 2026-06-16
-updated: 2026-07-02
+updated: 2026-09-23
 purpose: fixed-mandate for the independent adversarial reviewer — loaded from disk by the dispatch, not authored by the producer
 immutable: true
 tags: [reference, independent-review, adversarial-reviewer, mandate, review-gate, rgh-5, capstone]
@@ -47,6 +47,14 @@ python3 ~/workspace/repos/ai-agency-core/scripts/mandatory-review-gate/register-
 **The gate-block message is the ONLY authoritative source for your session ID.** Do NOT use `gate-whoami.py` — it returns the most recently active session, which is usually the producer's, not yours.
 
 This is SAFE and is NOT a producer bypass: the marker grants ONLY scoped read-only-Bash exemption — any Write/Edit deliverable still gates regardless of role. **Never ask the operator for repeated `gate-skip`s for read-only commands — register once instead.** For reviews of Cowork-authored changes with no producer CC session, use `--operator-dispatched` instead of `--reviewing-session`.
+
+---
+
+### Do NOT re-poll gate status after a block (RGH-21)
+
+When the Stop hook fires a block, the block message already contains the full unreviewed set and ready-to-paste clearing commands. Act on those directly. Do NOT re-run `gate-status.py` or `independent-reviewer-dispatch.py` to "check current status" — each re-run becomes a new Bash dirty entry, compounding the block with self-inspection artifacts. If the set has changed (new work happened), the next natural Stop-hook firing will show the updated set.
+
+This applies to both producer and reviewer sessions. The 2026-09-11 incident confirmed that 4 of 9 stuck entries were re-polling calls to these two scripts.
 
 ---
 
@@ -199,6 +207,28 @@ For **every file in the dirty ledger**, verify:
      actually does X (CR-016/017: dead code + broken idempotency that "passed" self-review).
    See `[[lesson-in-session-subagent-reviewer-rubber-stamps-2026-06-18]]`.
 
+8. **Conventions-conformance sweep — OC-28 (vault files only):** for every file under
+   `second-brain/` in the dirty ledger, run:
+   ```bash
+   python3 ~/workspace/repos/ai-agency-core/scripts/mandatory-review-gate/oc28-conventions-conformance.py \
+     --workspace-root ~/workspace --json <vault-files>
+   ```
+   This checks: (C1) filename kebab-case / length / prefix↔type agreement / date-stamp;
+   (C2) folder placement vs the conventions.md table; (C3) required frontmatter fields,
+   type/status enum membership, near-miss field names (e.g. `relevance:` → `relevance-score:`);
+   (C4) `wikilink-vault-resolution` — every `[[target]]` resolves to exactly one vault file.
+
+   **IMPORTANT — `link-resolution` ≠ `wikilink-vault-resolution` (CR-179 class):**
+   The existing `engine.py` `link-resolution` check only greps for FILL/TBD/TODO/PLACEHOLDER
+   tokens *inside* link syntax. It does NOT resolve `[[target]]` slugs against the vault
+   filesystem. C4 (`wikilink-vault-resolution`) does the actual slug→file resolution;
+   the two checks are disjoint. A PASS on engine `link-resolution` gives no signal about
+   whether a wikilink target actually exists (the VIS-5 root cause — CR-212).
+
+   Any C1/C2/C3/C4 FAIL is **BLOCKING**. Unknown `type:` values produce WARN (the enum
+   is "not exhaustive" per conventions.md). The `--strict-links` flag upgrades 0-match
+   wikilinks from WARN to FAIL; use it on files explicitly claiming all links are correct.
+
 ### Phase D — Omission audit (G-chat-close, every chat at close)
 
 Run the G-chat-close omission checks. The full registry is at
@@ -302,10 +332,13 @@ Schema:
     "converged": true | false
   },
   "cost_usd": 0.0,
-  "mandate_version": "1.3",
+  "mandate_version": "1.4",
   "mandate_path": "skills/gate-peer-reviewer/references/independent-reviewer-mandate.md"
 }
 ```
+
+> [!warning] **`checks_run[].name` MUST be a recognized gate check-id — NEVER a domain-specific metric name.**
+> Use the check ids the gate actually knows: `OC-1`…`OC-16` (the omission-check registry), `check_1`…`check_6` / `check_6.layer_a|b|c` (the return-contract), or the named G-default checks (`full-family-sweep`, `source-client-leak-audit`, `ground-truth-value-cross-check`, `link-resolution`, etc.). **Do NOT** put domain metrics (e.g. `LCP`, `CLS`, `TBT`, a Lighthouse score) or free text in `name` — `log-review-pass.py` validates every `checks_run[].name` and will reject the whole verdict (`unknown check-id` / `missing check-id`) and **keep the gate BLOCKED**, even when your review actually PASSed. If unsure, `grep -oE "OC-[0-9]+" omission-check-registry.md` for valid ids before you write the verdict file. (This is a recurring plumbing bug that has re-blocked multiple reviewers — see CR-179.)
 
 Then log the review-pass marker:
 ```bash
@@ -334,6 +367,12 @@ python3 ~/workspace/repos/ai-agency-core/scripts/mandatory-review-gate/log-revie
   on every turn.
 - **Do NOT author a PASS with unresolved blocking findings.** That's the D-05 class
   this entire program exists to eliminate.
+- **Do NOT downgrade convention violations under convergence pressure.** If OC-28 (or any
+  conventions check) fires on a file, it is BLOCKING regardless of how many review rounds
+  have passed or how minor the violation "seems." The specific failure mode this prevents:
+  in the VIS-5 round-3 review, the reviewer waved off folder-placement and status-enum
+  failures as "test-artifact conformance issues, not real" — the operator caught them in
+  QC. Convention conformance is never advisory once a real violation is found (CR-212).
 
 ---
 
@@ -372,8 +411,15 @@ python3 ~/workspace/repos/ai-agency-core/scripts/mandatory-review-gate/log-revie
 
 ## 7. Version
 
-- **Mandate version:** 1.3
+- **Mandate version:** 1.4
 - **Created by:** [RGH-5] independent-reviewer-dispatch (2026-06-16)
+- **v1.4 (2026-09-23):** [RGH-22] conventions-conformance ratchet — Phase C item 8: OC-28
+  conventions-conformance sweep (C1 filename, C2 folder placement, C3 frontmatter schema, C4
+  wikilink-vault-resolution) added as a BLOCKING check on vault files. §4 no-downgrade rule added:
+  "Do NOT downgrade convention violations under convergence pressure" (CR-212 root cause). CR-179
+  link-resolution disambiguation note added (OC-28 wikilink-vault-resolution ≠ engine.py
+  link-resolution). `mandate_version` in verdict schema bumped to `"1.4"`. See OC-28 in
+  omission-check-registry.md.
 - **v1.3 (2026-07-02):** [PR-1] productization-readiness additions — Phase D: added OC-18
   (task-definition decision-need alignment), OC-19 (capability-gap surfacing), OC-20
   (Productization-DoD B1–B6 completeness, Productize-tier only). Added Phase D2 (tier

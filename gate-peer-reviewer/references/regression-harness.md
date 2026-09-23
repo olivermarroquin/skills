@@ -3,7 +3,7 @@ type: reference
 skill: gate-peer-reviewer
 skill-version: 3.7
 created: 2026-06-07
-updated: 2026-06-16
+updated: 2026-09-23
 tags: [reference, regression-harness, testing, planted-defects, GPR-14]
 ---
 
@@ -58,7 +58,7 @@ regression_for: <D-row or PR number this prevents regressing>
 
 ---
 
-## Standing fixtures (v3.2 seed suite + v3.6 G-chat-close + v3.7 COA-4b corpus)
+## Standing fixtures (v3.2 seed suite + v3.6 G-chat-close + v3.7 COA-4b corpus + v3.10 OC-28)
 
 ### Fixture 1: `meta-only-placeholder`
 
@@ -282,6 +282,64 @@ regression_for: <D-row or PR number this prevents regressing>
 **Bound check:** OC-16
 **Design-verified:** dirty-ledger + expected finding documented; needs git repo to execute.
 **Regression for:** COA-4b C-23 — rename deletions unstaged.
+
+---
+
+## OC-28 conventions-conformance suite (v3.10 — 6 fixtures — [RGH-22])
+
+> Added by [RGH-22] (`rgh22-conventions-ratchet`). Source: `test_oc28.py` seed-defect suite
+> (58 tests, 58 passing). Each fixture corresponds to one of the 6 seed defect families
+> seeded into `oc28-conventions-conformance.py`. Bound check: `oc28-conventions-conformance.py`.
+> These are run via `pytest test_oc28.py` — the unit test suite IS the harness for OC-28.
+> The descriptions below document the defect classes for the LLM reviewer's reference.
+
+### Fixture 26: `oc28-c1-missing-date-in-filename`
+
+**Tests:** OC-28 C1 — date-required prefix without YYYY-MM-DD date stamp in filename.
+**Bound check:** OC-28 C1 (`check_c1_filename`)
+**Planted defect:** Vault file `source-my-article.md` (prefix `source-` requires a date stamp per conventions). No date component in filename.
+**Expected:** C1 FAIL on `filename-date-stamp`. Severity: blocking. Test: `TestSeedDefect1_NoDateInFilename::test_source_without_date_fails_c1`.
+**Regression for:** VIS-5 / CR-211 — date-stamp requirement not enforced by any deterministic check across 3 reviewer rounds.
+
+### Fixture 27: `oc28-c2-wrong-folder-placement`
+
+**Tests:** OC-28 C2 — vault file placed in wrong folder for its type.
+**Bound check:** OC-28 C2 (`check_c2_folder`)
+**Planted defect:** `source-2026-01-15-article.md` placed in `00_inbox/` root instead of `00_inbox/sources-pending/` or `03_domains/`.
+**Expected:** C2 FAIL on `folder-placement`. Severity: blocking. Test: `TestSeedDefect2_WrongFolderPlacement::test_source_in_inbox_root_fails_c2`.
+**Regression for:** VIS-5 — folder-placement rule not enforced deterministically.
+
+### Fixture 28: `oc28-c3-near-miss-field-name`
+
+**Tests:** OC-28 C3 — near-miss frontmatter field name that looks like a required field.
+**Bound check:** OC-28 C3 (`check_c3_frontmatter`)
+**Planted defect:** Frontmatter has `monetisation: high` (British spelling) instead of `monetization` — exact near-miss pattern from VIS-5 incident.
+**Expected:** C3 FAIL on `near-miss-field`. Severity: blocking. Test: `TestSeedDefect3_NearMissFieldName::test_monetization_near_miss_fails`.
+**Regression for:** VIS-5 — near-miss field silently ignored by prior reviewers 3 rounds running.
+
+### Fixture 29: `oc28-c3-wrong-status-value`
+
+**Tests:** OC-28 C3 — `status:` field value not in the allowed enum.
+**Bound check:** OC-28 C3 (`check_c3_frontmatter`)
+**Planted defect:** Frontmatter has `status: inbox` — not in the canonical enum (`draft`, `active`, `evergreen`, `archived`, `promoted`).
+**Expected:** C3 FAIL on `status-enum`. Severity: blocking. Test: `TestSeedDefect4_WrongStatusValue::test_inbox_status_fails`.
+**Regression for:** VIS-5 — status-enum violations not caught deterministically.
+
+### Fixture 30: `oc28-c4-ambiguous-wikilink`
+
+**Tests:** OC-28 C4 — wikilink resolves to 2+ files in the vault (ambiguous).
+**Bound check:** OC-28 C4 (`check_c4_wikilinks`)
+**Planted defect:** Body contains `[[_README]]` — resolves to multiple `_README.md` files across different folders.
+**Expected:** C4 FAIL on `wikilink-vault-resolution` (multiple matches). Severity: blocking. Test: `TestSeedDefect5_AmbiguousWikilink::test_ambiguous_readme_link_fails`.
+**Regression for:** VIS-5 — ambiguous wikilinks not resolved against vault index.
+
+### Fixture 31: `oc28-c3-missing-required-field`
+
+**Tests:** OC-28 C3 — required frontmatter field absent entirely.
+**Bound check:** OC-28 C3 (`check_c3_frontmatter`)
+**Planted defect:** Frontmatter missing `tags:` field (required for all vault files per conventions).
+**Expected:** C3 FAIL on `required-fields`. Severity: blocking. Test: `TestSeedDefect6_MissingRequiredField::test_missing_tags_fails`.
+**Regression for:** VIS-5 — missing required fields not caught by prior deterministic checks.
 
 ---
 

@@ -3,7 +3,7 @@ type: reference
 skill: gate-peer-reviewer
 skill-version: 4.0
 created: 2026-06-15
-updated: 2026-07-02
+updated: 2026-09-23
 gate-type: G-chat-close
 registry-discipline: append-only — every operator-caught gap becomes a new OC row, incident cited
 supersedes-drafts:
@@ -550,6 +550,43 @@ recurrence.
 **Built by:** [RGH-19] deterministic doc-completeness gate (2026-07-02).
 **Script:** `rgh19-doc-completeness.py` → `check_oc27_spec_registry_crosscheck()`.
 
+### OC-28: Conventions conformance — [RGH-22]
+
+**Check:** Every vault file touched this run conforms to `second-brain/_meta/conventions.md`
+across four check families:
+- **C1 (filename):** kebab-case, ≤80 chars, registered prefix↔frontmatter type agreement,
+  date-stamp present for date-required prefixes (e.g. `source-`, `lesson-`).
+- **C2 (placement):** folder path matches the conventions.md Folder-placement table for
+  the note's `type:` value.
+- **C3 (frontmatter schema):** required fields present (`type`, `status`, `created`,
+  `updated`, `tags`); `type` and `status` values in known enums (WARN not FAIL for unknown
+  types — the enum is "not exhaustive"); near-miss field names detected (e.g. `relevance:`
+  instead of `relevance-score:`).
+- **C4 (wikilink-vault-resolution):** every `[[target]]` resolves to exactly one `.md` file
+  in the vault (0 matches = WARN; >1 match = FAIL — the `[[_README|alias]]` seed defect with
+  204 vault files matching). Distinct from `engine.py`'s existing `link-resolution` check
+  which only finds FILL/TBD/PLACEHOLDER tokens inside link syntax (CR-179).
+
+**Procedure:**
+1. Identify vault files (`second-brain/`) in the dirty ledger.
+2. Run `python3 oc28-conventions-conformance.py --workspace-root ~/workspace --json <files>`.
+3. Any FAIL → BLOCKING. WARN-only → surface as finding.
+4. Grandfathered slugs (`_README.md`, `_ev-differentiation-wave-status.md`,
+   `_sh-differentiation-wave-status.md`, `_INITIATIVE.md`, `MASTER-STRATEGY-*.md`) pass C1
+   unconditionally. Files under `_meta/templates/` are exempt from C1 date-stamp and C4
+   wikilink checks (templates legitimately contain placeholders).
+
+**Seed incident:** CR-211, CR-212 (VIS-5, 2026-07-05) — 6 conformance defects survived 3
+independent review rounds because reviewers verified against the handoff spec rather than
+the conventions.md rulebook; caught only by operator QC. Seeded by: wrong field names
+(`relevance:` → `relevance-score:`), wrong status (`inbox`), no date in filename, wrong
+folder (`00_inbox/` not `00_inbox/sources-pending/`), ambiguous `[[_README|alias]]` (204
+matches), missing required `tags:` field.
+
+**Built by:** [RGH-22] conventions-conformance ratchet (2026-09-23).
+**Script:** `oc28-conventions-conformance.py` → `run_oc28()` (wired into
+`independent-reviewer-dispatch.py` under full-tier vault files).
+
 ---
 
 ## B. Per-chat-type profiles (classification → check set)
@@ -573,7 +610,8 @@ OC-18 (task-definition decision-need alignment — **WARN**; [PR-1]),
 OC-19 (capability-gap surfacing — **BLOCKING** when substitution detected; [PR-1]),
 OC-21 (exec-log substantive — **BLOCKING**; [RGH-19]),
 OC-25 (no-silent-deferrals — **BLOCKING**; [RGH-19]),
-OC-27 (spec-vs-registry OC cross-check — **BLOCKING**; [RGH-19]).
+OC-27 (spec-vs-registry OC cross-check — **BLOCKING**; [RGH-19]),
+OC-28 (conventions-conformance — **BLOCKING** on FAIL, WARN on unknown type; [RGH-22]; vault files only).
 
 ### Profile table
 
@@ -607,6 +645,7 @@ OC-27 (spec-vs-registry OC cross-check — **BLOCKING**; [RGH-19]).
 - Silent deferral without tracking surface (OC-25)
 - Knowledge capture audit not recorded (OC-26)
 - OC-number mismatch between spec and registry (OC-27)
+- Conventions conformance FAIL on vault file (OC-28 — filename/placement/frontmatter/wikilink-vault-resolution)
 
 ### WARN (pass with findings — fix before declaring done)
 - Stale memory (OC-4 — fix is one edit)
