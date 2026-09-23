@@ -1,11 +1,13 @@
 ---
 name: vis-extraction
+version: 1.4
+updated: 2026-09-22
 description: Extract structured intelligence from videos, articles, transcripts, and other long-form content into Oliver's Knowledge OS vault. Triggers on phrases like "ingest this video," "extract this URL," "process this transcript," "pull and extract from a URL," "analyze this article," "ingest this source," "run VIS on this," or any time the user provides a YouTube URL, web article URL, or local transcript file and wants a structured source note plus extracted artifacts (tools, tactics, opportunities, content ideas) written into the second-brain vault. Also use when the user mentions adding a video/article/talk to their vault, or when they paste a URL with no other instruction in a Knowledge OS context. This is the primary path for converting external content into vault artifacts.
 ---
 
-# VIS Extraction Skill (v1.3)
+# VIS Extraction Skill (v1.4)
 
-The Video Intelligence System (VIS) extraction skill. Wraps the `transcript-pull.sh` and `social-pull.sh` scripts and the v3.3 extraction prompt into a single workflow. Pull a transcript, run extraction, write structured notes to the vault.
+The Video Intelligence System (VIS) extraction skill. Wraps the `transcript-pull.sh` and `social-pull.sh` scripts and the v3.4 extraction prompt into a single workflow. Pull a transcript, run extraction, write structured notes to the vault.
 
 **Critical behavior (read this before anything else):**
 - **Cache and dedup are first-class.** Before pulling a transcript, check the cache. Before running an extraction, check whether the source already exists in the vault. Don't silently re-extract or overwrite the user's calibrated work.
@@ -19,8 +21,8 @@ This skill supports **multi-agent collaboration** as a first-class mode alongsid
 
 ### Role definitions (agent-agnostic)
 
-- **Executor agent** — the agent that does the actual file operations: pulls transcripts, reads vault state, drafts notes, writes files. Makes calibration and discipline decisions during execution (not blind execution; the executor reads vault state, applies extraction-discipline precedents, and surfaces judgment calls at approval gates). In current configuration this is typically Cowork. Could be any other agent with vault file-system access (local agent, other cloud agent, etc.).
-- **Review agent** — the agent the operator collaborates with to draft prompts for the executor, validate executor outputs, surface concerns, and produce approval prompts. Does NOT execute file operations directly. In current configuration this is typically a web-UI Claude chat. Could be any other agent (local agent, other cloud agent).
+- **Executor agent** — the agent that does the actual file operations: pulls transcripts, reads vault state, drafts notes, writes files. Makes calibration and discipline decisions during execution (not blind execution; the executor reads vault state, applies extraction-discipline precedents, and surfaces judgment calls at approval gates). Requires authorized vault filesystem access plus the tools needed for the current input; no agent vendor is required.
+- **Review agent** — the agent the operator collaborates with to draft prompts for the executor, validate executor outputs, surface concerns, and produce approval prompts. Does NOT execute file operations directly. Use a distinct agent/session when independent review is required, with access to the source and output evidence.
 - **Operator** — the human in the loop. Decides at approval gates, commits to git, makes final calls on contested points, transcribes outputs between agents.
 
 The skill's behavior depends on what configuration is invoking it. If the executor is invoking directly (no review agent in the loop), it follows the "single-agent mode" path. If the executor is being driven by a review agent + operator combination, it follows the "multi-turn mode" path.
@@ -820,7 +822,7 @@ cat /Users/olivermarroquin/workspace/skills/vis-extraction/prompts/extraction-pr
 cat /Users/olivermarroquin/workspace/second-brain/_meta/scoring-rubric.md
 ```
 
-The extraction prompt is v3.3. It defines Phase 0 (environment preflight) and Phases 1-8 (the extraction itself). The scoring rubric is canonical for tier/relevance/actionability/monetization values.
+The extraction prompt is v3.4. It defines Phase 0 (environment preflight) and Phases 1-8 (the extraction itself). The scoring rubric is canonical for tier/relevance/actionability/monetization values.
 
 ### Step 5 — Phase 0 environment preflight
 
@@ -1112,31 +1114,36 @@ Read these as needed. The extraction prompt is the authoritative spec; this SKIL
 
 ---
 
-## Peer-reviewer dispatch (GPR-9, gate-peer-reviewer v3.3)
+## Peer-reviewer dispatch (GPR-9, canonical installed contract)
 
-> **Independence precedence (gate-peer-reviewer v3.8).** The Task sub-agent dispatch described here is the *weaker-independence convenience mode* — acceptable for high-volume, low-stakes gates. For any gate that changes vault/live state, registers a skill, or ships a client deliverable, the CANONICAL and MANDATORY mode is a **separate-session, step-by-step running review** (separate Claude Code or Cowork session; operator pastes each producer output; reviewer disk-verifies and hands back a paste-ready producer-reply block). See `~/workspace/skills/gate-peer-reviewer/SKILL.md` § Independence precedence and `~/workspace/second-brain/05_shared-intelligence/patterns/pattern-independent-peer-review-chat.md`. A sub-agent verdict is never full independent review.
+> **Independence precedence.** Read the current `~/workspace/skills/gate-peer-reviewer/SKILL.md` and its registry/return contract at invocation (v4.0 inspected 2026-09-22; do not pin callers to a stale version). The host-supported sub-agent dispatch described here is the *weaker-independence convenience mode* — acceptable for high-volume, low-stakes gates. For any gate that changes vault/live state, registers a skill, or ships a client deliverable, the CANONICAL and MANDATORY mode is a **separate-session, step-by-step running review** (separate reviewer session with fresh context and independent disk reads; relay producer outputs through the workspace relay convention). See `~/workspace/skills/gate-peer-reviewer/SKILL.md` § Independence precedence and `~/workspace/second-brain/05_shared-intelligence/patterns/agent-ops/pattern-independent-peer-review-chat.md`. A sub-agent verdict is never full independent review.
+
+**Scoped VIS exception:** The operator decision recorded in `second-brain/_meta/handoffs/vis-system-enhancement/audit-2026-09-21-vis-weaknesses.md` (Operator follow-ups item 2, 2026-09-21) permits convenience sub-agent review for source-note writes only: initially advisory-only, never the sole gate, with light escalation logging on initial Mode 5 auto-ships. Preserve training-mode/operator approval and all other required gates. The verdict-routing and degradation branches below are subordinate to this constraint; an unavailable reviewer cannot silently waive a required gate.
 
 **Gate type:** G-extraction (NOT a closing gate — Check 6 skipped).
 **Fires after:** Phase 6 review gate (executor surfaces structured summary before writes).
-**Dispatch shape:** Orchestrator spawns the peer-reviewer as a Task sub-agent after the structured summary is ready and before the write-to-vault phase.
+**Dispatch shape:** Orchestrator spawns the peer-reviewer through the host’s available sub-agent dispatch capability after the structured summary is ready and before the write-to-vault phase.
 
-**Per-gate dispatch block (Claude Code substrate):**
+**Per-gate dispatch block (capability-based; verify the host supports it):**
 
 ```
 ## Peer-reviewer dispatch
 
+Required capability tier: WORKHORSE for ordinary review; dense/high-stakes second-pass review uses one tier above the actual producer per model-routing.md.
+Model check: verify runtime identity and required tier before work; STOP for relaunch or operator confirmation if wrong or unverifiable. Record producer tier, selected model/version, reasoning setting, substrate and independence.
+Enforcement: manual — operator picks at spawn unless a supported override is verified.
 Gate type: G-extraction
 Orchestrator: vis-extraction
 Project: <source-slug>
 Wave: null
 
-Context paths for the Task sub-agent:
+Context paths for the review agent:
 - Gate output: <structured summary — source note + supporting artifacts>
 - Gate-type registry: ~/workspace/skills/gate-peer-reviewer/references/gate-type-registry.md
 - Check spec: ~/workspace/skills/gate-peer-reviewer/references/check-spec.md
 - Lesson files: ~/workspace/second-brain/05_shared-intelligence/lessons/ (most recent for this skill)
 
-Task instruction: Read the gate-type registry entry for G-extraction. Run Check 1 satisfaction targets.
+Review instruction: Read the gate-type registry entry for G-extraction. Run Check 1 satisfaction targets.
 Run Checks 2-5 per check-spec.md skip logic. This is NOT a closing gate — skip Check 6.
 Classify each catch severity per return-contract.md § Severity tiers.
 Return the structured JSON verdict per references/return-contract.md.

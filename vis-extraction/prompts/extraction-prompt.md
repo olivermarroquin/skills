@@ -1,6 +1,6 @@
-# VIS Source Extraction — Prompt for Cowork (v3.3)
+# VIS Source Extraction — Agent-independent prompt (v3.4)
 
-This document tells Cowork how to extract structured KOS notes from a transcript file. It's read at the start of every extraction job. Treat it as authoritative — if the user's request and this document disagree, ask the user, don't guess.
+This document tells the invoking agent how to extract structured KOS notes from a transcript file. It's read at the start of every extraction job. Follow the user's explicit instructions; use this document for workflow details. Ask only when the intended scope is genuinely unclear.
 
 ---
 
@@ -111,7 +111,7 @@ No environment preflight needed. Skip Phase 0 entirely; proceed to Step 6 (Pull)
 
 ### Phase 0d — Social reel URLs (Facebook / Instagram / TikTok / YouTube Shorts)
 
-**This phase runs on the HOST machine (Claude Code in VS Code), not in the sandbox.** Social reels require `yt-dlp` + `ffmpeg` + `openai-whisper` — all installed host-side.
+**This phase requires a host machine with filesystem and shell access, `yt-dlp`, `ffmpeg`, and Python with `openai-whisper`.** Any agent with authorized access to that host can run it; an isolated sandbox lacking those capabilities cannot. The commands below reflect the installed macOS toolchain, not an agent-product requirement; verify the configured interpreter path rather than assuming another host has it.
 
 Required tools: `yt-dlp`, `ffmpeg`, Python 3.12 with `openai-whisper`.
 
@@ -171,7 +171,7 @@ Before reading the transcript content, read these files in order:
    - `workspace/ai-factory/` if it exists (factory infrastructure)
 
    **Read full content of:**
-   - `workspace/CLAUDE.md` if it exists (top-level operating doc — high signal)
+   - `workspace/AGENTS.md` (shared workspace operating rules); load a host-specific adapter only when the current host requires it
    - One or two project READMEs that look directly related to the source content
    - `second-brain/01_ai-operating-system/master-system-map.md` if the source touches system architecture
 
@@ -225,7 +225,7 @@ When `source-type: social-reel` appears in the transcript frontmatter (produced 
 
 **This is the load-bearing step.** For EACH extracted claim/tool/strategy from Step 1, perform an active investigation:
 
-1. **Web search.** Use WebSearch (or equivalent tool) to look up the named tool, technique, or strategy. Search for:
+1. **Web search.** Use an available web-search tool to look up the named tool, technique, or strategy. Search for:
    - The tool's official site / landing page (does it exist? what does it actually do?)
    - Independent reviews, tutorials, or case studies showing it in action
    - The specific mechanism/workflow the creator claims (is it real?)
@@ -239,7 +239,7 @@ When `source-type: social-reel` appears in the transcript frontmatter (produced 
    - **plausible** — the tool exists and the mechanism makes theoretical sense, but no independent confirmation that it works as specifically claimed in the reel. Evidence: tool exists but claims are extrapolated.
    - **unsubstantiated** — tool doesn't exist, or does something different from what's claimed, or no evidence of the claimed capability anywhere. Evidence: searched and found nothing / found contradictory info.
 
-**Tool availability note:** This sub-phase requires WebSearch. In substrates where WebSearch is available (Claude Code, Cowork with web access), run it directly. In substrates without web access, explicitly mark every claim as `unverified (no web access in this substrate)` and generate operator follow-up tasks for each — do NOT guess ratings from model knowledge alone, because model knowledge cannot confirm current tool existence or current feature sets. The operator follow-ups become the verification path.
+**Tool availability note:** This sub-phase requires a web-search capability that returns inspectable sources. Check the current host’s available tools and use its supported search interface; the tool name and agent vendor are not requirements. In substrates without web access, explicitly mark every claim as `unverified (no web access in this substrate)` and generate operator follow-up tasks for each — do NOT guess ratings from model knowledge alone, because model knowledge cannot confirm current tool existence or current feature sets. The operator follow-ups become the verification path.
 
 #### Step 3 — Source note structure (during Phase 7 write)
 
@@ -328,7 +328,7 @@ If the source explicitly demonstrates a workflow:
 
 If the source describes a goal/outcome but doesn't show steps:
 - Construct a likely workflow from what was said + general knowledge of the tools/domain
-- **Place this in a clearly labeled section: `## Workflow (constructed by Claude — not shown in source)`**
+- **Place this in a clearly labeled section: `## Workflow (constructed by the invoking agent — not shown in source)`**
 - Keep this strictly separate from any actual demonstrated workflow
 
 If the source has neither demonstration nor description:
@@ -384,7 +384,7 @@ This is a clearly-separated section in the source note for "what could this beco
 - "This source's approach + your capability in Y could enable..."
 - "An adjacent opportunity not stated by the source: ..."
 
-**This section is explicitly labeled as your analysis, not the source's content.** It sits in its own section in the source note: `## Speculative extensions (Claude's analysis — not from source)`.
+**This section is explicitly labeled as your analysis, not the source's content.** It sits in its own section in the source note: `## Speculative extensions (the invoking agent's analysis — not from source)`.
 
 Use this when there's real signal worth elevating. Skip it when there's nothing meaningful to add — empty is better than noisy.
 
@@ -397,7 +397,7 @@ After producing the analytic content above, factor out **discrete, actionable it
 1. **Decidable outcome** — closing the item requires a yes / no / done answer. Not "ongoing thought" or "general curiosity."
 2. **Specific enough to act on** — names the project, the tool, the artifact, or the deliverable involved. "Investigate AI coding" doesn't qualify; "try `grill-me` on resume-saas auth feature" does.
 3. **Generalizes beyond pattern-watching** — pattern observations stay in "Pattern candidates"; tasks live here.
-4. **Actionable to the operator** — the operator can plausibly act on it given current capabilities and access. Curiosity questions Claude can't answer and the operator can't act on stay in "Research questions."
+4. **Actionable to the operator** — the operator can plausibly act on it given current capabilities and access. Curiosity questions the invoking agent can't answer and the operator can't act on stay in "Research questions."
 
 **Soft cap: 8-10 items per source.** Surplus observations stay in the legacy sections (Replication potential / Speculative extensions / Research questions). The system shouldn't inherit the diagnostic file's wide-net width — task creation is restrictive on purpose.
 
@@ -450,7 +450,7 @@ After producing the analytic content above, factor out **discrete, actionable it
 Generate suggested values for each judgment field, with one-line reasoning per suggestion. **These suggestions go in a separate section of the source note** (not in the frontmatter — the frontmatter judgment fields stay empty). Format:
 
 ```markdown
-## Suggested judgments (Claude's analysis — verify before adopting)
+## Suggested judgments (the invoking agent's analysis — verify before adopting)
 
 These are advisory only. Read each, verify against your goals, then fill in the frontmatter fields above with your actual judgment. Don't anchor on these.
 
@@ -810,7 +810,7 @@ These are non-negotiable. Violations break the system's signal-to-noise.
 
 2. **Always label inference correctly.** Explicit / inferred / uncertain. Never promote inferred to explicit because it makes the note look stronger.
 
-3. **Always label your own analysis as such.** "Constructed by Claude — not shown in source." "Inferred — source did not state." "Claude's analysis — not from source." If a section contains your reasoning rather than source content, it gets a label.
+3. **Always label your own analysis as such.** "Constructed by the invoking agent — not shown in source." "Inferred — source did not state." "the invoking agent's analysis — not from source." If a section contains your reasoning rather than source content, it gets a label.
 
 4. **Suggested judgments are advisory only.** Never pre-fill the frontmatter judgment fields. Always put suggestions in the body's "Suggested judgments" section with explicit "advisory only" framing. Be honest about uncertainty when current-goals.md is empty.
 
@@ -873,7 +873,7 @@ Suggested judgments degrade gracefully. Be explicit in the suggestions: "Goals d
 
 The source note template includes a `## Discussions` section that lists discussion notes about this source. Discussions are a **separate artifact type** from sources, tactics, opportunities, etc — they capture questions, conversations, and reasoning *about* a source after extraction.
 
-When writing a new source note, **leave the Discussions section as just the heading + an empty Dataview block**. Don't populate it. Discussions are created later via QuickAdd or by user request in Cowork, not during extraction.
+When writing a new source note, **leave the Discussions section as just the heading + an empty Dataview block**. Don't populate it. Discussions are created later via QuickAdd or by user request to the invoking agent, not during extraction.
 
 The template's Discussions section uses Dataview to auto-list any discussion files that link back to the source — so as discussions get created, they appear in this section without manual updates.
 

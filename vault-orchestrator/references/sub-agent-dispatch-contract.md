@@ -20,6 +20,10 @@ When Mode 6 spawns a sub-agent, it produces a prompt with these load-bearing par
 You are a sub-agent dispatched by vault-orchestrator Mode 6 EXECUTE
 on behalf of project <project-slug>, wave <wave-id>.
 
+Required capability tier: <tier from second-brain/_meta/model-routing.md, with task-class rationale>
+Model check FIRST: verify actual runtime model/version and reasoning setting against the tier; STOP for relaunch or operator confirmation if wrong/unverifiable. Record evidence. Enforcement is manual — operator picks at spawn unless a supported override is verified.
+Reviewer tier and independence: <ordinary WORKHORSE or one-tier-up/ceiling rule; named separate review role and actual producer tier>
+
 Your single artifact: <absolute artifact path on disk>
 Artifact type: <service-brief | city-brief | intersection-brief | client-fact-brief | data-file | scaffolded-page | imagery-prompts | internal-link-proposals | final-report>
 Spec source: <path to the spec the artifact must satisfy>
@@ -82,25 +86,21 @@ Mode 6 detects the runtime substrate at dispatch time and adapts the dispatch mo
 
 ### Substrate detection
 
-The orchestrator checks (in order):
-
-1. **Operator-stated substrate** — if the operator names it explicitly ("dispatch via Cowork Agent tool" / "fire from Claude Code Task tool"), use that and skip the probes.
-2. **Tool availability probes** — concrete probes the orchestrator runs in this order:
-   - **Probe 1 — Task tool availability.** Check whether the Claude Code `Task` tool appears in the runtime's tool list AND can be called without an "unknown tool" error. If yes → Claude Code Task tool substrate. Detect by inspecting the system-prompt tool inventory OR by attempting a dry-run Task call wrapped in error handling.
-   - **Probe 2 — filesystem mount paths.** Inspect the runtime's working directory and known workspace root. Path matching `/sessions/<id>/mnt/workspace/` indicates Cowork sandbox; path matching `/Users/<user>/workspace/` (or `~/workspace/` resolved by the Mac shell) indicates Mac Terminal (Claude Code). If Probe 1 was ambiguous + filesystem signals are clean, Probe 2 resolves the substrate.
-   - **Probe 3 (future) — Hermes-harness MCP server registration.** Check the MCP registry for a registered `hermes-harness` server. If present + reachable, that's Hermes substrate. Not live today; reserved for the post-Hermes-shipping era.
-   - **Probe order:** 1 → 2 → 3 → default. The first probe to resolve a substrate wins; subsequent probes don't run.
-3. **Fallback** — Cowork sandbox is the default when all probes are ambiguous; renders the dispatch plan with the sequential adaptation. Operator can override with `--substrate <name>` if the default is wrong.
-
-When operators report substrate mis-detection, the debug path is: which probe resolved the substrate? If Probe 1 returned a false positive (Task tool listed but actually unreachable), the runtime tool inventory may be stale — surface the diagnostic + ask operator to confirm.
+1. Record the operator’s requested host and inspect its actual tool inventory and documented invocation schema. A requested host is a preference, not proof of tool access; do not spawn a paid worker merely to test discovery.
+2. Verify the capabilities needed by this wave: artifact filesystem access, shell/network tools, isolated worker context, completion/result retrieval, allowed concurrency and (if needed) mid-run state writes. Filesystem paths identify mounts, not model vendors or dispatch APIs.
+3. Select the supported execution shape below. Unknown or unavailable dispatch means STOP before fan-out and surface the missing capability. An operator may choose a separately scoped sequential/manual run with a revised estimate; do not pretend parallel dispatch is available.
 
 ### Substrate matrix
 
-| Substrate | Status (2026-06-03) | Dispatch model | State-file writes | Polling cadence |
-|---|---|---|---|---|
-| Cowork Agent tool | Available today | Sequential one-shot. One Agent call per sub-agent; orchestrator blocks until the call returns; writes state between calls; next call spawns when prior returns. | Between calls (orchestrator does the write, not the sub-agent). | N/A — calls block until return. |
-| Claude Code Task tool | Available today | True parallel. Multiple Task calls in one message fan out concurrently; sub-agents write `quality_log` keys mid-run; orchestrator polls state file at configurable cadence. | Mid-run, per-key (each sub-agent owns its `quality_log[<step>][<artifact-name>]` key per [[inter-agent-coordination-via-state-file]]). | Default 10s, configurable via `--polling-cadence Ns`. |
-| Hermes-harness | Future (Phase 1 prework still queued; substrate not live yet) | Long-lived sub-agents with bidirectional messaging; full polling model with low-latency state propagation; sub-agents can be paused + resumed. | Mid-run + push notifications via Hermes channels. | Push-driven (no polling needed) once Hermes ships. |
+| Capability profile | Dispatch behavior | State-file ownership | Evidence needed before dispatch |
+|---|---|---|---|
+| Parallel isolated workers | Dispatch disjoint edit-zones concurrently up to verified host limits; serialize dependencies. | Workers own only assigned keys when safe mid-run writes are supported; otherwise orchestrator serializes returned patches. | Callable spawn + wait/results interface, concurrency limit, filesystem access and isolation. |
+| Sequential one-shot workers | One worker call, wait for return, verify result, then next. | Orchestrator applies verified state updates between calls. | Callable worker interface and result retrieval; no concurrency assumed. |
+| Separate operator-launched sessions | Operator launches scoped prompts; relay artifacts and completion receipts. | Preserve explicit edit-zone ownership; serialize shared updates. | Operator confirmation of host, access and role model check. Manual, not automatic dispatch. |
+| Persistent messaging workers | Long-lived workers with messages and completion events. | Existing ownership contract still applies. | Host-specific adapter must be verified; not assumed shipped by this document. |
+
+Host names are examples, not primary routing keys: Claude Code `Task`, a Cowork `Agent` interface, Codex collaboration tools, or another vendor’s runtime may implement one of these profiles. Verify the current invocation schema and capability set; an interface name does not prove parallelism or independence. A text-only host without tools needs an operator-launched execution session, not invented API calls. Concrete model selection belongs to `second-brain/_meta/model-routing.md` and must be checked separately from the dispatch profile.
+
 
 ### How the orchestrator names the substrate up front
 
@@ -120,7 +120,7 @@ Parallel-safe per edit-zone detector: <count> sub-agents
 Serialized per edit-zone detector: <count> sub-agents
 ```
 
-Honest framing prevents the trust erosion lesson D-07 named: an operator who sees "parallel-OK-with-note" on a Cowork dispatch shouldn't think they're getting concurrent execution they aren't. The cost surface is similarly honest — operator sees the pre-fire surface PLUS the conditional Mode 4 escalation surface, not just one or the other.
+Honest framing prevents the trust erosion lesson D-07 named: an operator who sees "parallel-OK-with-note" on a sequential dispatch shouldn't think they're getting concurrent execution they aren't. The cost surface is similarly honest — operator sees the pre-fire surface PLUS the conditional Mode 4 escalation surface, not just one or the other.
 
 ### Cost estimation aggregated from per-artifact-sizing
 
@@ -138,9 +138,9 @@ Cost line discipline: ALL surface costs are inline + named per surface; no opaqu
 
 ### Why this matters for time estimates
 
-Sequential dispatch on Cowork: total wall-clock ≈ sum of all sub-agent durations. A wave with two 90-minute briefs runs ~3h.
+Sequential dispatch: total wall-clock ≈ sum of all sub-agent durations. A wave with two 90-minute briefs runs ~3h.
 
-Parallel dispatch on Claude Code Task tool: total wall-clock ≈ duration of the slowest sub-agent (plus dispatch + return overhead). Two 90-minute briefs in parallel run ~1.5-2h.
+Verified parallel dispatch: total wall-clock ≈ duration of the slowest sub-agent (plus dispatch + return overhead). Two 90-minute briefs in parallel run ~1.5-2h.
 
 The dispatch plan names BOTH numbers when the substrate could change between drafting + firing.
 
