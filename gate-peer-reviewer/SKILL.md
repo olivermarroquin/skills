@@ -1,9 +1,12 @@
 ---
 name: gate-peer-reviewer
-version: 4.1
+version: 4.2
 status: active
 created: 2026-06-03
-updated: 2026-09-23
+updated: 2026-09-24
+quality-log: "[[_quality-log#SKILL]]"
+last-evaluated: 2026-09-24
+last-verdict: PASS
 description: Automated peer-review layer that sits between any orchestrator skill's gate emission and operator review. Fires 6 structured checks + severity tiers + standing regression harness. 21 registered gate types across 13 orchestrators — incl. G-default universal catch-all gate (v3.4) for ad-hoc/non-orchestrated tasks + G-chat-close omission-audit gate (v3.6) for chat-completeness verification at every close. All 9 non-Core-30 skills dispatch the reviewer at their gates (GPR-9). Reviewer performs its own live cache-busted fetch (GPR-11). All sweeps enumerate meta/og/schema surfaces (GPR-12). Verdicts carry blocking/advisory severity (GPR-13). Planted-defect regression suite prevents silent regression (GPR-14). Substrate-agnostic. Project-agnostic. Output-agnostic.
 triggers:
   - any orchestrator emits a gate decision for operator review
@@ -25,7 +28,7 @@ composes-with:
 tags: [skill, peer-review, gate-review, process-quality, orchestrator-coaching, substrate-agnostic, v2, page-build, autonomous-dispatch, deliberate-evolution-vs-silent-drift]
 ---
 
-# `gate-peer-reviewer` skill v4.0
+# `gate-peer-reviewer` skill v4.2
 
 Automated peer-review layer that fires on every orchestrated output across every project across every skill. v1 replaced the parallel-Cowork coaching layer Oliver ran by hand through waves A2-A6 of S&H Core 30 research. v2 extends to page-build gates (replacing the manual peer-review transport from the S&H Core 30 page-build run, PR-01..PR-40) and adds autonomous dispatch so the operator stops being the paste-transport layer.
 
@@ -75,27 +78,45 @@ Four rules for any peer-reviewer pass that touches live page state (publish gate
 
 4. **Don't scope a page as "fine, minor fix" from a prior run note — disk-verify its actual state first.** Before scoping a page as "images render acceptably — only needs the map" (or any similar assessment from a prior note), disk-verify the page's current wired-image + style-wrapper state. The reviewer mis-scoped page 01 as "fine" from an old run note while on disk its hero was never wired and its live content was the old version. Same class as `pattern-disk-verify-integration-target-before-drafting` applied to the reviewer's own scoping.
 
-## Substrate detection (3-probe sequence)
+## Substrate detection — capability-based dispatch (v4.2, A8-06)
 
-The peer-reviewer runs under three substrates without spec changes:
+The peer-reviewer dispatches based on **verified host capabilities**, not vendor names. The three
+previously named substrates ("Claude Code Task tool", "Cowork sequential", "Hermes-harness daemon")
+are replaced by the capabilities they provide. A host that lacks a required capability gets an
+**explicit stop** — never a vendor-inferred fallback.
 
-| Substrate | How peer-reviewer fires | Status |
-|-----------|------------------------|--------|
-| Claude Code Task tool | Parent orchestrator spawns peer-reviewer as a Task tool sub-agent after each gate emission | Feasible today |
-| Cowork sequential | Parent orchestrator invokes peer-reviewer as a sub-skill (single-process), output to chat | Feasible today |
-| Hermes-harness daemon (Build wave 3 / Level 3 target) | Daemon watches event log; on every gate event, fires peer-reviewer; posts response back to parent substrate's stdin | Requires Hermes Prework A + B + C |
+| Required capability | Dispatch shape | Notes |
+|---------------------|----------------|-------|
+| `sub-agent-spawn` — host can spawn an isolated sub-agent (Task/process) as the peer-reviewer | Parent orchestrator spawns peer-reviewer as a sub-agent after each gate emission; sub-agent returns structured JSON verdict | Claude Code Task tool has this capability; verify before dispatch |
+| `sub-skill-invocation` — host can invoke a skill in-process within the same session | Parent orchestrator invokes peer-reviewer as a sub-skill; output renders in the same session | Cowork sequential has this capability; verify before dispatch |
+| `daemon-event-watch` — host daemon can watch the event log asynchronously and fire the peer-reviewer | Daemon watches `_event-log.md`; on every gate event, fires peer-reviewer; posts response back to parent's stdin | Requires Hermes Prework A + B + C; not available until Build wave 3 |
 
-**Why 3-probe over 2-probe.** A 2-probe sequence (parent-orchestrator-provided substrate tag → fallback) is simpler. The peer-reviewer uses 3-probe because under Hermes daemon dispatch (Build wave 3), the parent-orchestrator-provided substrate tag is NOT reliably available — the daemon fires from outside the orchestrator's process, so the tag-passing channel may not exist. Daemon robustness is the load-bearing reason; sibling-consistency with vault-orchestrator Mode 6's 3-probe sequence is the bonus.
+**Unavailable capability = explicit stop.**
 
-**The 3-probe sequence:**
+```
+If the required capability is not available on the current host:
+STOP — do not attempt to infer the dispatch path from mount paths, env hints, or vendor names.
+Report: "gate-peer-reviewer dispatch requires [capability]; this capability is not available
+on the current host. Cannot dispatch autonomously — operator must dispatch manually or
+confirm the correct capability is active."
+```
+
+Never proceed with a "best-guess" substrate. A wrong dispatch path produces a reviewer verdict
+with structurally weaker independence than the operator intended.
+
+**Capability detection (3-probe sequence, preserved from v1):**
 
 ```
 Probe 1 — Read env var GATE_PEER_REVIEWER_SUBSTRATE (set by parent dispatcher when known)
-Probe 2 — Read parent-context introspection (Task tool exposes hasTaskParent; Cowork sub-skill invocation exposes parentSkill)
-Probe 3 — Fallback to interactive prompt OR daemon-mode signal file at /tmp/hermes-substrate-tag
+Probe 2 — Verify capability directly: attempt sub-agent-spawn probe (if Task-capable host) or
+          sub-skill-invocation probe (if Cowork-capable host)
+Probe 3 — Read signal file at /tmp/hermes-substrate-tag (daemon-mode only)
 ```
 
-Default: if all 3 probes fail, assume `cowork-sequential` and log warning to event log.
+If all 3 probes fail: **do not assume any substrate.** Surface an explicit stop to the operator
+rather than silently falling back to `cowork-sequential`. (Prior default assumption logged a warning;
+this version treats an unresolved substrate as a hard stop — a silent wrong-dispatch is worse than
+a visible one.)
 
 ## Inputs read at every invocation
 
@@ -103,7 +124,11 @@ Per gate review:
 
 1. **Current gate output text** — the thing being reviewed
 2. **Current wave's kickoff prompt** — the contract
-3. **`feedback_*` memory files** under `~/Library/Application Support/Claude/local-agent-mode-sessions/.../memory/` — what the operator has validated as good or corrected as wrong
+3. **Operator-validated context** (A8-09 — portable, not Claude-app-specific): resolved in order:
+   - Env var `GATE_REVIEWER_CONTEXT_ROOTS` (colon-separated paths) — set by the caller when known
+   - Caller-supplied `context_roots` parameter in the dispatch block
+   - Portable fallback: `_scratch/relay/` working surface + lesson/pattern files cited in the gate type's registry entry
+   - If none of the above resolve: **REPORT exactly what context is missing** — do not silently omit it and proceed as if no prior operator feedback exists. A non-Claude runtime must be able to provide this context via one of the paths above; the previous `~/Library/Application Support/Claude/...` path was macOS + Claude-app-specific and is not portable.
 4. **State file** — `04_projects/<area>/<name>/_state/onboarding.json` (or equivalent for non-S&H/EV orchestrators)
 5. **Recent lesson D-rows** — most recent 1-2 lesson files for this orchestrator + project
 6. **Active chats tracker** — `_meta/handoffs/_active-chats-tracker.md`, what other orchestrators are in flight that might collide
@@ -230,6 +255,13 @@ There are two dispatch shapes for the reviewer, and they are **not** equally ind
 
 **Precedence rule.** When a gate qualifies as state-changing / skill-registration / high-stakes, the separate-session running review wins even if an autonomous-dispatch path exists for that gate. Autonomous dispatch is an optimization for the low-stakes high-volume tail, not the default for everything.
 
+**G-extraction VIS exception (DECIDED 2026-09-21 — implement, do not re-litigate).** VIS source-note writes are the high-volume, low-stakes tail explicitly authorized by the operator for sub-agent convenience dispatch. Policy:
+- Verdicts are **advisory-only initially** — logged and advisory findings attached to the note.
+- **BLOCKING-severity verdicts escalate to the operator immediately** — they are not suppressed or treated as advisory.
+- The sub-agent verdict is never the sole gate that closes a run until the operator reviews the first logged batch (escalation log: `second-brain/_meta/escalations/vis-extraction-escalation-log.md`).
+- Model tier: **WORKHORSE** for G-extraction ordinary review; escalate to **FRONTIER** (separate-session) only if a BLOCKING finding triggers operator escalation and a higher-confidence review is warranted.
+- Source: `second-brain/_meta/handoffs/vis-system-enhancement/audit-2026-09-21-vis-weaknesses.md` §2 DECIDED block; registry entry `references/gate-type-registry.md` § P6 `independence_policy`.
+
 ## Autonomous dispatch (v2.0) — convenience mode, see Independence precedence above
 
 v1 required the operator to manually paste each gate output into a peer-review chat and paste the reply back. v2 removes the operator-as-transport **for the low-stakes high-volume tail** (per the Independence precedence section above — this is the weaker-independence convenience mode, not the default for state-changing or skill-registration work):
@@ -277,13 +309,17 @@ Five parseable fields. Grep-friendly: future operators run `grep "event-type: pe
 
 Per-gate incremental cost when peer-reviewer fires:
 
-| Layer | Per-gate cost | Per-wave cost (5 gates) | Notes |
-|-------|---------------|------------------------|-------|
-| Opus invocation (peer-reviewer reasoning) | $0.05-$0.12 | $0.25-$0.60 | Default; reads ~5-10K tokens of context, produces structured JSON |
-| Sonar query (optional Check 3 domain probe) | $0.025-$0.04 | $0.025-$0.08 | Bounded to 1 query per gate max; typically 1-2 of 5 gates need it |
-| Total per-wave incremental | — | $0.28-$0.68 | Edge case all-5-gates-Sonar: $0.125-$0.20 additional, bounded by triage filter |
+Model tier is set per [[model-routing]]: **WORKHORSE for ordinary review; FRONTIER for gate/security-touching review.** There is no single "default" tier — the gate type and review context determine the tier. Switching is **manual**: the operator selects the tier at spawn or the dispatch block carries an explicit override. There is no automatic tier-switching at runtime.
 
-Justified: the catches Oliver was making in parallel Cowork would otherwise cost (a) Mode 4 iterations on failed briefs ($0.05-$0.15 per re-iteration) or (b) operator time at Gate 2 spot-check. Peer-reviewer absorbs both.
+| Layer | WORKHORSE tier cost | FRONTIER tier cost | Notes |
+|-------|--------------------|--------------------|-------|
+| Peer-reviewer reasoning (ordinary review) | $0.02-$0.06 per gate | — | WORKHORSE (Sonnet-class): use for G-extraction, G-data, G-scaffold, and other knowledge/content artifact gates |
+| Peer-reviewer reasoning (gate/security review) | — | $0.05-$0.12 per gate | FRONTIER (Opus-class): use for skill registrations, gate-infrastructure changes, security-touching code, and any gate where a weaker-independence finding would be expensive to miss |
+| Sonar query (optional Check 3 domain probe) | $0.025-$0.04 | $0.025-$0.04 | Bounded to 1 query per gate max; typically 1-2 of 5 gates need it; tier-independent |
+| Total per-wave (5 gates, WORKHORSE, no Sonar) | $0.10-$0.30 | — | Ordinary content pipeline (Core-30, VIS extractions) |
+| Total per-wave (5 gates, FRONTIER, no Sonar) | — | $0.25-$0.60 | Gate-infrastructure or security-touching build |
+
+Justified: the catches Oliver was making in parallel Cowork would otherwise cost (a) Mode 4 iterations on failed briefs ($0.05-$0.15 per re-iteration) or (b) operator time at Gate 2 spot-check. Peer-reviewer absorbs both. WORKHORSE tier for ordinary gates roughly halves the per-gate cost vs. the prior Opus default while preserving review quality for non-security work.
 
 ## Operator invocation modes
 
@@ -315,6 +351,7 @@ The peer-reviewer is normally dispatched by a parent orchestrator. Operator-driv
 
 ## Version history
 
+- **v4.2 (2026-09-24)** — [VIS-P1] G-extraction gate fully wired. (1) Independence precedence section expanded with G-extraction VIS exception (DECIDED 2026-09-21): advisory-only sub-agent review, BLOCKING escalates to operator, first-batch review required, WORKHORSE model tier. (2) Model/cost table replaced with capability-based model-routing policy per `model-routing.md` (WORKHORSE ordinary / FRONTIER gate-security; switching is manual at spawn). (3) Substrate detection table replaced with capability-based dispatch table (`sub-agent-spawn` / `sub-skill-invocation` / `daemon-event-watch`); unavailable capability = explicit stop; all-probes-fail no longer defaults to cowork-sequential. (4) Inputs item 3 context-roots replaced: `~/Library/Application Support/…` path removed; portable `GATE_REVIEWER_CONTEXT_ROOTS` env var or `context_roots` parameter, with `_scratch/relay/` + lesson files as fallback; reports exactly what is missing if unresolvable. Companion: vis-extraction v1.5, escalation-log surface created, G-extraction registry entry fully filled (T2/T3/T4 of VIS-P1 handoff).
 - **v4.1 (2026-09-23)** — [RGH-22] conventions-conformance ratchet. OC-28 (`oc28-conventions-conformance.py`) wired into `independent-reviewer-dispatch.py` as a full-tier deterministic check on vault files (C1 filename, C2 folder placement, C3 frontmatter schema, C4 wikilink-vault-resolution). 58-test suite (`test_oc28.py`) covers all 6 seed defect families + grandfathering regression (MOC-*, _README.md, MASTER-STRATEGY-*) + drift check. OC-28 registered in `omission-check-registry.md` (BLOCKING on FAIL, WARN on unknown type). `independent-reviewer-mandate.md` bumped v1.3→v1.4: Phase C item 8 (OC-28 sweep), no-downgrade rule §4 (CR-212 anti-regress), link-resolution disambiguation (CR-179). `meta-reviewer-mandate.md` created: operator-side check on the independent reviewer; mandatory Productize-tier, sampled Capture-only; M3 no-downgrade phase is the CR-212 circuit breaker. `template-peer-review-chat.md` created with reviewer spawn template + meta-reviewer dispatch decision table. Regression harness 25→31 fixtures (6 OC-28 seed-defect fixtures added). Handoff template updated with OC-28 in check-id vocabulary. Root cause: VIS-5 / CR-211 — 6 convention defects survived 3 reviewer rounds.
 - **v4.0 (2026-07-02)** — [RGH-18]+[RGH-19] deterministic build-correctness + doc/knowledge-completeness gate checks as code. `rgh18-build-correctness.py` (Leg A: completeness diff + DIFF-AWARE all-dirty-file sweep + staging-reality audit) and `rgh19-doc-completeness.py` (Leg B: OC-21..27 + OC-20 wired as code) now auto-fire via `independent-reviewer-dispatch.py` on every full-tier run. OC-21..27 registered in `references/omission-check-registry.md` (registry v3.9→v4.0) with severity mappings, profile assignments, and seed incidents. 17/17 new regression tests pass; 0 new regressions on the existing 127-pass conformance suite. Shipped by the separate `rgh18-19-deterministic-gate-checks` chat; SKILL.md version synced here. Gate count unchanged (enforcement moves from prose to code).
 - **v3.9 (2026-07-02)** — GPR-15 jurisdiction-determinant check for multi-jurisdiction city briefs. New `checkable_fact` in `research-brief.yaml`: `jurisdiction_determinant` with 3 deterministic sub-checks — (a) anti-pattern flag (ZIP co-located with jurisdiction term), (b) require non-ZIP determinant when >=2 authorities named (corporate-limits/GIS/tax-bill), (c) cross-field ZIP-collision. Mechanized in `brief-preflight.py` (LU-T1). Companion script `brief-citation-sweep.py` (LU-T2) checks wikilink resolution + unsourced numeric claims. Both scripts proven against real EV briefs (PASS, zero false positives) and deliberately broken copies (each defect caught). Wired into `workflow-content-brief-peer-review.md` as Step 0 automated pre-pass. OQL routing entry added for `per-city content brief` artifact type. Closes GPR-15 from the enhancement log (CR-140). Gate count unchanged; profile count +1 sub-check.

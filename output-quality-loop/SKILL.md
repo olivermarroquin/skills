@@ -1,6 +1,6 @@
 ---
 name: output-quality-loop
-description: Evaluate a finished Knowledge OS artifact against the specs that define what "good" looks like for its type, produce a structured verdict (PASS / NEEDS REVISION minor or substantive / FAIL), generate a revision prompt the producing chat can ingest to regenerate, and (Mode 4) compose with `perplexity-refinement` to research the strongest published version of each gap and feed those elevation suggestions back into the revision prompt. Triggers on phrases like "quality-check <artifact-path>," "evaluate <artifact-path>," "run output-quality-loop on <artifact-path>," "is this draft ready to ship," "does this brief meet the spec," "did the refinement pass actually elevate the source note," "audit this synthesis against its sources," "elevate this draft against the strongest published version," "what's the best version of this artifact in the world," or any time the operator wants a structured fitness evaluation of an artifact already on disk. Also fires via the auto-invoke convention block other skills emit at completion (see references/auto-invoke-convention.md). The keystone of the output-quality-loop system; Phases 2-6 of the roadmap build on top of this skill.
+description: "Evaluate a finished Knowledge OS artifact against the specs that define what \"good\" looks like for its type, produce a structured verdict (PASS / NEEDS REVISION minor or substantive / FAIL), generate a revision prompt the producing chat can ingest to regenerate, and (Mode 4) compose with `perplexity-refinement` to research the strongest published version of each gap and feed those elevation suggestions back into the revision prompt. Triggers on phrases like \"quality-check artifact-path,\" \"evaluate artifact-path,\" \"run output-quality-loop on artifact-path,\" \"is this draft ready to ship,\" \"does this brief meet the spec,\" \"did the refinement pass actually elevate the source note,\" \"audit this synthesis against its sources,\" \"elevate this draft against the strongest published version,\" \"what's the best version of this artifact in the world,\" or any time the operator wants a structured fitness evaluation of an artifact already on disk."
 ---
 
 # Output Quality Loop Skill (v1.4)
@@ -336,6 +336,8 @@ Per `references/folder-quality-log-shape.md` and `references/research-budget-per
 The judgment mode. Modes 1–4 evaluate fit and elevate quality; Mode 5 decides what happens with the verdict. High-confidence PASS verdicts ship without operator review. Low-confidence PASS, NEEDS REVISION, FAIL, and 3-iteration stalls escalate to the operator on two paths (light vs hard) with full diagnostic.
 
 Mode 5 turns the loop from "operator reviews every verdict" into "operator reviews only the verdicts that need judgment." The cost of being wrong is bounded — operator can override any auto-approve, any escalation, any threshold.
+
+> **Phase 2 composition note (VIS Phase 1 → OQL Mode 5):** Mode 5's auto-approve and escalation paths will wire into the G-extraction verdict shape (`verdict: PASS|HOLD|FAIL`, `checks_run[]`, `catches[]`, `cost_usd`) and the escalation-log surface (`second-brain/_meta/escalations/vis-extraction-escalation-log.md`) landed in VIS Phase 1. No Mode 5 wiring in Phase 1 — this note marks the composition point for Phase 2.
 
 **Trigger phrases:**
 

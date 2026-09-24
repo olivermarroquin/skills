@@ -3,8 +3,11 @@ type: reference
 skill: gate-peer-reviewer
 skill-version: 3.8
 created: 2026-06-03
-updated: 2026-06-17
+updated: 2026-09-24
 tags: [reference, gate-type-registry, substrate-agnostic, future-orchestrator-friendly, page-build, client-seo-onboarding, value-correctness, ground-truth, g-chat-close, omission-audit, g-coverage, content-coverage-audit]
+quality-log: "[[_quality-log#gate-type-registry]]"
+last-evaluated: 2026-09-24
+last-verdict: PASS
 ---
 
 # Gate-type registry
@@ -580,18 +583,70 @@ Registered by the toolkit-wide quality-tool integration audit (2026-06-06). Thes
   emits: source note + supporting artifacts (tactics, patterns, tools)
   contract_source: skills/vis-extraction/SKILL.md § Phase 6
   is_closing_gate: false
+  model_override: WORKHORSE
+  # G-extraction is ordinary knowledge-artifact review; escalate to FRONTIER (separate-session) only if
+  # independence_policy.blocking_escalates_to is triggered. Per model-routing.md: ordinary review = WORKHORSE.
+  independence_policy:
+    mode: advisory-only
+    # Sub-agent (Task/Agent tool) dispatch authorized for G-extraction — VIS source-note writes are the
+    # high-volume/low-stakes tail. Verdicts are advisory; the sub-agent verdict is never the sole gate
+    # that closes a run until the operator reviews the first logged batch.
+    decided: 2026-09-21
+    # DECIDED block from audit-2026-09-21-vis-weaknesses §2 — do not re-litigate.
+    blocking_escalates_to: operator
+    # BLOCKING-severity advisory findings surface to the operator immediately; they are not suppressed.
+    escalation_log: second-brain/_meta/escalations/vis-extraction-escalation-log.md
+    # Operator skims this file to review the first batch before advisory→blocking promotion is lifted.
+    first_batch_review: required before sub-agent advisory verdicts may be treated as blocking-capable
   expects:
     check_1_satisfaction_targets:
       - source note follows 7-section structure (Take-away through Pattern candidates)
       - plain-English layer present (top-level + callouts)
       - no fabricated citations (every claim traceable to source)
       - project-applicability frontmatter fields present
-    check_2_calibration_metrics: []
-    check_3_domain_probe_classes: []
+    check_2_calibration_metrics:
+      - claim_sample_size: reviewer samples ≥3 claims per note (must include ≥1 tool/URL claim when
+          the Tools section is non-empty) and records trace result for each
+      - section_count: number of 7 required sections present (BLOCKING if <7)
+      - cost_usd: actual extraction run cost recorded in verdict for trend tracking
+    check_3_domain_probe_classes:
+      - technical-tool-url-validity: reviewer probes whether tool/URL claims are real (AI, dev,
+          business tools are hallucination-prone — a plausible-sounding but non-existent tool name
+          is a BLOCKING source-fidelity failure)
+      - insight-attribution: reviewer probes whether insights are attributed to this specific video
+          vs. general knowledge the model may have supplied without transcript grounding
     check_4_cross_wave_artifact_type: source-note
     check_4_within_wave_prior_gate: null
+    check_source_fidelity:
+      description: sampled claims in the source note must trace to transcript text
+      severity: BLOCKING
+      detail: >
+        Fabricated tools, URLs, or citations not present in the transcript = BLOCKING.
+        Reviewer samples ≥3 claims per note total; must include ≥1 tool/URL claim when the Tools
+        section is non-empty (hallucination-prone domain). Records trace result for each sampled claim.
+        check_3_domain_probe_classes.technical-tool-url-validity is the primary probe surface.
+    check_conventions_conformance:
+      description: OC-28 conventions conformance sweep on all vault files written by this extraction
+      check_id: OC-28
+      reference: skills/gate-peer-reviewer/references/omission-check-registry.md § OC-28
+      severity: BLOCKING on FAIL (no-downgrade rule per independent-reviewer-mandate v1.4)
+      invocation: >
+        python3 ~/workspace/repos/ai-agency-core/scripts/mandatory-review-gate/oc28-conventions-conformance.py
+        --workspace-root ~/workspace --json <written-vault-files>
+      note: invoke the registered checker — do NOT rebuild conventions checking
+    check_structured_verdict:
+      description: reviewer return contract must include Phase 2-consumable verdict shape
+      required_fields:
+        - verdict: PASS | HOLD | FAIL
+        - checks_run: list of check objects with name + result
+        - catches: list of findings with severity and surface
+        - cost_usd: float
+      severity: BLOCKING if verdict file absent or fields missing
+      note: this shape is the Phase 2 (output-quality-loop Mode 5) composition input
   registered_by: quality-tool-integration-audit-202606060000
   registered_at: 2026-06-06
+  updated_at: 2026-09-24
+  updated_by: vis-p1-gate-integration
 
 # P7: intel-routing
 - orchestrator: intel-routing

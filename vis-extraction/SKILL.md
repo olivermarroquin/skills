@@ -1,11 +1,14 @@
 ---
 name: vis-extraction
-version: 1.4
-updated: 2026-09-22
+version: 1.5
+updated: 2026-09-24
+quality-log: "[[_quality-log#SKILL]]"
+last-evaluated: 2026-09-24
+last-verdict: PASS
 description: Extract structured intelligence from videos, articles, transcripts, and other long-form content into Oliver's Knowledge OS vault. Triggers on phrases like "ingest this video," "extract this URL," "process this transcript," "pull and extract from a URL," "analyze this article," "ingest this source," "run VIS on this," or any time the user provides a YouTube URL, web article URL, or local transcript file and wants a structured source note plus extracted artifacts (tools, tactics, opportunities, content ideas) written into the second-brain vault. Also use when the user mentions adding a video/article/talk to their vault, or when they paste a URL with no other instruction in a Knowledge OS context. This is the primary path for converting external content into vault artifacts.
 ---
 
-# VIS Extraction Skill (v1.4)
+# VIS Extraction Skill (v1.5)
 
 The Video Intelligence System (VIS) extraction skill. Wraps the `transcript-pull.sh` and `social-pull.sh` scripts and the v3.4 extraction prompt into a single workflow. Pull a transcript, run extraction, write structured notes to the vault.
 
@@ -862,7 +865,38 @@ For YouTube URLs, use the sandbox-reachable Cloudflare Worker wrapper instead of
 python3 ~/workspace/repos/ai-agency-core/scripts/fetch_youtube_transcript.py --url "<YOUTUBE-URL>" --markdown --quiet > /Users/olivermarroquin/workspace/skills/vis-extraction/cache/transcript-$(date +%Y-%m-%d-%H%M%S)-<slug>.md
 ```
 
-The wrapper reads the API token from `~/workspace/second-brain-tier3/automation/secrets/youtube-transcript.key` (Mac Terminal) or `/mnt/user/second-brain-tier3/automation/secrets/youtube-transcript.key` (Cowork sandbox). If this succeeds, capture the output filename and proceed to Step 7.
+The wrapper reads the API token from `~/workspace/second-brain-tier3/automation/secrets/youtube-transcript.key` (Mac Terminal) or `/mnt/user/second-brain-tier3/automation/secrets/youtube-transcript.key` (Cowork sandbox).
+
+**Typed-failure branch (Phase 3 fix — branch on exit code, not file content):**
+
+`fetch_youtube_transcript.py` exits 0 on success and exits 1 on failure, with the failure class written to stderr. Do NOT check file content for `**ERROR:**` — the Phase 3 fix means the output file is empty on failure, not error-text-bearing.
+
+```
+exit 0 → capture output filename; proceed to Step 7 (normal path)
+
+exit 1, stderr class = transcripts_disabled OR transcripts_not_available:
+  Captions do not exist for this video — a host caption pull (Scenario C) will also fail.
+  Branch on video length:
+    Short video (≤30 min): offer the Whisper transcription path via social-pull.sh
+      (proven in Phase 5 — operator confirms before running, as it costs more).
+    Long video OR operator declines Whisper: skip this source entirely.
+      Log reason: "transcripts_disabled — <video-slug>" in extraction log; proceed to next source.
+
+exit 1, stderr class = video_not_found OR video_private:
+  Video is unavailable. Skip entirely.
+  Log reason: "video_not_found|video_private — <video-slug>" in extraction log; proceed to next source.
+
+exit 1, stderr class = rate_limited:
+  Back off and retry the current sprint step after a pause.
+  Do not skip; the video is accessible, just throttled.
+
+exit 1, stderr class = connection_error:
+  Transient network error. Retry once immediately; if still failing, route to Scenario C
+  (sandbox network blocked path — the Worker may be unreachable from this substrate).
+
+exit 1, stderr class = <unrecognized>:
+  Treat as connection_error (transient); retry once, then route to Scenario C.
+```
 
 **Scenario B-legacy — transcript-pull.sh via yt-dlp (fallback for YouTube, required for articles):**
 
@@ -913,7 +947,9 @@ Phase 0 (environment preflight) was already executed in Step 5. Following the v3
 3. **Phase 3 — Source analysis.** Apply global writing rules (acronym expansion on first use; plain-English coverage at top + 4 jargon-section callouts). Produce all structured analysis. **Also produce a "Structured action items" block organized by kind (experiment / decision / comparison / research / adoption / conditional)** — apply the four-rule inclusion gate (decidable outcome, specific enough to act on, generalizes beyond pattern-watching, actionable to the operator). Soft cap at 8-10 items per source; surplus stays in legacy sections.
 4. **Phase 4 — Existing-note check.** Dedup-and-enhance pass against vault content.
 5. **Phase 5 — Conservative-creation gate.** Apply the "would this note be useful 3 months from now" filter.
-6. **Phase 6 — Review gate.** In `training` mode: STOP and present structured summary including the new "Proposed structured action items" approval block. Wait for user approval. In `auto` mode: skip directly to Phase 7.
+6. **Phase 6 — Review gate.** Dispatch the G-extraction peer-reviewer (MANDATORY — see § Peer-reviewer dispatch, which is the wired contract for this step; apply its independence policy, model override, and mandatory-trace requirements). This dispatch is NOT optional in either mode; an executor skipping it and proceeding to Phase 7 is a defect.
+   - `training` mode: present structured summary (including "Proposed structured action items" block) AND dispatch G-extraction peer-reviewer. Route on verdict per § Peer-reviewer dispatch. Wait for both the user's approval of the structured summary AND the peer-reviewer verdict routing before proceeding to Phase 7.
+   - `auto` mode: dispatch G-extraction peer-reviewer and route on verdict. `APPROVE` / `APPROVE-WITH-NOTES` + advisory verdict → proceed to Phase 7. `APPROVE-WITH-NOTES` + blocking verdict → surface to operator before proceeding. `REJECT-AND-REDO` → fix and re-dispatch (cap 2). `ESCALATE-AMBIGUOUS` → surface to operator.
 7. **Phase 7 — Write to disk.** Write source note to `00_inbox/sources-pending/`, supporting notes to their canonical locations. **Materialize approved structured action items as task notes in `06_tasks/`** with `extracted-via: vis-phase6` and `source: [[<source-note>]]`. Set `attention-mode` in frontmatter. Leave the source note's "Action log" Dataview block in place (it auto-populates from the new task notes). Leave Discussions section's Dataview block in place.
 8. **Phase 8 — Report.** Generate the structured report (see "Final report format" below).
 
@@ -1118,7 +1154,12 @@ Read these as needed. The extraction prompt is the authoritative spec; this SKIL
 
 > **Independence precedence.** Read the current `~/workspace/skills/gate-peer-reviewer/SKILL.md` and its registry/return contract at invocation (v4.0 inspected 2026-09-22; do not pin callers to a stale version). The host-supported sub-agent dispatch described here is the *weaker-independence convenience mode* — acceptable for high-volume, low-stakes gates. For any gate that changes vault/live state, registers a skill, or ships a client deliverable, the CANONICAL and MANDATORY mode is a **separate-session, step-by-step running review** (separate reviewer session with fresh context and independent disk reads; relay producer outputs through the workspace relay convention). See `~/workspace/skills/gate-peer-reviewer/SKILL.md` § Independence precedence and `~/workspace/second-brain/05_shared-intelligence/patterns/agent-ops/pattern-independent-peer-review-chat.md`. A sub-agent verdict is never full independent review.
 
-**Scoped VIS exception:** The operator decision recorded in `second-brain/_meta/handoffs/vis-system-enhancement/audit-2026-09-21-vis-weaknesses.md` (Operator follow-ups item 2, 2026-09-21) permits convenience sub-agent review for source-note writes only: initially advisory-only, never the sole gate, with light escalation logging on initial Mode 5 auto-ships. Preserve training-mode/operator approval and all other required gates. The verdict-routing and degradation branches below are subordinate to this constraint; an unavailable reviewer cannot silently waive a required gate.
+**Scoped VIS exception (DECIDED 2026-09-21 — implement, do not re-litigate).** The operator decision in `second-brain/_meta/handoffs/vis-system-enhancement/audit-2026-09-21-vis-weaknesses.md` (§2 DECIDED block) authorizes convenience sub-agent review for G-extraction source-note writes. Policy terms:
+- **Advisory-only initially.** Sub-agent verdicts are advisory; they are logged and findings attached to the note. The sub-agent verdict is never the sole gate that closes a run.
+- **BLOCKING-severity verdicts escalate to the operator immediately.** Append a row to `second-brain/_meta/escalations/vis-extraction-escalation-log.md` (schema: date | extraction-slug | verdict | finding-summary | operator-action) and surface to the operator before proceeding. Do not suppress or treat as advisory.
+- **First-batch review required.** Until the operator has reviewed the escalation log from the first batch of autonomous G-extraction firings and explicitly lifts the advisory-only constraint, every BLOCKING verdict must surface. This surface is `second-brain/_meta/escalations/vis-extraction-escalation-log.md`.
+- **Model tier: WORKHORSE** (see dispatch block below). Escalate to FRONTIER (separate-session) only if a BLOCKING finding triggers operator review and a higher-confidence second pass is warranted.
+- All other required gates, training-mode approval, and degradation branches are subordinate to this policy. An unavailable reviewer cannot silently waive a required gate.
 
 **Gate type:** G-extraction (NOT a closing gate — Check 6 skipped).
 **Fires after:** Phase 6 review gate (executor surfaces structured summary before writes).
@@ -1130,6 +1171,10 @@ Read these as needed. The extraction prompt is the authoritative spec; this SKIL
 ## Peer-reviewer dispatch
 
 Required capability tier: WORKHORSE for ordinary review; dense/high-stakes second-pass review uses one tier above the actual producer per model-routing.md.
+Model override: WORKHORSE
+# G-extraction = ordinary knowledge-artifact review. Per model-routing.md: WORKHORSE tier.
+# Escalate to FRONTIER (separate-session) only if a BLOCKING finding triggers operator escalation.
+# This override is explicit — do not default to Opus or any named top-tier model.
 Model check: verify runtime identity and required tier before work; STOP for relaunch or operator confirmation if wrong or unverifiable. Record producer tier, selected model/version, reasoning setting, substrate and independence.
 Enforcement: manual — operator picks at spawn unless a supported override is verified.
 Gate type: G-extraction
@@ -1149,16 +1194,34 @@ Classify each catch severity per return-contract.md § Severity tiers.
 Return the structured JSON verdict per references/return-contract.md.
 ```
 
+**Mandatory trace — every firing, zero-trace firings are a defect.**
+
+Before any verdict routing, append both rows. "Fires but unlogged" is equivalent to "didn't fire."
+
+**1. Event-log row** (append immediately, before write phase):
+```
+| <UTC-timestamp> | vis-extraction: <source-note-path> | G-extraction | <chat-id> | G-extraction fired on <source-slug>; verdict: <PASS|HOLD|FAIL>; catches: <n-blocking>, <n-advisory>; model: WORKHORSE; advisory-mode. |
+```
+Use `printf '| <row> |\n' >> ~/workspace/second-brain/_meta/_event-log.md` or `append_event_log.sh`. For graceful-degradation skips: set verdict to `SKIPPED`, catches to `0 blocking, 0 advisory`.
+
+**2. Firing-tracker row** (file at extraction session close; reviewer authors per firing-tracker convention):
+```
+| <chat-slug>-<YYYYMMDDHHMM> | <YYYY-MM-DD> | Claude Code | vis-extraction G-extraction / <source-slug> | vis-extraction | Producer | Peer-review (G-extraction advisory) | Yes | Sub-agent advisory dispatch per DECIDED 2026-09-21 independence policy. | <verdict + catch summary> | <grade> | <Keep|Conditional|Drop> | <what would raise grade> | — |
+```
+If no FRONTIER reviewer session present, self-report and mark the Why column with `self-reported (no independent grader)`.
+
 **What the orchestrator does with the verdict:**
 
 - `APPROVE` + `verdict_severity: advisory` → proceed to write phase. No operator review needed.
 - `APPROVE-WITH-NOTES` + `verdict_severity: advisory` → proceed to write; notes logged for awareness.
-- `APPROVE-WITH-NOTES` + `verdict_severity: blocking` → surface to operator. Operator decides.
+- `APPROVE-WITH-NOTES` + `verdict_severity: blocking` → append escalation-log row (schema: date | extraction-slug | verdict | finding-summary | operator-action); surface to operator; do not proceed until operator acts.
 - `REJECT-AND-REDO` → fix the catch, re-surface structured summary, re-dispatch peer-reviewer. Cap at 2 iterations; on 3rd REJECT, escalate to operator.
 - `ESCALATE-AMBIGUOUS` → surface to operator with the peer-reviewer's ambiguity framing.
 
-**Graceful degradation.** If peer-reviewer dispatch fails (skill unavailable on substrate), log:
+**Graceful degradation.** If peer-reviewer dispatch fails (skill unavailable on substrate):
 
+1. Append event-log row with `verdict: SKIPPED` (required — a skip without a log row is a zero-trace firing).
+2. Log the skip event:
 ```
 event-type: peer-reviewer-skipped
 reason: skill not available on <substrate>
@@ -1166,5 +1229,13 @@ chat-id: <id>
 gate-id: G-extraction
 orchestrator: vis-extraction
 ```
+3. Proceed to write phase with the skip noted in the extraction log.
 
-Then proceed to write phase with the skip noted.
+---
+
+## Version history
+
+- **v1.5 (2026-09-24)** — [VIS-P1] G-extraction gate fully wired into execution path. (1) Phase 6 execution step rewritten: G-extraction peer-reviewer dispatch is now MANDATORY in both `training` and `auto` modes; "skip to Phase 7" removed as a valid path; executor skipping is named a defect. (2) Mandatory-trace section added: every firing must append event-log row + firing-tracker row; zero-trace firings are a failure mode equivalent to not firing. (3) Independence policy (DECIDED 2026-09-21) expanded from one-liner to full policy with escalation-log path (`second-brain/_meta/escalations/vis-extraction-escalation-log.md`), BLOCKING escalation behavior, schema, first-batch review requirement, WORKHORSE model tier. (4) Model override (`WORKHORSE`) wired into dispatch block with inline annotation. (5) Verdict routing updated: BLOCKING now appends escalation-log row and surfaces to operator. (6) Graceful-degradation skip now also requires event-log row with `verdict: SKIPPED`. (7) Scenario B typed-failure branch (T6): transcript-fetch script exit-code classes replace `**ERROR:**` string-check; `transcripts_disabled`/`transcripts_not_available` → short video: offer Whisper path (social-pull.sh), long or declined → skip with logged reason (NOT Scenario C); `video_not_found`/`video_private` → skip; `rate_limited` → back-off + retry; `connection_error` → transient retry then Scenario C; `<unrecognized>` → treat as connection_error. Companion: gate-peer-reviewer v4.2, G-extraction registry entry fully filled.
+- **v1.4 (2026-09-22)** — [RGH-22] OC-28 conventions-conformance wired; scoped VIS exception noted for G-extraction advisory independence.
+
+Then file the firing-tracker row at close with `Fired? = No` and the skip reason in Why.
