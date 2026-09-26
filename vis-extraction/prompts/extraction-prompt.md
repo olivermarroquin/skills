@@ -1,4 +1,4 @@
-# VIS Source Extraction — Agent-independent prompt (v3.4)
+# VIS Source Extraction — Agent-independent prompt (v3.6)
 
 This document tells the invoking agent how to extract structured KOS notes from a transcript file. It's read at the start of every extraction job. Follow the user's explicit instructions; use this document for workflow details. Ask only when the intended scope is genuinely unclear.
 
@@ -187,6 +187,7 @@ Before reading the transcript content, read these files in order:
    - `second-brain/05_shared-intelligence/patterns/`
    - `second-brain/03_domains/*/insights/` (across all domains)
    - `second-brain/00_inbox/decisions-pending/` (existing opportunities)
+   - `second-brain/04_projects/clients/_active/*/execution-logs/`, `*/plans/`, and `*/_strategic-decisions/` (or the equivalent decisions folder each client carries) — **client-project folders are first-class dedup surfaces, not background context.** The 2026-09-26 Nate Herk run proved nearly every high-value miss (a stale tool note beside the real production pipeline, a competitor-asset-leak precedent, a standing scope decision) lived exactly here, invisible to a check scoped only to shared-intelligence and domain folders.
 
    You don't need to read the contents yet — just the filenames. Reading happens in Phase 4 when overlap is detected.
 
@@ -319,12 +320,24 @@ For each tool, classify as:
 
 Be honest about which category. Inferring "they probably use Notion based on a brief cutaway" is fine when labeled as inferred. Inferring "they probably use Claude" because every AI creator uses Claude is not — that's noise.
 
+For each tool entry, add two sub-fields:
+- **URL:** Verified tool URL found during Phase 2 deep-feasibility investigation. `not-found` is a legitimate value (means you investigated and could not locate one). Never guess or construct a URL — only record what you verified by actually reaching the page.
+- **Cost:** Pricing as stated in the source or found during investigation. `unstated` is a legitimate value. Never infer pricing not found in source or investigation.
+
+Format:
+```
+- [[tool-X]] — <what it does>
+  - **URL:** <verified URL or `not-found`>
+  - **Cost:** <pricing as stated or `unstated`>
+```
+
 ### Workflow / process
 
 If the source explicitly demonstrates a workflow:
 - Extract the step-by-step process shown
 - Note implementation details
 - Note likely architecture (what's probably happening under the hood)
+- **Verbatim prompt library (mandatory when present):** when the source speaks, shows, or demonstrates actual AI prompts, scripts, or reusable command sequences, extract them **verbatim (or near-verbatim from the transcript) as a named, numbered list** in a `## Prompt library (from source)` section — each entry: the prompt text, what it's for, and the timestamp. "The creator used Claude for X" is a summary, not an extraction; the reusable asset is the prompt itself. (Added after the 2026-09-26 Nate Herk run, where a 9-prompt reusable library only surfaced on squeeze pass 4 because nothing asked for it.)
 
 If the source describes a goal/outcome but doesn't show steps:
 - Construct a likely workflow from what was said + general knowledge of the tools/domain
@@ -357,14 +370,13 @@ For each takeaway, classify:
 - **Needs adaptation** — useful but requires customization
 - **Likely fluff or non-reusable** — not worth applying
 
-### Visual signal markers
+### Visual signals (manual)
 
 The transcript captures speech, not visuals. If during the transcript you encounter language that strongly suggests visual content matters (e.g., "as you can see in this folder structure," "look at how I've organized this," "here's the diagram," "watch what happens when I click"):
 
-- Add a research question with the approximate timestamp if available
-- Note: "Visual content at ~MM:SS — manually inspect if relevant"
+- Add a checkbox entry with the approximate timestamp: `- [ ] ~MM:SS — <what the source hinted at>`
 - Do not fabricate what was on screen
-- *(Future: a Phase 2.5 automation will auto-screenshot these timestamps. For now, the user does this manually.)*
+- *(Future: Phase 4b automation will screenshot these timestamps. For now, the user inspects manually.)*
 
 ### Research questions
 
@@ -474,7 +486,7 @@ The frontmatter judgment fields (`tier:`, `actionability-score:`, `relevance-sco
 
 ## Phase 4 — Existing-note check (the dedup-and-enhance pass)
 
-For each potential supporting note (tactic, opportunity, tool, content idea), check the existing-note index from Phase 1.
+For each potential supporting note (tactic, opportunity, tool, content idea), check the existing-note index from Phase 1 — **including the client-project folders** (`04_projects/clients/_active/*/` execution-logs, plans, strategic decisions). A tool/tactic that looks new against shared-intelligence may already be superseded, adopted, banned, or refined inside a client engagement — those folders hold the vault's most current operational truth (lesson: [[lesson-second-squeeze-not-wired-into-vis-extraction-2026-09-26]]).
 
 If there's a name overlap or topical overlap, **read the contents of the existing note**. Then decide one of four outcomes:
 
@@ -513,6 +525,17 @@ No meaningful overlap. The tactic/tool/opportunity is new to the vault.
 For opportunity notes, also include a `## Capability gap` section: if pursuing this opportunity requires capabilities the user doesn't have, name them and suggest 1-2 paths to acquire them. This way "I don't have skill X" doesn't silently kill a real opportunity — it becomes "I need to learn X to pursue this."
 
 ---
+
+## Phase 4b — Second squeeze (MANDATORY — do not proceed to Phase 5 without a quiet pass)
+
+After Phase 4's dedup work and BEFORE the conservative-creation gate, run the second-squeeze method (canonical: `skills/second-squeeze/SKILL.md`; same method the workflow doc's step 4b mandates) against your own Phase 3-4 output:
+
+1. Re-enter the RAW transcript with fresh angles the first pass did not use (the skill's angle menus: money pass, promises pass, names pass, one-speaker read, corrections pass, etc.) — hunt for missed material.
+2. Stress-test what you DID extract: already-covered check against the FULL Phase 1 index **including client-project folders**, evidence check, number check, current-disk check.
+3. Record every pass honestly in the source note's `## Second-squeeze delta` table (angles used, items found, corrections). Loop until a full fresh-angle pass comes back quiet. Minimum 2 passes on dense sources; 3 when money decisions ride on the content.
+4. Set `squeeze-delta:` frontmatter to the FINAL pass's significant-find count. **A final delta ≥1 means you stopped too early — keep squeezing or surface why to the operator; it is never silently acceptable.**
+
+**Phase 6 enforcement:** the review gate REFUSES auto-approval (auto mode) and the G-extraction reviewer treats it as a finding (training mode) when `squeeze-delta:` is missing or the final pass is ≥1. This step being skipped entirely is a defect of the same class as skipping the Phase 6 dispatch. (Wired 2026-09-26 from [[lesson-second-squeeze-not-wired-into-vis-extraction-2026-09-26]] — the mandate previously lived only in the workflow doc, which this spec never read, so four operator-requested passes were needed to catch what this step now catches by default.)
 
 ## Phase 5 — Conservative-creation gate
 

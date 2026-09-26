@@ -1,6 +1,6 @@
 ---
 name: vis-extraction
-version: 1.5
+version: 1.6
 updated: 2026-09-24
 quality-log: "[[_quality-log#SKILL]]"
 last-evaluated: 2026-09-24
@@ -10,7 +10,7 @@ description: Extract structured intelligence from videos, articles, transcripts,
 
 # VIS Extraction Skill (v1.5)
 
-The Video Intelligence System (VIS) extraction skill. Wraps the `transcript-pull.sh` and `social-pull.sh` scripts and the v3.4 extraction prompt into a single workflow. Pull a transcript, run extraction, write structured notes to the vault.
+The Video Intelligence System (VIS) extraction skill. Wraps the `transcript-pull.sh` and `social-pull.sh` scripts and the v3.5 extraction prompt into a single workflow. Pull a transcript, run extraction, write structured notes to the vault.
 
 **Critical behavior (read this before anything else):**
 - **Cache and dedup are first-class.** Before pulling a transcript, check the cache. Before running an extraction, check whether the source already exists in the vault. Don't silently re-extract or overwrite the user's calibrated work.
@@ -825,7 +825,7 @@ cat /Users/olivermarroquin/workspace/skills/vis-extraction/prompts/extraction-pr
 cat /Users/olivermarroquin/workspace/second-brain/_meta/scoring-rubric.md
 ```
 
-The extraction prompt is v3.4. It defines Phase 0 (environment preflight) and Phases 1-8 (the extraction itself). The scoring rubric is canonical for tier/relevance/actionability/monetization values.
+The extraction prompt is v3.5. It defines Phase 0 (environment preflight) and Phases 1-8 (the extraction itself). The scoring rubric is canonical for tier/relevance/actionability/monetization values.
 
 ### Step 5 — Phase 0 environment preflight
 
@@ -945,13 +945,14 @@ Phase 0 (environment preflight) was already executed in Step 5. Following the v3
    - 9,000-25,000 words → focused-attention
    - ≥25,000 words → chunked
 3. **Phase 3 — Source analysis.** Apply global writing rules (acronym expansion on first use; plain-English coverage at top + 4 jargon-section callouts). Produce all structured analysis. **Also produce a "Structured action items" block organized by kind (experiment / decision / comparison / research / adoption / conditional)** — apply the four-rule inclusion gate (decidable outcome, specific enough to act on, generalizes beyond pattern-watching, actionable to the operator). Soft cap at 8-10 items per source; surplus stays in legacy sections.
-4. **Phase 4 — Existing-note check.** Dedup-and-enhance pass against vault content.
-5. **Phase 5 — Conservative-creation gate.** Apply the "would this note be useful 3 months from now" filter.
-6. **Phase 6 — Review gate.** Dispatch the G-extraction peer-reviewer (MANDATORY — see § Peer-reviewer dispatch, which is the wired contract for this step; apply its independence policy, model override, and mandatory-trace requirements). This dispatch is NOT optional in either mode; an executor skipping it and proceeding to Phase 7 is a defect.
+4. **Phase 4 — Existing-note check.** Dedup-and-enhance pass against vault content — INCLUDING `04_projects/clients/_active/*/` (execution-logs, plans, strategic decisions), per extraction-prompt Phase 1 item 6 + Phase 4.
+5. **Phase 4b — Second squeeze (MANDATORY — do not skip, do not proceed without a quiet pass).** Run the second-squeeze method (`skills/second-squeeze/SKILL.md`) against your own Phase 3-4 output per extraction-prompt § Phase 4b: fresh-angle passes on the RAW transcript + stress-tests of extracted claims, every pass recorded in the note's `## Second-squeeze delta` table, looping until a full fresh-angle pass comes back quiet (`squeeze-delta: 0`). Minimum 2 passes on dense sources, 3 for money-shaped content. An executor skipping this step is a defect of the same class as skipping Phase 6.
+6. **Phase 5 — Conservative-creation gate.** Apply the "would this note be useful 3 months from now" filter.
+7. **Phase 6 — Review gate.** Dispatch the G-extraction peer-reviewer (MANDATORY — see § Peer-reviewer dispatch, which is the wired contract for this step; apply its independence policy, model override, and mandatory-trace requirements). This dispatch is NOT optional in either mode; an executor skipping it and proceeding to Phase 7 is a defect. **Squeeze enforcement:** if `squeeze-delta:` is missing or the final pass found ≥1 significant item, auto mode REFUSES to proceed (surface to operator) and training mode surfaces it as a to-fix finding — a thin or unrecorded squeeze never ships silently.
    - `training` mode: present structured summary (including "Proposed structured action items" block) AND dispatch G-extraction peer-reviewer. Route on verdict per § Peer-reviewer dispatch. Wait for both the user's approval of the structured summary AND the peer-reviewer verdict routing before proceeding to Phase 7.
    - `auto` mode: dispatch G-extraction peer-reviewer and route on verdict. `APPROVE` / `APPROVE-WITH-NOTES` + advisory verdict → proceed to Phase 7. `APPROVE-WITH-NOTES` + blocking verdict → surface to operator before proceeding. `REJECT-AND-REDO` → fix and re-dispatch (cap 2). `ESCALATE-AMBIGUOUS` → surface to operator.
-7. **Phase 7 — Write to disk.** Write source note to `00_inbox/sources-pending/`, supporting notes to their canonical locations. **Materialize approved structured action items as task notes in `06_tasks/`** with `extracted-via: vis-phase6` and `source: [[<source-note>]]`. Set `attention-mode` in frontmatter. Leave the source note's "Action log" Dataview block in place (it auto-populates from the new task notes). Leave Discussions section's Dataview block in place.
-8. **Phase 8 — Report.** Generate the structured report (see "Final report format" below).
+8. **Phase 7 — Write to disk.** Write source note to `00_inbox/sources-pending/`, supporting notes to their canonical locations. **Materialize approved structured action items as task notes in `06_tasks/`** with `extracted-via: vis-phase6` and `source: [[<source-note>]]`. Set `attention-mode` in frontmatter. Leave the source note's "Action log" Dataview block in place (it auto-populates from the new task notes). Leave Discussions section's Dataview block in place.
+9. **Phase 8 — Report.** Generate the structured report (see "Final report format" below).
 
 **Do NOT touch git.** The user commits manually after inspecting on disk.
 
@@ -1235,6 +1236,8 @@ orchestrator: vis-extraction
 
 ## Version history
 
+- **v1.5 (2026-09-24, updated VIS-P4a)** — [VIS-P4a] Extraction prompt bumped to v3.5: tool URL+Cost sub-fields added to `### Tools mentioned` (verified URL or `not-found`; pricing or `unstated`); conditional `## Cost benchmarks` section added; `## Visual signal markers` renamed `## Visual signals (manual)` with checkbox format. Template and workflow updated to match (squeeze-delta frontmatter field, `## Second-squeeze delta` pass table, step 4b one-liner). Reference in this file updated from v3.4 → v3.5.
+- **v1.6 (2026-09-26)** — Second-squeeze wired into the execution path + two extraction-depth spec fixes, from the Nate Herk run diagnosis ([[lesson-second-squeeze-not-wired-into-vis-extraction-2026-09-26]]; extraction-prompt v3.5→v3.6 companion). (1) NEW Phase 4b step (MANDATORY): second-squeeze against own Phase 3-4 output, fresh-angle passes recorded in the note's delta table, loop to quiet pass; skipping = defect, same class as skipping Phase 6. (2) Phase 6 squeeze enforcement: missing `squeeze-delta:` or final pass ≥1 → auto mode refuses to proceed, training mode surfaces as to-fix finding. (3) Phase 1 existing-note index + Phase 4 dedup check now include `04_projects/clients/_active/*/` (execution-logs, plans, strategic decisions) — client folders were where nearly every missed finding lived. (4) Phase 3 workflow section now mandates verbatim prompt-library extraction (`## Prompt library (from source)`) when a source demonstrates actual prompts/scripts. Same defect class as VIS-P1's T1 catch: mandate documented in the workflow doc but absent from the invoked spec's execution path.
 - **v1.5 (2026-09-24)** — [VIS-P1] G-extraction gate fully wired into execution path. (1) Phase 6 execution step rewritten: G-extraction peer-reviewer dispatch is now MANDATORY in both `training` and `auto` modes; "skip to Phase 7" removed as a valid path; executor skipping is named a defect. (2) Mandatory-trace section added: every firing must append event-log row + firing-tracker row; zero-trace firings are a failure mode equivalent to not firing. (3) Independence policy (DECIDED 2026-09-21) expanded from one-liner to full policy with escalation-log path (`second-brain/_meta/escalations/vis-extraction-escalation-log.md`), BLOCKING escalation behavior, schema, first-batch review requirement, WORKHORSE model tier. (4) Model override (`WORKHORSE`) wired into dispatch block with inline annotation. (5) Verdict routing updated: BLOCKING now appends escalation-log row and surfaces to operator. (6) Graceful-degradation skip now also requires event-log row with `verdict: SKIPPED`. (7) Scenario B typed-failure branch (T6): transcript-fetch script exit-code classes replace `**ERROR:**` string-check; `transcripts_disabled`/`transcripts_not_available` → short video: offer Whisper path (social-pull.sh), long or declined → skip with logged reason (NOT Scenario C); `video_not_found`/`video_private` → skip; `rate_limited` → back-off + retry; `connection_error` → transient retry then Scenario C; `<unrecognized>` → treat as connection_error. Companion: gate-peer-reviewer v4.2, G-extraction registry entry fully filled.
 - **v1.4 (2026-09-22)** — [RGH-22] OC-28 conventions-conformance wired; scoped VIS exception noted for G-extraction advisory independence.
 
