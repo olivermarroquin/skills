@@ -191,6 +191,8 @@ Before reading the transcript content, read these files in order:
 
    You don't need to read the contents yet — just the filenames. Reading happens in Phase 4 when overlap is detected.
 
+7. **Recent-mistakes ledger (MANDATORY — learn from prior runs before starting).** Read, in full: (a) the "Mistakes" / "What was missed" sections of the TWO most recent execution logs in `skills/vis-extraction/execution-logs/`, and (b) any lesson in `second-brain/05_shared-intelligence/lessons/agent-ops/` whose filename mentions vis or extraction, from the last 60 days. State in one line at the start of Phase 3 which prior mistakes you are actively guarding against in this run. This is bounded reading (~2 logs + a couple of lessons), not an archive crawl — its job is making every run inherit the last runs' scar tissue. (Added 2026-09-27 per operator directive after the Nate Herk run: four manual squeeze passes caught what earlier-run awareness plus a correct spec would have caught once.)
+
 ---
 
 ## Phase 2 — Chunking decision
