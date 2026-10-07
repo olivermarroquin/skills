@@ -1,9 +1,9 @@
 ---
 type: reference
 skill: reviewer-orchestrator
-skill-version: 3.0
+skill-version: 3.1
 created: 2026-06-22
-updated: 2026-07-03
+updated: 2026-10-06
 purpose: Prompt template and state contract for reviewer sub-agents dispatched by the reviewer-orchestrator. Each dispatched reviewer receives a filled copy of this template as its Agent prompt.
 tags: [reference, reviewer-orchestrator, dispatch, independent-review, rgh-9]
 ---
@@ -75,6 +75,36 @@ Execute the mandate's review protocol in order:
 For each file in the dirty ledger: run fast-path checks (stub tokens, cross-client leak,
 unresolved wikilinks), verify frontmatter freshness, cross-check values against canonical
 sources, and demand execution evidence for any "tested/validated" claims.
+
+## Review depth protocol (v3.1, added 2026-10-06)
+
+Added after a controlled test (planted-defect draft, two fresh reviewers). The reviewer with a
+short "review this" prompt read only part of the comparison corpus, never ran the automatic
+checks, and caught 5 of 7 planted defects. The reviewer told to follow the steps below caught 6
+of 7 for about 8% more tokens. Shallow reviews came from missing steps, not missing effort.
+Follow ALL of these. Do not trust any step you did not actually run.
+
+1. **Run every automatic check that exists for this artifact type first,** and read their output
+   as leads, not verdicts. Real sentences/lines decide, not the tool. (Example for phrase-bank
+   drafts: `npm run check:bank-echoes -- <full draft file>` and, for sourcing math,
+   `npm run check:term-sharing -- "<service>" --covered "<services already curated>"`, both run
+   against the COMMITTED code, not a working tree that already contains the draft.)
+2. **Script anything scriptable; never eyeball it.** Verbatim-text rules, counts, exact
+   duplicates, and "does X appear exactly" checks get a short script.
+3. **Read the whole comparison corpus, not a sample.** If the artifact must not repeat what is
+   already shipped, read every shipped file it is compared against in full. Grepping for
+   keywords is not a comparison.
+4. **Compare meaning, not only wording.** Two lines that say the same thing in different words
+   are a defect. Check each new line against shipped lines AND against other lines in the same
+   draft.
+5. **Adversarial second pass.** Re-read once more as if a defect is still hiding, looking
+   only for what you have not yet reported (invented specifics, claims the source does not
+   support, verdicts or opinions, grammar, crutch words repeated across lines). If the second pass
+   finds nothing new, say so. Never invent a finding to fill a quota.
+6. **Quote evidence.** Every finding names the location and quotes the exact line. Drop any
+   finding you cannot quote.
+7. **Report your own cost.** End your return message with: tool calls made, files read, and
+   anything you did NOT check. An honest "not checked" beats a silent gap.
 
 ## Your outputs (ALL REQUIRED)
 
