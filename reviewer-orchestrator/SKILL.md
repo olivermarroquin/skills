@@ -1,15 +1,17 @@
 ---
 name: reviewer-orchestrator
-version: 3.0
+version: 3.1
 description: Separate-session control plane that auto-dispatches independent peer-reviewers in parallel for producer chats, removing manual reviewer-spawning while preserving true session-independence. Phase 1 = operator-triggered dispatch; Phase 2 = auto-watch event-log polling; Phase 3 deferred. v3.0 adds deterministic completeness pre-checks (RGH-18/19 + PR-1 DoD) and structured producer-reply generation via event-log handoff-bus.
 created: 2026-06-22
-updated: 2026-07-03T00:00Z
+updated: 2026-10-07T00:00Z
 status: active
 depends-on: [gate-peer-reviewer, independent-reviewer-mandate]
 tags: [skill, review-gate, rgh, rgh-9, reviewer-orchestrator, parallel-review, automation, independent-review]
 ---
 
-# Reviewer Orchestrator (v3.0)
+# Reviewer Orchestrator (v3.1)
+
+> **v3.1 changelog (2026-10-07)** — Reviewer reuse. Default is now ONE long-lived reviewer per project, sent short follow-up messages each round, instead of a fresh reviewer for every dispatch (new Step 5a). A per-project state page keeps what the reviewer has learned, so a fresh reviewer can be started at natural boundaries (or on request) without losing context. Also adds the 7-step review depth protocol to the reviewer prompt (see `references/dispatch-contract.md`). Basis: planted-defect tests on 2026-10-06 (basic prompt 5/7, depth protocol 6/7; kept-alive reviewer 5/5 on round 2 in 2 tool calls vs a fresh reviewer ~4/5 in 6 calls). NOT yet verified inside Claude Code; see Honest limits 9.
 
 > **v3.0 changelog (2026-07-03)** — [RGH-16/RO-FIX]: completeness audit + producer-reply. Two new capabilities:
 > 1. **Deterministic completeness pre-checks (Step 2):** Before dispatching LLM reviewers, the orchestrator runs `rgh18-build-correctness.py` + `rgh19-doc-completeness.py` on each full-tier manifest item. If either returns BLOCKING, that item is flagged DETERMINISTIC-BLOCKED and the LLM reviewer is skipped (the deterministic checks already found the problems). For Productize-tier runs, RGH-19's OC-20 enforces PR-1's B1-B6 DoD. This makes the orchestrator INVOKE the completeness checks, not just trust the reviewer to run them.
@@ -192,9 +194,71 @@ For DETERMINISTIC-BLOCKED items, the operator can:
 - `override <item>` — force LLM dispatch despite the deterministic block (rare — e.g., if a deterministic check is a known false-positive)
 - `abort` — cancel everything
 
+### Step 5a — Reviewer mode: reuse one reviewer per project (default, v3.1)
+
+**Default = `persistent`.** One reviewer per project is started once and then sent short follow-up
+messages. A reviewer that already knows the project does not re-read it every round (cheaper), and
+it remembers earlier findings (better: it can say which old issues are still unfixed).
+`fresh` mode (a brand-new reviewer for this dispatch) is always available. The operator can say
+"fresh reviewer" at any time, and the rotation rules below also trigger it.
+
+**Registry:** `~/workspace/.review-gate/state/persistent-reviewers.json`, one entry per project key
+(e.g. `keelworks-platform`): `agent_id`, `started`, `rounds`, `state_page`, `state_page_sha256`, `status`. Never put more
+than one live persistent reviewer on a project.
+
+**Per-project state page** (the shared memory; reviewers read it, update it, nothing else is
+needed to pick the project up). One file per project, kept inside that project. For
+keelworks-platform it is the existing `.kos/reviewer-continuity-2026-09-26.md`, do not rename it.
+Two parts:
+1. **Current state** (hard cap about 60 lines). REWRITTEN by the reviewer at the end of every
+   round: standing rules, where things live, tracks in flight (one short section per track or task),
+   open items, known quirks, and anything the reviewer does not trust.
+2. **Round log** (append-only, one line per round: date, track, verdict, catches, tool calls, files
+   read). Never read in full; search it only when needed. This is also the token-cost record.
+The state page is hints only. The producer must not edit it, and the reviewer flags any change it
+did not make (`STATE_PAGE_TAMPERED`). The orchestrator session itself must not author project work.
+Per-task detail goes inside the project's file as a section and log lines, not in a separate file.
+Only split a task into its own file if it runs separately with its own reviewer.
+
+**Each dispatch:**
+1. Look up the project in the registry.
+2. If a live persistent reviewer exists, mode is not `fresh`, and no rotation trigger fired: send it
+   a SHORT follow-up (template in `references/dispatch-contract.md`: file paths, what changed since
+   last round, the automatic-check output). Do NOT re-send history or the mandate. The summary and
+   check output are the producer's claims, not proof: the follow-up tells the reviewer to re-run
+   the checks on the full file and re-read every changed file itself.
+   Before sending, hash the state page (`shasum -a 256`) and compare with the registry's
+   `state_page_sha256` from the end of the last round. If they differ, someone other than the
+   reviewer changed it: say so in the follow-up, and the reviewer treats the page as untrusted
+   (`STATE_PAGE_TAMPERED: true`) until it re-verifies from the files. Do not use `git diff` for
+   this: the page is often uncommitted, so git cannot tell reviewer edits from producer edits.
+3. Otherwise start a new reviewer with the full dispatch prompt, told to read the state page FIRST
+   (not the whole project history), and record it in the registry.
+4. When the reviewer returns, it must have rewritten the state page's Current state and appended its
+   log line. If it did not, treat the round as incomplete. Then hash the page again and store it
+   as `state_page_sha256` (and bump `rounds`) in the registry, so the next round can compare.
+
+**Rotation triggers (start a fresh reviewer):**
+- the operator asks for one;
+- a natural boundary: a unit of work closes (for example one service's bank gets PASS, or a
+  handoff is consumed);
+- the reviewer reports its context is heavy;
+- a backstop of 15 rounds on one reviewer;
+- the saved `agent_id` can no longer be resumed (the session that started it ended).
+Before replacing a reviewer that is still resumable, ask it to update the state page and write a
+short handover (open items, what it distrusts, quirks). The new reviewer reads the state page only.
+
+**Independence is unchanged.** The persistent reviewer inherits the orchestrator's session, which is
+different from every producer's session, so `log-review-pass.py` still accepts it and still rejects
+same-session attempts. A reviewer must never be pointed at work it produced.
+
+**Drift guard.** On every 5th round with the same reviewer, remind the operator to spot-check one
+verdict file and one PASS from that reviewer. A long-lived reviewer can get too comfortable with a
+producer; the operator is the backstop.
+
 ### Step 6 — Dispatch reviewers in parallel
 
-For each DETERMINISTIC-PASS manifest item (and any DETERMINISTIC-BLOCKED items the operator overrode), fire an Agent sub-agent with the dispatch prompt from `references/dispatch-contract.md`. All items dispatch in a single message (parallel Agent tool calls). DETERMINISTIC-BLOCKED items (not overridden) are skipped.
+For each DETERMINISTIC-PASS manifest item (and any DETERMINISTIC-BLOCKED items the operator overrode), apply Step 5a: resume the project's persistent reviewer with a short follow-up, or (first review, `fresh` mode, or a rotation trigger) fire a new Agent sub-agent with the full dispatch prompt from `references/dispatch-contract.md`. All items dispatch in a single message (parallel Agent tool calls). DETERMINISTIC-BLOCKED items (not overridden) are skipped.
 
 Each dispatched reviewer:
 1. Loads `independent-reviewer-mandate.md` from disk (hardcoded path, non-negotiable)
@@ -429,6 +493,8 @@ Phase 3 wires into vault-orchestrator Mode 6's Step 10 wave-close: when a wave c
 10. **Producer-reply is model-authored (v3.0).** The structured reply (Step 9) is generated by the orchestrator model, not a deterministic script. The findings table faithfully reproduces deterministic and LLM outputs, but the "Next action" section is model-composed. The operator should review the reply before forwarding to the producer if the findings are complex or ambiguous.
 
 11. **Handoff-bus is one-way until producer-side auto-watch ships (v3.0).** The `handoff-back` event-log row is written, but the producer doesn't auto-detect it yet — the operator still forwards the reply manually (or the producer greps the event log). Full bidirectional auto-watch is fleet-orchestration territory (see `_meta/handoffs/fleet-orchestration/`).
+
+9. **Reviewer reuse is not yet verified inside Claude Code (v3.1).** Reusing one reviewer was tested on 2026-10-06 in a Cowork session using a send-message-to-existing-agent call, 2 rounds only. Not yet tested: Claude Code's own Agent tool resuming a reviewer, many-round chat growth, or a reviewer going easy on a familiar producer. The first real use is a dry run; confirm the follow-up lands on the same reviewer (it should recall round 1) before relying on it. The registry can point at an agent that no longer exists, in which case start a fresh reviewer and note it in the state page.
 
 ## Related
 

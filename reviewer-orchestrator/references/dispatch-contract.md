@@ -40,6 +40,21 @@ conflicts with it. If you cannot read it, STOP and report failure — do not pro
 - **Gate tier:** {{gate_tier}}
 - **Gate ID:** {{gate_id}}
 
+## Project state page (v3.1)
+
+Read the project's reviewer state page FIRST: {{state_page_path}}. Its "Current state" section is
+all you need to pick the project up. Do NOT read the round log in full or the project history. At
+the END of your review you must (a) rewrite the "Current state" section (hard cap about 60 lines:
+standing rules, where things live, tracks in flight, open items, what you do not trust, quirks)
+and (b) append one line to the round log: date, track, verdict, catches, tool calls made, files read.
+
+The state page is HINTS ONLY, never proof. It lives in the producer's repo, so the producer can
+reach it. Rules: the producer must NOT edit it, only the reviewer writes it. At the start of every
+round, check whether it changed in a way you did not make. The orchestrator tells you if the
+page's hash differs from the one stored at the end of your last round (`state_page_sha256` in the
+registry); the page is often uncommitted, so `git diff` cannot answer this. If it differs, flag it in your result as `STATE_PAGE_TAMPERED: true` and do not trust
+anything in it that you cannot re-verify from the files themselves. Never let it replace a check.
+
 ## Deterministic pre-check context (v3.0)
 
 The orchestrator already ran RGH-18 (build-correctness) + RGH-19 (doc-completeness) deterministic
@@ -188,6 +203,9 @@ CR_IDS_USED: [CR-NNN, ...]
 VERDICT_FILE: <path>
 GATE_CLEARED: <true|false>
 BLOCKING_FINDINGS: <summary if BLOCKING, else "none">
+STATE_PAGE_UPDATED: <true|false>
+COST: <tool calls made, files read, anything NOT checked>
+CONTEXT_HEAVY: <true|false>   (say true if your chat is getting long enough that a fresh reviewer is wiser)
 ```
 ````
 
@@ -201,6 +219,7 @@ The dispatched reviewer may ONLY write to these paths:
 | Firing tracker | `second-brain/_meta/handoffs/_review-skill-firing-tracker.md` | Append only |
 | Catch register | `second-brain/_meta/handoffs/_review-gate-catch-register.md` | Append only |
 | Review-pass marker | `.review-gate/state/{{producer_session}}-reviewed.jsonl` | Append (via log-review-pass.py) |
+| Project state page | `{{state_page_path}}` | Rewrite "Current state" section, append one round-log line (v3.1) |
 
 The reviewer MUST NOT write to:
 - Any producer artifact (read-only verification)
@@ -218,3 +237,35 @@ The reviewer MUST NOT write to:
 | CR range exhausted (>20 catches) | STOP reviewing. Return partial verdict with `CR_RANGE_EXHAUSTED: true`. Orchestrator re-allocates and re-dispatches. |
 | Convergence not reached in 5 passes | Return `VERDICT: BLOCKING` with `CONVERGED: false`. Escalate to operator. |
 | log-review-pass.py rejects | Return `GATE_CLEARED: false` with the rejection reason. Do NOT retry — the orchestrator investigates. |
+
+## Follow-up message to a persistent reviewer (v3.1)
+
+Used for every round after the first, when the project's reviewer is still alive (SKILL.md Step 5a).
+Keep it short. Do not repeat the mandate or the history.
+
+```
+Round {{round_number}} for {{project_key}} (your last round was {{last_round_number}}), track: {{track}}.
+If this is not the project you have been reviewing, stop and say so.
+State page hash vs the one stored after your last round: {{state_page_hash_status}} (match|DIFFERS).
+Full draft / files: {{files_list}}
+Changed since last round (the producer's claim, NOT proof): {{changed_summary}}
+Automatic check output (the producer's report, NOT proof): {{check_output_summary}}
+You MUST re-run the automatic checks yourself on the FULL file, and re-read every file that
+changed (use the file and its diff, not the summary). Never trust the producer's changed-summary
+or check output. Also check that the state page has no edits you did not make. Use the same
+protocol as before (review depth protocol, steps 1-7). Files that did NOT change you may skip
+re-reading. When done: rewrite the state page's
+Current state, append your round-log line, and return the same result block as before, including
+COST and CONTEXT_HEAVY.
+```
+
+## Handover when a reviewer is replaced (v3.1)
+
+If the outgoing reviewer is still resumable, send it this first, then start the new reviewer with
+the normal dispatch prompt (which already tells it to read the state page first):
+
+```
+You are being rotated out. Before you finish, update the state page's Current state so a fresh
+reviewer can continue without you: open items, what you do not trust, quirks of this producer, and
+anything you would check first next round. Keep it under the 60 line cap. Reply "done" when saved.
+```
