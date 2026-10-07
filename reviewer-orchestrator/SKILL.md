@@ -248,6 +248,33 @@ Only split a task into its own file if it runs separately with its own reviewer.
 Before replacing a reviewer that is still resumable, ask it to update the state page and write a
 short handover (open items, what it distrusts, quirks). The new reviewer reads the state page only.
 
+**Manual reviewer mode (a reviewer chat that is not a registered agent).** Today's keelworks-platform
+reviewer is a manual chat. There is no registry file, so the state page's fingerprint goes in a
+sidecar file next to it: `<state page>.sha256`. At the END of each round, run
+`shasum -a 256 <state page> > <state page>.sha256`. At the START of the next round, run
+`shasum -a 256 -c <state page>.sha256`. If it says FAILED, someone edited the page after the
+reviewer's last write: the reviewer treats the page as untrusted and says so. Only the reviewer's
+own end-of-round command writes the sidecar; the producer never touches either file. The registry
+and the `persistent` wording apply only once auto-dispatch actually registers an agent.
+
+**Read-only reviewer mode (first test, set by the manual reviewer 2026-10-07).** For a first run of
+a setup that is untested inside Claude Code, the manual reviewer keeps OWNING the state page and the
+auto reviewer only READS it. A reviewer that both writes the page and judges the work leaves nothing
+independent to compare it against. In this mode the auto reviewer does NOT edit the state page or
+the sidecar hash. It returns ONE paste-ready line in the result block as `STATE_NOTES:` (date | track | verdict | main
+issue | read: ...), same style as the round log, plus its COST line. Its reading list is fixed: relay
+file, draft, echo summary, duplicate count, nothing else and the manual reviewer decides what goes into the page. Step 4
+below ("reviewer must have rewritten the page") does not apply in this mode, and the registry
+`state_page_sha256` is only updated by the manual reviewer's own end-of-round command. Hand the page
+over to the auto reviewer only after the manual reviewer has seen several good calls.
+
+**Round file (read-only mode).** After each auto round the orchestrator saves the whole result to
+`_scratch/relay/_relay-auto-reviewer-<track>-round<N>.md` with: the verdict, the `STATE_NOTES` line,
+`FILES_READ` (every file and command, as the reviewer reported it), `COST`, and the TOKEN COUNT the
+run reported. If the run reports no token count, write "not reported". Never fill in an estimate.
+The orchestrator also checks the round 2 reply against round 1 (ask it to name one line number it
+flagged earlier) to confirm the reviewer really kept its memory.
+
 **Independence is unchanged.** The persistent reviewer inherits the orchestrator's session, which is
 different from every producer's session, so `log-review-pass.py` still accepts it and still rejects
 same-session attempts. A reviewer must never be pointed at work it produced.

@@ -48,6 +48,13 @@ the END of your review you must (a) rewrite the "Current state" section (hard ca
 standing rules, where things live, tracks in flight, open items, what you do not trust, quirks)
 and (b) append one line to the round log: date, track, verdict, catches, tool calls made, files read.
 
+READ-ONLY MODE (when the orchestrator says so): you only READ the state page. Your reading list is
+FIXED: the producer relay file, the draft file, the echo-check summary, and the exact-duplicate
+count. Read nothing else (no shipped phrase files unless a flagged line needs one grep, and then
+name it in the read: field). Do not edit it or its
+.sha256 sidecar; return what you would have written as STATE_NOTES. Reading rule for checks: read
+only the summary and the exact-duplicate count of the echo check, not its full trigram list.
+
 The state page is HINTS ONLY, never proof. It lives in the producer's repo, so the producer can
 reach it. Rules: the producer must NOT edit it, only the reviewer writes it. At the start of every
 round, check whether it changed in a way you did not make. The orchestrator tells you if the
@@ -203,8 +210,11 @@ CR_IDS_USED: [CR-NNN, ...]
 VERDICT_FILE: <path>
 GATE_CLEARED: <true|false>
 BLOCKING_FINDINGS: <summary if BLOCKING, else "none">
-STATE_PAGE_UPDATED: <true|false>
-COST: <tool calls made, files read, anything NOT checked>
+STATE_PAGE_UPDATED: <true|false>   (read-only mode: always false; put your notes in STATE_NOTES)
+STATE_NOTES: <read-only mode only. EXACTLY ONE line per round, same style as the round log, ready to paste:
+  YYYY-MM-DD | <track> | <PASS or NEEDS REVISION or BLOCKING> | <main issue, one short phrase, or "none"> | read: <files and checks, as listed>>
+COST: <tool calls made, anything NOT checked>
+FILES_READ: <every file you opened or ran, one per line, with the command for any check you ran>
 CONTEXT_HEAVY: <true|false>   (say true if your chat is getting long enough that a fresh reviewer is wiser)
 ```
 ````
