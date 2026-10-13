@@ -1,0 +1,10 @@
+# Alias and ignore rules for the Saraev Part 1 note (2026-10-13).
+# "caption spelling = right spelling" counts only if the right spelling is in the note.
+# "name ! reason" ignores on purpose and is printed in the diff output.
+MacOSS = macOS
+Enthropic = Anthropic
+Nixrive = Nick
+Nixx = Nick
+Nyx = Nick
+XYZ ! placeholder letters in a spoken example about permission prompts
+Oh ! filler word at sentence start

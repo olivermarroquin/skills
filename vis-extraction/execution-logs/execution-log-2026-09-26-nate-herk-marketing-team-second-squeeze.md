@@ -156,3 +156,11 @@ After the root-cause diagnosis above, the operator had the VIS-system chat apply
 - `[[tool-scroll-world]]`, `[[opportunity-ai-creative-package-productized-service]]`, `[[tactic-claude-code-project-scaffold-for-brand-context]]` — newly created supporting artifacts
 - `[[tool-higgsfield]]`, `[[tactic-grill-before-plan]]`, `[[decision-2026-05-14-visual-social-proof-capture-as-service-delivery-model]]`, `[[execution-log-2026-09-04-higgsfield-image-libraries]]` — enhanced/cross-linked existing notes
 - `[[lesson-second-squeeze-not-wired-into-vis-extraction-2026-09-26]]` — root-cause diagnosis for this run's repeated squeeze misses
+
+## Git commit (2026-10-13)
+
+The 10 vault files from this run were committed to the `second-brain` repo: commit `f5a267b`, "Add Nate Herk VIS extraction: marketing/AI content system source note + supporting notes" — 10 files changed, 811 insertions, 10 deletions.
+
+One earlier attempt (run through the remote-devices bridge on the operator's behalf) failed at the commit-hook step with `python3: can't open file '/Users/olivermarroquin/workspace/repos/ai-agency-core/scripts/mandatory-review-gate/git_hook_adapter.py': [Errno 2] No such file or directory` — the staged files were untouched by the failure. The operator then ran the same `git commit` directly in his own terminal and it succeeded without the hook error, so the issue was specific to the bridge shell's environment, not the hook itself or the staged content. No fix was needed; noted here in case the bridge-environment gap recurs on a future commit.
+
+This run is now fully closed: source note written, supporting notes created/enhanced, task notes created for both approved structured action items, root-cause lesson filed, and the resulting vault changes committed.

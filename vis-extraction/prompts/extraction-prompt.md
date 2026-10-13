@@ -1,4 +1,4 @@
-# VIS Source Extraction — Agent-independent prompt (v3.6)
+# VIS Source Extraction — Agent-independent prompt (v3.7)
 
 This document tells the invoking agent how to extract structured KOS notes from a transcript file. It's read at the start of every extraction job. Follow the user's explicit instructions; use this document for workflow details. Ask only when the intended scope is genuinely unclear.
 
@@ -205,6 +205,16 @@ Word count thresholds (count words in the transcript body, excluding frontmatter
 
 - **≥ 25,000 words (roughly ≥ 2 hours):** chunked extraction. Split into 30-minute logical segments using chapter markers if present; otherwise split at natural topic transitions. Run Phase 3 (analysis) on each segment separately, then synthesize in a final pass. Mark `chunked: true` and `segment-count: N` in frontmatter.
 
+**Density trigger (v1.7).** Length alone does not tell you how hard a source is to read. A 5,000 word monologue that walks through six frameworks with six platforms each is harder to hold in one read than a 12,000 word chat with two topics. So ALSO use dense chunking when the transcript is **3,000 words or more AND any one of:** no chapter markers; 20 or more figures; 15 or more distinct names; 3 or more "for example" style cues. Do not count by hand: run `python3 scripts/coverage-diff.py <transcript> --density` and read the DENSE yes/no line.
+
+**Boundary check (v3.7, from the Saraev Part 2 run).** When the scope of a part is an ESTIMATE (cut by pace, by "about hour 2", or by a coordinator's guess) rather than a chapter marker, verify the end before splitting. Run `python3 scripts/coverage-diff.py <FULL transcript> --pivots` (or `--find "phrase"`) and look for the speaker's own topic switch ("next major step", "done with X", "move on to"). Cut at the real pivot sentence, not at the estimated word count. The Part 2 estimate was 3,250 words short of the real pivot and would have ended mid-demo. Record the cut word and the evidence phrase in the note's Series section. Times printed by the script are ESTIMATES from word position.
+
+For dense chunking (this replaces the single-pass or focused-attention instruction above):
+- Cut the transcript into chunks of about 900 words at sentence ends: `python3 scripts/coverage-diff.py <transcript> --split 900 <scratch-dir>`.
+- Work through the chunks one after another in the SAME chat (helper agents were tested and cost far more tokens than the chunks are worth). For each chunk read ONLY that chunk and write inventory lines using the Step 3.0 rules. No analysis, no note writing yet.
+- Merge in order, drop exact repeats, keep the speaker's wording. Then fill the template once, in the main context, from the merged inventory.
+- Frontmatter: `chunked: true`, `segment-count: N`, `attention-mode: dense-chunked`.
+
 For chunked extraction:
 - Each segment produces its own internal analysis (don't write segment-level notes to disk)
 - The final synthesis combines segment analyses into one source note + supporting notes
@@ -282,6 +292,26 @@ Short-form reels are NOT exempt from the standard source note structure. The fol
 ## Phase 3 — Source analysis
 
 Read the transcript (or a segment, in chunked mode). Produce an internal analysis covering:
+
+### Step 3.0: Inventory first (the "pass 0"; phase 6)
+
+Why: the second squeeze kept finding things the first pass never went looking for (the Codie run needed 9 passes). So the first pass now goes looking for ALL of it, as a plain list, before any section is written.
+
+List one short line per item, in speaker order. Do not analyze yet.
+
+**Machine help for the two categories that are easiest to under-capture (v3.7).** Before filling the template run `python3 scripts/coverage-diff.py <transcript> --questions` and make sure every question the speaker asked is either answered in the Q&A table or listed as open. Questions and personality/example lines were the thin spots in the Part 2 first draft, the same class of miss as the Codie run. Captions have no timestamps: when the prompt library or any section needs a time, use `--time-at <word position>` or `--find`, and label every such time "estimate".
+1. **FIGURES:** every dollar amount, percent, count, ratio, with what it measures and the speaker's hedge ("about", "just over").
+2. **NAMES:** every person, company, brand, product, platform, with one clause on why the speaker mentions it.
+3. **EXAMPLES:** every story, case, or worked example. For good-vs-bad pairs, one line each with the verdict and the reason the speaker gives.
+4. **PARTS:** every item of every list or framework. If the speaker names 6 steps and 6 platforms under each, that is 36 cells: list them as rows.
+5. **PERSONALITY:** every description, metaphor, or "this one is like..." used for a thing being compared.
+6. **QUESTIONS:** every question the speaker asks (rhetorical counts) and the answer given.
+7. **PROMISES:** every "if you do X then Y happens" or outcome claim, and who it is promised to.
+8. **QUOTES:** lines worth keeping word for word (coined terms, punchy rules). Max 15.
+9. **CORRECTIONS:** self-corrections, hedges, admissions, things the speaker says they do not do themselves.
+10. **PROMPTS:** every prompt, script or command the speaker says out loud to a tool, kept near-verbatim in order (feeds the Verbatim prompt library below). Added after the Nate Herk test, where paraphrasing them lost the exact wording.
+
+Then fill the template from this list. Every inventory line must land in a section or be marked `skipped: reason` in the working list. Nothing is dropped silently.
 
 ### Global writing rules (apply throughout the source note)
 
@@ -528,14 +558,18 @@ For opportunity notes, also include a `## Capability gap` section: if pursuing t
 
 ---
 
-## Phase 4b — Second squeeze (MANDATORY — do not proceed to Phase 5 without a quiet pass)
+## Phase 4b: Second squeeze (MANDATORY, capped; v1.7)
 
-After Phase 4's dedup work and BEFORE the conservative-creation gate, run the second-squeeze method (canonical: `skills/second-squeeze/SKILL.md`; same method the workflow doc's step 4b mandates) against your own Phase 3-4 output:
+After Phase 4's dedup work and BEFORE the conservative-creation gate:
 
-1. Re-enter the RAW transcript with fresh angles the first pass did not use (the skill's angle menus: money pass, promises pass, names pass, one-speaker read, corrections pass, etc.) — hunt for missed material.
-2. Stress-test what you DID extract: already-covered check against the FULL Phase 1 index **including client-project folders**, evidence check, number check, current-disk check.
-3. Record every pass honestly in the source note's `## Second-squeeze delta` table (angles used, items found, corrections). Loop until a full fresh-angle pass comes back quiet. Minimum 2 passes on dense sources; 3 when money decisions ride on the content.
-4. Set `squeeze-delta:` frontmatter to the FINAL pass's significant-find count. **A final delta ≥1 means you stopped too early — keep squeezing or surface why to the operator; it is never silently acceptable.**
+1. **Machine checks first (no model reading).** (a) `python3 scripts/coverage-diff.py <inventory-file> <note> --inventory-check` lists inventory lines whose key words never reached the note; fix or justify each. (b) `python3 scripts/coverage-diff.py <transcript> <note> --aliases <aliases-file>`; mark every flag `fixed` or `not needed: reason`. Caption misspellings and noise go in the aliases file (`Higsfield = Higgsfield` or `Okay ! filler`), NOT into the note: the diff ignores the note's "Coverage-diff record" and "Inventory disposition" sections, so writing a miss out there no longer clears it, and every `!` ignore is printed in the output. Goal: CLEAN with the aliases file saved beside the transcript so the result can be reproduced. (c) `python3 scripts/coverage-diff.py <note> --links <vault-root>`: no missing or ambiguous `[[links]]`, never `[[_README]]`, and do not quote a bad link as live `[[...]]` text when logging a fix (write it as plain text).
+2. **Then ONE combined all-angles pass on the RAW transcript.** Use every angle from the second-squeeze menus at once (money, promises, names, one-speaker, corrections, questions, timing, discomfort, plus examples and personality). Do not spread angles over separate passes. In the same pass run Hunt 2 once: already-covered check against the FULL Phase 1 index including client-project folders, evidence check, number check, current-disk check.
+3. **Record every pass** in the note's `## Second-squeeze delta` table (angles used, items found, corrections). Row 1 is the inventory extraction.
+4. **Stop rule:** coverage diff CLEAN **and** one combined pass finds nothing new. If a combined pass finds something, run one more to confirm quiet.
+5. **Cap:** default maximum 3 squeeze passes. A 4th needs a written reason in its delta row. If the cap is hit with the last pass still finding items, surface that to the operator. Never loop silently.
+6. Set `squeeze-delta:` to the FINAL pass's significant-find count and `coverage-diff:` to `clean` or the count of unresolved flags. A final delta of 1 or more is never silently acceptable.
+7. **Two counters, not one (v3.7).** `squeeze-delta:` counts only MISSED SOURCE FACTS (things the speaker said that the note lacked). Gap and risk findings about the source (no evidence shown, unattended spend, repeat-run problems, vault fit) are ANALYSIS ITEMS and are counted in a separate frontmatter field `analysis-items:`. The Part 2 late passes found 0 missed source facts but 7 analysis items; one number could not mean both. Row 1 of the delta table is the inventory extraction and does not count as a squeeze pass toward the cap. An extra pass the operator asks for beyond the cap of 3 is allowed: log it as `operator-requested` with the date and the reason in its delta row.
+8. **Switch lenses when word scans go quiet.** If two passes in a row find no missed source facts, stop scanning for words and run the late-pass lens menu in `skills/second-squeeze/SKILL.md` (evidence, unattended spend, repeat runs, sharing/keys, unexplained choices, vault fit, consolidation).
 
 **Phase 6 enforcement:** the review gate REFUSES auto-approval (auto mode) and the G-extraction reviewer treats it as a finding (training mode) when `squeeze-delta:` is missing or the final pass is ≥1. This step being skipped entirely is a defect of the same class as skipping the Phase 6 dispatch. (Wired 2026-09-26 from [[lesson-second-squeeze-not-wired-into-vis-extraction-2026-09-26]] — the mandate previously lived only in the workflow doc, which this spec never read, so four operator-requested passes were needed to catch what this step now catches by default.)
 

@@ -1,9 +1,9 @@
 ---
 name: second-squeeze
-version: 1.2
+version: 1.4
 status: active
 created: 2026-09-22
-updated: 2026-09-30
+updated: 2026-10-13
 canonical-copy: "workspace/skills/second-squeeze/SKILL.md (this repository file); installed/account copies are distribution mirrors, not authorities."
 description: "Independent fresh-angle re-review of a source or finished work; hunt for what the first pass missed and what it got wrong, verify against the whole vault, and fix the record in place. Triggers: second squeeze, gap sweep, run another pass, what did we miss, independent review, squeeze the transcript."
 ---
@@ -54,6 +54,27 @@ Select producer/reviewer tiers and record runtime identity per `~/workspace/seco
 - The FIRST-HAND-PROOF pass: list what only the client can supply (photo, video, a job story, their own numbers and habits) and turn it into one short plain text the owner can send.
 - The COMPETITOR-COPY pass: a table with three columns: already have, copy, skip on purpose (with the reason). Never leave competitor tactics as a loose list.
 - The BACKLOG pass: every spin-off page, article, post or video the material suggests, each with intent, what it depends on, and a cannibalization check against the page just built.
+
+## VIS sources: the phase 6 rule (added 2026-10-13)
+
+For VIS source notes (videos, articles, social posts, Skool), this section REPLACES the general cadence below. Pass 1 is the inventory extraction (extraction-prompt Step 3.0), not a squeeze pass.
+1. **Run the script first.** `python3 skills/vis-extraction/scripts/coverage-diff.py <transcript> <note>`. Fix real misses. Mark noise `not needed: reason`.
+2. **One combined all-angles pass** on the RAW source: every angle in the menus below at once, plus examples and personality lines. Not one angle per pass.
+3. **Vault checks run once, inside that combined pass:** already-covered check (including `04_projects/clients/_active/*/`), evidence check, number check, current-disk check, own-claims check.
+4. **Stop** when the script is CLEAN and a combined pass finds nothing new.
+5. **Cap: 3 squeeze passes.** A 4th needs a written reason in its delta-table row. At the cap with items still found, surface it to the operator. Never loop silently.
+6. **Count two things (v1.4).** `squeeze-delta` = missed source facts in the final pass. Gaps, risks and fit findings go in `analysis-items`. Say which kind each delta row found. An operator-requested pass beyond the cap is allowed and is logged as such with the reason.
+7. **Switch lenses, do not repeat scans.** Word scans (money, names, promises, questions) saturate by pass 2. If two passes in a row find no missed source facts, run the late-pass lens menu below instead of another scan.
+Everything else (client calls, vault work, finished deliverables) keeps the general cadence below.
+
+### Late-pass lens menu for how-to and tool-demo sources (added 2026-10-13, proven on the Saraev Part 2 run: 7 real analysis items after word scans found 0)
+- **EVIDENCE:** was any result shown (a real ad performing, a test, a number from a live account), or only the build? A tutorial with no results is a method, not proof.
+- **UNATTENDED SPEND and STOP SWITCH:** if anything runs on a schedule or in a loop (routine, cron, cloud job), what does each run cost, what caps it, and how does a person stop it?
+- **REPEAT-RUN:** does a scheduled job redo work it already did (same ads, same posts, same leads)? What remembers what was done?
+- **SHARING and KEYS:** where do API keys live, who can see them, what happens when the build is shared or moved to the cloud (separate key, reconnected connectors)?
+- **UNEXPLAINED CHOICES:** the model, setting or number the speaker picked without saying why. Flag each as unverified.
+- **VAULT FIT:** which active client or project could use this, which existing decision or open task it touches or contradicts (check `04_projects/clients/_active/*/`).
+- **CONSOLIDATION:** pull scattered material into one place: a failure table (what breaks, why, fix), rules of thumb, roles (who does what), prerequisites.
 
 ## Cadence and the stop rule
 

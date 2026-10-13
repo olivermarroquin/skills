@@ -1,0 +1,27 @@
+# Alias and ignore rules for the Saraev Part 2 note (2026-10-13).
+# "caption spelling = right spelling" counts as covered only if the right spelling is in the note.
+# "name ! reason" ignores on purpose; every ignore is printed in the diff output.
+Higsfield = Higgsfield
+Higsfield Soul Higsfield Soul Cinema Cream Pro = Higgsfield
+Higsfield MCP = Higgsfield
+Higsfield CLI = Higgsfield
+Hixfield MCP = Higgsfield
+HGfield = Higgsfield
+GBT = GPT
+Claro = Clarvo
+Clairvo = Clarvo
+Cling Turbo = Kling
+Microsoft Paints = Microsoft Paint
+UGC's = UGC
+Stripe Maker School Maker School Survive Nick Surive ! caption run-together of on-screen text, not a real name
+Yeah ! filler word capitalised at sentence start
+She's ! filler/caption fragment
+Anyway ! filler word
+Crush ! slang in a spoken aside about UGC style
+America ! appears only in French ad copy that the note covers
+SOP ! speaker's loose word for API documentation (the doc-reading step is in Build B)
+Q&amp ! HTML entity fragment of Q&A
+cue:28 ! two-ad-format duplication example is Build A (procedural ads)
+cue:36 ! two cues at 36%: version-one-to-richer-ads step is Build A to Build B; the "text into pixels" explainer is in Build B step 1
+cue:57 ! template sections example (feet row etc.) is in the Build B template steps
+cue:58 ! thousand-variants-from-a-template remark is in the Build B scale-up note

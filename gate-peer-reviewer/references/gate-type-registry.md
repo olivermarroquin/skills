@@ -643,10 +643,19 @@ Registered by the toolkit-wide quality-tool integration audit (2026-06-06). Thes
         - cost_usd: float
       severity: BLOCKING if verdict file absent or fields missing
       note: this shape is the Phase 2 (output-quality-loop Mode 5) composition input
+    check_dense_source_discipline:
+      description: VIS v1.7 dense-source rules were followed (added by vis-p6-dense-source-fix, 2026-10-13)
+      applies_to: every source note; the chunking check applies only when the density trigger fired
+      checks:
+        - pass_0_inventory: a Step 3.0 inventory exists (working list or saved) covering figures, names, examples, list parts, personality lines, questions, promises, quotes, corrections, spoken prompts. Missing = BLOCKING on a dense source, advisory otherwise.
+        - coverage_script_result: the note shows a coverage-diff.py result (frontmatter `coverage-diff:` plus the run output or its summary). Not run or result not shown = BLOCKING. Unresolved flags must each say fixed or `not needed: reason`.
+        - squeeze_pass_count: delta table shows 3 squeeze passes or fewer. A 4th pass must carry a written reason in its row. More than 3 without a reason = BLOCKING.
+        - dense_chunking: if `coverage-diff.py <transcript> --density` prints DENSE: yes, frontmatter must show `chunked: true` and `attention-mode: dense-chunked`. Missing = advisory finding with the reason asked for.
+      reference: skills/vis-extraction/SKILL.md § Scope, skills/second-squeeze/SKILL.md § VIS sources
   registered_by: quality-tool-integration-audit-202606060000
   registered_at: 2026-06-06
-  updated_at: 2026-09-24
-  updated_by: vis-p1-gate-integration
+  updated_at: 2026-10-13
+  updated_by: vis-p6-dense-source-fix
 
 # P7: intel-routing
 - orchestrator: intel-routing

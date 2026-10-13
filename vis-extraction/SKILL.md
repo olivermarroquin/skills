@@ -1,14 +1,14 @@
 ---
 name: vis-extraction
-version: 1.6.1
-updated: 2026-09-24
+version: 1.8
+updated: 2026-10-13
 quality-log: "[[_quality-log#SKILL]]"
 last-evaluated: 2026-09-24
 last-verdict: PASS
 description: Extract structured intelligence from videos, articles, transcripts, and other long-form content into Oliver's Knowledge OS vault. Triggers on phrases like "ingest this video," "extract this URL," "process this transcript," "pull and extract from a URL," "analyze this article," "ingest this source," "run VIS on this," or any time the user provides a YouTube URL, web article URL, or local transcript file and wants a structured source note plus extracted artifacts (tools, tactics, opportunities, content ideas) written into the second-brain vault. Also use when the user mentions adding a video/article/talk to their vault, or when they paste a URL with no other instruction in a Knowledge OS context. This is the primary path for converting external content into vault artifacts.
 ---
 
-# VIS Extraction Skill (v1.5)
+# VIS Extraction Skill (v1.8)
 
 The Video Intelligence System (VIS) extraction skill. Wraps the `transcript-pull.sh` and `social-pull.sh` scripts and the v3.5 extraction prompt into a single workflow. Pull a transcript, run extraction, write structured notes to the vault.
 
@@ -17,6 +17,18 @@ The Video Intelligence System (VIS) extraction skill. Wraps the `transcript-pull
 - **Sandbox network may be limited.** If the sandbox can't reach a URL, route the pull to the user's host machine — don't fake the work.
 - **Stop at the review gate by default.** Training mode is the default. Only skip review when the user explicitly says "auto."
 - **Multi-turn collaboration mode is available and recommended for batch ingestion.** This skill supports two modes: single-agent (one agent does everything; faster per source) and multi-turn (executor agent + review agent + operator collaboration; higher quality on batch ingestion). Both modes are first-class. See "Multi-turn collaboration protocol" below for when to use which.
+
+## Scope: what the v1.7 dense-source rules cover (stated 2026-10-13)
+
+The v1.7 rules are: Step 3.0 inventory first, density-triggered chunking, `scripts/coverage-diff.py` before squeezing, one combined squeeze pass, a cap of 3 squeeze passes, vault checks once.
+
+| Source type | Covered? | Where it stands |
+|---|---|---|
+| Videos with a transcript (YouTube) | **Yes, tested** | Codie (9 passes before, 3 now) and Nate Herk tests; see `second-brain/_meta/handoffs/vis-system-enhancement/phase-6-test-report.md` |
+| Articles | **Yes in the rules, not tested** | Same extraction prompt, so Step 3.0 and Phase 4b apply. The script reads any text file. Never tried on a real article. |
+| Social short-form (under 500 words) | **Partly** | Inventory and the script apply. Chunking never triggers (needs 3,000+ words). The reel path keeps its own depth rules. Not tested. |
+| Skool posts and courses | **Yes in the rules, not tested** | Pulled by `skool-pull.sh`, then the same extraction prompt. A Skool course delivered as video counts as video. |
+| Client calls (`client-call-ingest`) | **No** | Separate skill with its own pipeline. It does not mention the inventory or the script. It uses the general second-squeeze cadence (older rule). Open gap. |
 
 ## Multi-turn collaboration protocol
 
@@ -937,16 +949,18 @@ Local files don't need network. Run the script normally — it produces a copy i
 
 ### Step 7 — Run the extraction
 
-Phase 0 (environment preflight) was already executed in Step 5. Following the v3.2 extraction prompt, execute Phases 1-8:
+Phase 0 (environment preflight) was already executed in Step 5. Following the v3.7 extraction prompt, execute Phases 1-8:
 
 1. **Phase 1 — Context gathering.** Read templates, conventions, broad workspace context (CLAUDE.md, current-goals.md per Phase 1 step 3 of the extraction prompt, project READMEs, existing-note index from the vault).
 2. **Phase 2 — Chunking decision.** Determine attention mode:
    - <9,000 words → single-pass
    - 9,000-25,000 words → focused-attention
    - ≥25,000 words → chunked
-3. **Phase 3 — Source analysis.** Apply global writing rules (acronym expansion on first use; plain-English coverage at top + 4 jargon-section callouts). Produce all structured analysis. **Also produce a "Structured action items" block organized by kind (experiment / decision / comparison / research / adoption / conditional)** — apply the four-rule inclusion gate (decidable outcome, specific enough to act on, generalizes beyond pattern-watching, actionable to the operator). Soft cap at 8-10 items per source; surplus stays in legacy sections.
+   - **End-boundary check (v1.8):** if the scope end is an estimate (a slice cut by pace), run `scripts/coverage-diff.py <full transcript> --pivots` first and cut at the speaker's real topic switch (extraction-prompt § Phase 2 boundary check).
+   - **Density override (v1.7):** 3,000+ words AND (no chapter markers, or `scripts/coverage-diff.py <transcript> --density` prints DENSE: yes) → dense-chunked: about 900-word chunks inventoried in fresh small contexts, merged, then filled once (extraction-prompt § Phase 2).
+3. **Phase 3 — Source analysis.** **Start with the inventory (extraction-prompt § Step 3.0): list every figure, name, example, list part, personality description, question, promise, quote and correction BEFORE filling any section.** Apply global writing rules (acronym expansion on first use; plain-English coverage at top + 4 jargon-section callouts). Produce all structured analysis. **Also produce a "Structured action items" block organized by kind (experiment / decision / comparison / research / adoption / conditional)** — apply the four-rule inclusion gate (decidable outcome, specific enough to act on, generalizes beyond pattern-watching, actionable to the operator). Soft cap at 8-10 items per source; surplus stays in legacy sections.
 4. **Phase 4 — Existing-note check.** Dedup-and-enhance pass against vault content — INCLUDING `04_projects/clients/_active/*/` (execution-logs, plans, strategic decisions), per extraction-prompt Phase 1 item 6 + Phase 4.
-5. **Phase 4b — Second squeeze (MANDATORY — do not skip, do not proceed without a quiet pass).** Run the second-squeeze method (`skills/second-squeeze/SKILL.md`) against your own Phase 3-4 output per extraction-prompt § Phase 4b: fresh-angle passes on the RAW transcript + stress-tests of extracted claims, every pass recorded in the note's `## Second-squeeze delta` table, looping until a full fresh-angle pass comes back quiet (`squeeze-delta: 0`). Minimum 2 passes on dense sources, 3 for money-shaped content. An executor skipping this step is a defect of the same class as skipping Phase 6.
+5. **Phase 4b — Second squeeze (MANDATORY — do not skip, do not proceed without a quiet pass).** Run the second-squeeze method (`skills/second-squeeze/SKILL.md`) against your own Phase 3-4 output per extraction-prompt § Phase 4b: fresh-angle passes on the RAW transcript + stress-tests of extracted claims, every pass recorded in the note's `## Second-squeeze delta` table. Order: first run the machine checks (`--inventory-check`, the diff with `--aliases`, `--links`; extraction-prompt § Phase 4b item 1) and fix what they flag, then ONE combined all-angles pass (not one angle per pass). Stop when the diff is CLEAN and a combined pass finds nothing. Default cap 3 squeeze passes; a 4th (or an operator-requested extra pass) needs a written reason in the delta table; `squeeze-delta:` counts missed source facts only and gap/risk findings go in `analysis-items:` (v1.8); when two word-scan passes in a row are quiet, switch to the late-pass lens menu in `skills/second-squeeze/SKILL.md`; at the cap with items still found, surface to the operator (`squeeze-delta: 0` is the goal, never silently skipped). An executor skipping this step is a defect of the same class as skipping Phase 6.
 6. **Phase 5 — Conservative-creation gate.** Apply the "would this note be useful 3 months from now" filter.
 7. **Phase 6 — Review gate.** Dispatch the G-extraction peer-reviewer (MANDATORY — see § Peer-reviewer dispatch, which is the wired contract for this step; apply its independence policy, model override, and mandatory-trace requirements). This dispatch is NOT optional in either mode; an executor skipping it and proceeding to Phase 7 is a defect. **Squeeze enforcement:** if `squeeze-delta:` is missing or the final pass found ≥1 significant item, auto mode REFUSES to proceed (surface to operator) and training mode surfaces it as a to-fix finding — a thin or unrecorded squeeze never ships silently.
    - `training` mode: present structured summary (including "Proposed structured action items" block) AND dispatch G-extraction peer-reviewer. Route on verdict per § Peer-reviewer dispatch. Wait for both the user's approval of the structured summary AND the peer-reviewer verdict routing before proceeding to Phase 7.
@@ -1243,3 +1257,5 @@ orchestrator: vis-extraction
 - **v1.4 (2026-09-22)** — [RGH-22] OC-28 conventions-conformance wired; scoped VIS exception noted for G-extraction advisory independence.
 
 Then file the firing-tracker row at close with `Fired? = No` and the skip reason in Why.
+- **v1.7 (2026-10-13)** - [VIS-P6] Dense-source fix: Step 3.0 inventory first, density-triggered chunking (run chunks in the same chat, not helper agents), `scripts/coverage-diff.py` coverage check, one combined squeeze pass, cap of 3 squeeze passes, new optional template sections and `coverage-diff:` frontmatter. Tested on the Codie transcript: 29 of 30 transcript items in 3 passes vs 9. See vis-system-enhancement/phase-6-test-report.md.
+- **v1.8 (2026-10-13)** - [VIS-P7] Lessons from the Saraev Part 2 dense run (27,583 words, 31 chunks). (1) End-boundary check via `coverage-diff.py --pivots/--find` before chunking (estimated end was 3,250 words short). (2) `coverage-diff.py` gained `--questions`, `--inventory-check`, `--links`, `--time-at`, `--aliases`, and now ignores the note's own coverage-record sections so a clean result cannot be faked by spelling a miss out. (3) Two counters: `squeeze-delta` = missed source facts, `analysis-items` = gaps and risks; operator-requested extra passes are logged, not hidden. (4) Switch-lens rule when word scans go quiet (second-squeeze v1.4). Extraction prompt bumped v3.6 to v3.7. Same-chat chunking held at scale: about 81k tokens for the chunk loop, about 343k for the whole job.
