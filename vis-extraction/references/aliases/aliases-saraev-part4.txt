@@ -1,0 +1,5 @@
+OOTH = OAuth
+Netlefi = Netlify
+Netlifi = Netlify
+Kuo = Quo
+Wait ! caption fragment "Wa, this is way more efficient" (the efficiency-trap quote is in the Examples block)
