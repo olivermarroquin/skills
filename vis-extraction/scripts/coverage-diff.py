@@ -49,6 +49,48 @@ Monday Tuesday Wednesday Thursday Friday Saturday Sunday January February March 
 You You're You'll Your We We're They He She If Or Because Then Also Just Like Let Let's Don't Do Did Is Are Was Were Can Will""".split())
 WORD_STOP = set("""about after again because before being between could doing during every first going great really right should something still their there these thing things think those through under until where which while would your""".split())
 
+# ASR phoneme-substitution table for --auto-caption mode (CR-281).
+# Maps common caption OCR/phoneme errors to their correct form so the
+# name-detection pass doesn't flag the corrected tokens as "not in note."
+# Keep entries conservative: add only patterns confirmed as caption artifacts
+# in real Gate 3 transcripts; never suppress real proper nouns.
+AUTO_CAPTION_SUBS = [
+    # Anthropic variants (Entropic is the classic ASR error; others observed in captioned AI content)
+    (re.compile(r'\bEntropic\b', re.I),    'Anthropic'),
+    (re.compile(r'\bEnthropic\b', re.I),   'Anthropic'),
+    (re.compile(r'\bAnthropik\b', re.I),   'Anthropic'),
+    # Claude variants
+    (re.compile(r'\bClawed\b', re.I),      'Claude'),
+    (re.compile(r'\bClaus\b', re.I),       'Claude'),
+    (re.compile(r'\bClade\b', re.I),       'Claude'),
+    # Grokbot / Grok variants
+    (re.compile(r'\bGrockbots?\b', re.I),  'Grokbot'),
+    (re.compile(r'\bGrockpot\b', re.I),    'Grokbot'),
+    (re.compile(r'\bGrokpot\b', re.I),     'Grokbot'),
+    # Llama variants
+    (re.compile(r'\bLama\b', re.I),        'Llama'),
+]
+
+def auto_caption_preprocess(text):
+    """
+    Apply ASR caption artifact substitutions for --auto-caption mode.
+    Corrects phoneme-class errors in transcript text before name-detection
+    so that transcript variants (Entropic, Claus, Grockbot) are matched
+    against note text as their correct forms (Anthropic, Claude, Grokbot).
+
+    Does NOT strip bracket-noise here — sentences() already handles that.
+    Returns the substituted text string.
+    """
+    for pattern, replacement in AUTO_CAPTION_SUBS:
+        text = pattern.sub(replacement, text)
+    return text
+
+
+def has_figure(sentence):
+    """Return True if the sentence contains any figure pattern (money, pct, unit, number)."""
+    return bool(MONEY.search(sentence) or PCT.search(sentence) or UNIT.search(sentence) or ANYNUM.search(sentence))
+
+
 def load(path):
     t = open(path, encoding="utf-8", errors="ignore").read()
     if "## Transcript" in t:
@@ -68,7 +110,7 @@ def sentences(text):
     text = re.sub(r"\s+", " ", text)
     return [s.strip() for s in re.split(r"(?<=[.?!])\s+", text) if s.strip()]
 
-def scan(tr, note, aliases=None, ignored=None):
+def scan(tr, note, aliases=None, ignored=None, auto_caption=False):
     aliases = aliases or {}
     nl = note.lower()
     nvals = {val(m.group(1), m.group(2)) for m in ANYNUM.finditer(note)}
@@ -113,6 +155,12 @@ def scan(tr, note, aliases=None, ignored=None):
     freq = collections.Counter(w for w in re.findall(r"[a-z]{5,}", tr.lower()) if w not in WORD_STOP)
     for i, s in enumerate(sents):
         if not CUES.search(s):
+            continue
+        # --auto-caption: suppress cue hits in sentences with zero figure tokens.
+        # A cue phrase (e.g. "for example") in a figure-free sentence is almost
+        # always a topic transition or anecdote framing — not a data point being missed.
+        # This is the third layer of CR-281 caption-noise reduction.
+        if auto_caption and not has_figure(s):
             continue
         blob = " ".join(sents[i:i + 2]).lower()
         words = sorted({w for w in re.findall(r"[a-z]{5,}", blob) if w not in WORD_STOP}, key=lambda w: freq[w])[:4]
@@ -270,10 +318,17 @@ def main():
     if "--time-at" in a:
         pos = int(a[a.index("--time-at") + 1]); w = wps_arg(a)
         print(f"word {pos} = about {fmt_time(pos / w)} ESTIMATED at {w} words/sec (captions had no timestamps)"); return
+    # --auto-caption: preprocess transcript before scoring (CR-281).
+    # Layer 1: phoneme-class substitutions (Entropic→Anthropic, Claus→Claude, etc.)
+    # Layer 2: bracket-noise already stripped by sentences()
+    # Layer 3: story-cue false-positive filter (figure-free sentences suppressed in scan())
+    auto_caption = "--auto-caption" in a
+    if auto_caption:
+        tr = auto_caption_preprocess(tr)
     aliases = load_aliases(a[a.index("--aliases") + 1]) if "--aliases" in a else {}
     cap = int(a[a.index("--max-per-section") + 1]) if "--max-per-section" in a else 40
     ignored = []
-    miss = scan(tr, strip_records(open(a[2], encoding="utf-8", errors="ignore").read()), aliases, ignored)
+    miss = scan(tr, strip_records(open(a[2], encoding="utf-8", errors="ignore").read()), aliases, ignored, auto_caption=auto_caption)
     n = 0
     print(f"# Coverage diff: {os.path.basename(a[2])}\n")
     for kind, items in miss.items():

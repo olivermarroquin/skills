@@ -598,6 +598,32 @@ Registered by the toolkit-wide quality-tool integration audit (2026-06-06). Thes
     escalation_log: second-brain/_meta/escalations/vis-extraction-escalation-log.md
     # Operator skims this file to review the first batch before advisory→blocking promotion is lifted.
     first_batch_review: required before sub-agent advisory verdicts may be treated as blocking-capable
+  phase_2_policy:
+    # Five-signal auto-proceed gate. VIS-P8 (2026-11-23): Signal 2 now load-bearing (was advisory-pass-pending).
+    # A note auto-proceeds (status: ingested) only when ALL FIVE pass:
+    #   1. G-extraction verdict: APPROVE or APPROVE-WITH-NOTES (advisory severity)
+    #   2a. sections-check.py --type <type>: required sections present and non-empty
+    #       python3 skills/vis-extraction/scripts/sections-check.py <note> --type <type>
+    #       exit 1 → PARK (missing or empty required section)
+    #   2b. sections-check.py --type <type> --content: no stub action items
+    #       python3 skills/vis-extraction/scripts/sections-check.py <note> --type <type> --content
+    #       exit 2 → PARK (stub entry: no named-specific AND stub-phrase present)
+    #   2c. oql_signal2.py: OQL confidence >= threshold (80, from confidence-calibration.md VIS row)
+    #       python3 skills/vis-extraction/scripts/oql_signal2.py <verdict-json-path>
+    #       exit 1 → PARK (score < threshold)
+    #   3. squeeze-delta: 0 in the written note's frontmatter (quiet final squeeze pass)
+    #   4. coverage-diff.py exits 0: `python3 coverage-diff.py <transcript-cache-path> <note-path>`
+    #      transcript-cache-path = transcript fetched in Step 6, stored in note's transcript-cache: frontmatter
+    #      (passing only note-path → exit 2 bad-input, not a CLEAN result)
+    # Any signal failing → note parks (status: parked), escalation-log row appended.
+    # Parking is a routing decision, not rejection. Operator reviews and ships parked notes.
+    # advisory_constraint: gate operates under independence_policy.mode = advisory-only until
+    #   first_batch_review is satisfied and operator promotes to blocking-capable.
+    signals: [g-extraction-verdict, sections-structure, sections-stubs, oql-confidence, squeeze-delta-zero, coverage-diff-clean]
+    flip_prerequisite: Signal 2 is load-bearing as of VIS-P8 (2026-11-23) — precondition satisfied.
+    # When flipping advisory-only → blocking-capable, add signal_2_flip_status: load-bearing alongside mode change.
+    park_destination: second-brain/_meta/escalations/vis-extraction-escalation-log.md
+    spec_ref: skills/vis-extraction/SKILL.md § Auto-proceed policy (Phase 2)
   expects:
     check_1_satisfaction_targets:
       - source note follows 7-section structure (Take-away through Pattern candidates)

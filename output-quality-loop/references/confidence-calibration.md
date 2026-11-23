@@ -6,7 +6,7 @@ This file is the source of truth for two things:
 1. **Per-artifact-type confidence multipliers** — how reliable a verdict of this shape is at predicting what the operator would have decided
 2. **Per-artifact-type auto-approve thresholds** — the score above which a PASS verdict ships without operator review
 
-Updated quarterly as more real-use data accumulates. The next scheduled refresh is **2026-08-28** (three months from Phase 6 ship). Add a row to the "Calibration history" table at the bottom every time the file is updated.
+Updated quarterly as more real-use data accumulates. The next scheduled refresh is **2027-01-16** (three months from the 2026-10-16 VIS-P2 refresh). Add a row to the "Calibration history" table at the bottom every time the file is updated.
 
 ---
 
@@ -64,7 +64,7 @@ The table below is the starting calibration for Phase 6 ship (2026-05-28). It an
 | Tool note | **85** | 75 | 70 | 70 | Same shape as tactic. |
 | Pattern note | **85** | 75 | 70 | 70 | Same shape, slightly higher promotion threshold (3+ observed instances rule). |
 | Lesson note | **85** | 75 | 70 | 70 | Same shape as pattern. |
-| Source note (VIS) | **80** | 80 | 70 | 70 | Low downstream radius. First-pass cleanliness is the main signal (matches Phase 1 Jono regression where PASS confidence sat high on first iteration). |
+| Source note (VIS) | **80** | 80 | 70 | 70 | Low downstream radius. First-pass cleanliness is the main signal (matches Phase 1 Jono regression where PASS confidence sat high on first iteration). **2026-10-16 refresh:** 5-run dataset (YATB, Saraev Parts 1-4) — 3/5 squeeze-delta: 0 (auto-proceed eligible), 2/5 delta ≥1 (parked, operator reviewed and shipped both). All 5 operator-accepted = 100% agreement. Parts 3 (delta: 2) and Part 4 (delta: 4, 3-pass cap) shipped via operator review — this is the park path working correctly, not a failure of the policy. Do NOT treat delta ≥1 as auto-ship-eligible. Threshold held at 80: dataset confirms first-pass cleanliness is the right signal; no evidence to revise upward or downward. |
 | Research brief | **85** | 75 | 70 | 75 | Feeds downstream scaffolders. Spec-routing coverage weighted high. |
 | Cross-cluster synthesis | **90** | 75 | 70 | 75 | Same shape as cluster synthesis. |
 | Blueprint | **90** | 70 | 65 | 75 | High blast radius — blueprints feed multiple downstream initiatives. |
@@ -97,12 +97,18 @@ As of 2026-05-28, the dataset is small. Phase 6 ships early (operator green-lit 
 | `03_domains/seo/insights/` | source-2026-04-26-jono-catliff-claude-code-seo-50000-clicks-per-month-masterclass | refinement output | PASS | 1 of 3 | Yes (operator hand-eval matched skill verdict) |
 | `05_shared-intelligence/research-briefs/intersections/` | panel-upgrade--vienna-va | research brief (intersection) | PASS | 1 of 3 | Yes (handoff named as "high-quality reference artifact") |
 | `04_projects/clients/_active/ev-electric-services/website-archive/new/core-30/02-panel-upgrade-vienna-va/` | panel-upgrade-vienna-va (Core 30 page) | Core 30 page draft | (BYPASSED) | n/a | n/a — operator overrode the gate rather than running the loop |
+| `second-brain/` (VIS notes) | YATB source note | Source note (VIS) | PASS | 1 | Yes — squeeze-delta: 0, operator accepted |
+| `second-brain/` (VIS notes) | Saraev Part 1 source note | Source note (VIS) | PASS | 1 | Yes — squeeze-delta: 0, operator accepted |
+| `second-brain/` (VIS notes) | Saraev Part 2 source note | Source note (VIS) | PASS | 1 | Yes — squeeze-delta: 0, operator accepted |
+| `second-brain/` (VIS notes) | Saraev Part 3 source note | Source note (VIS) | PASS (parked: delta: 2) | 1 + operator extra pass | Yes — operator reviewed parked note and shipped. Proof of park→ship path. |
+| `second-brain/` (VIS notes) | Saraev Part 4 source note | Source note (VIS) | PASS (parked: delta: 4, 3-pass cap) | 3 (cap hit) | Yes — operator reviewed parked note and shipped. Proof of park→ship path. |
 
-**Aggregate signals:**
+**Aggregate signals (as of 2026-10-16 VIS-P2 refresh):**
 
-- 3 PASS verdicts emitted, 3 operator-accepted (100%)
+- 7 PASS verdicts total (3 original + 4 VIS runs with delta=0), operator-accepted 100%
+- 2 parked notes (Saraev Parts 3+4) — operator reviewed and shipped both (100% park-path agreement)
 - 0 NEEDS REVISION or FAIL verdicts
-- All 3 PASS verdicts landed at iteration 1 (no loop required)
+- All base-iteration PASS verdicts landed at iteration 1
 - 1 publish bypass on the highest-stakes artifact type (Core 30 page) — the operator chose to skip the loop rather than run it
 
 **What this calibration set can and can't tell us:**
@@ -158,7 +164,8 @@ Every update to this file appends a row here.
 | 2026-05-28 | Phase 6 ship | Initial table; conservative anchors; n=3 real-use verdicts + n=1 bypass event backing the calibration | Phase 6 build |
 | 2026-06-02 | client-seo-onboarding v1.1 | Added 4 new rows: Scaffolded data file (90), Imagery-prompt log (80), Internal-link proposals + dead-link audit (85), Onboarding final report (85). Conservative-by-default; calibration data sparse until v1.1 first real use. | v1.1 SKILL rewrite (per-step quality loop integration needs per-type thresholds for the artifacts the orchestrator produces) |
 | 2026-06-08 | mandatory-review-gate build | Added catch-all/unrouted row (threshold 90, PASS anchor 65). Conservative: almost nothing auto-ships without operator review on unrouted types. Companion catch-all routing entry added to `spec-routing-table.md`. | v1.3 mandatory pre-land review gate — any artifact type now gets baseline evaluation instead of being skipped |
-| (next: 2026-08-28) | quarterly refresh | TBD | TBD |
+| 2026-10-16 | VIS-P2 earned-autonomy build | Source note (VIS) row: updated weight notes with 5-run dataset (YATB + Saraev Parts 1-4). Threshold held at 80. Parts 3+4 precedent documented explicitly: delta ≥1 → park path, operator ships — this is correct behavior, not a policy failure. Next refresh: 2027-01-16. | Overdue quarterly refresh (was 2026-08-28); triggered by VIS-P2 four-signal auto-proceed policy needing calibration notes. |
+| 2026-11-23 | VIS-P8 value hardening | `oql_signal2.py` wired Signal 2c against Source note (VIS) threshold (80). Self-test: 8 cases, all pass. T4(c) trace: clean PASS verdict → score 100 (all 5 inputs full marks). Gate 3 batch (4 released standard notes) all PARK on structure (pre-Phase-8 notes lack `## Related notes` + `## Second-squeeze delta`) — real gaps, not false parks. Threshold held at 80; no data suggesting revision. CG-006 closed. | VIS-P8 Signal 2 load-bearing wiring. |
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: vis-extraction
-version: 1.8
+version: 2.0
 updated: 2026-10-13
 quality-log: "[[_quality-log#SKILL]]"
 last-evaluated: 2026-09-24
@@ -837,7 +837,7 @@ cat /Users/olivermarroquin/workspace/skills/vis-extraction/prompts/extraction-pr
 cat /Users/olivermarroquin/workspace/second-brain/_meta/scoring-rubric.md
 ```
 
-The extraction prompt is v3.5. It defines Phase 0 (environment preflight) and Phases 1-8 (the extraction itself). The scoring rubric is canonical for tier/relevance/actionability/monetization values.
+The extraction prompt is v3.7. It defines Phase 0 (environment preflight) and Phases 1-8 (the extraction itself). The scoring rubric is canonical for tier/relevance/actionability/monetization values.
 
 ### Step 5 — Phase 0 environment preflight
 
@@ -964,8 +964,8 @@ Phase 0 (environment preflight) was already executed in Step 5. Following the v3
 6. **Phase 5 — Conservative-creation gate.** Apply the "would this note be useful 3 months from now" filter.
 7. **Phase 6 — Review gate.** Dispatch the G-extraction peer-reviewer (MANDATORY — see § Peer-reviewer dispatch, which is the wired contract for this step; apply its independence policy, model override, and mandatory-trace requirements). This dispatch is NOT optional in either mode; an executor skipping it and proceeding to Phase 7 is a defect. **Squeeze enforcement:** if `squeeze-delta:` is missing or the final pass found ≥1 significant item, auto mode REFUSES to proceed (surface to operator) and training mode surfaces it as a to-fix finding — a thin or unrecorded squeeze never ships silently.
    - `training` mode: present structured summary (including "Proposed structured action items" block) AND dispatch G-extraction peer-reviewer. Route on verdict per § Peer-reviewer dispatch. Wait for both the user's approval of the structured summary AND the peer-reviewer verdict routing before proceeding to Phase 7.
-   - `auto` mode: dispatch G-extraction peer-reviewer and route on verdict. `APPROVE` / `APPROVE-WITH-NOTES` + advisory verdict → proceed to Phase 7. `APPROVE-WITH-NOTES` + blocking verdict → surface to operator before proceeding. `REJECT-AND-REDO` → fix and re-dispatch (cap 2). `ESCALATE-AMBIGUOUS` → surface to operator.
-8. **Phase 7 — Write to disk.** Write source note to `00_inbox/sources-pending/`, supporting notes to their canonical locations. **Materialize approved structured action items as task notes in `06_tasks/`** with `extracted-via: vis-phase6` and `source: [[<source-note>]]`. Set `attention-mode` in frontmatter. Leave the source note's "Action log" Dataview block in place (it auto-populates from the new task notes). Leave Discussions section's Dataview block in place.
+   - `auto` mode: dispatch G-extraction peer-reviewer. `REJECT-AND-REDO` → fix and re-dispatch (cap 2). `ESCALATE-AMBIGUOUS` → surface to operator. `APPROVE-WITH-NOTES` with blocking severity → append escalation-log row, surface to operator, do not proceed. On APPROVE or APPROVE-WITH-NOTES (advisory): proceed to Phase 7 (write to disk), then immediately run the **four-signal auto-proceed gate** (see § Auto-proceed policy). All four pass → note ships (status: ingested). Any signal fails → note parks (status: parked, escalation-log row) and the batch run continues on remaining URLs.
+8. **Phase 7 — Write to disk.** Write source note to `00_inbox/sources-pending/`, supporting notes to their canonical locations. **Materialize approved structured action items as task notes in `06_tasks/`** with `extracted-via: vis-phase6` and `source: [[<source-note>]]`. Set `attention-mode` in frontmatter. Set `transcript-cache:` frontmatter field to the path of the transcript file fetched in Step 6 (e.g. `skills/vis-extraction/cache/transcript-YYYY-MM-DD-HHMMSS-<slug>.md`) — Signal 4 of the four-signal auto-proceed gate reads this field to locate the transcript for the completeness check. Leave the source note's "Action log" Dataview block in place (it auto-populates from the new task notes). Leave Discussions section's Dataview block in place.
 9. **Phase 8 — Report.** Generate the structured report (see "Final report format" below).
 
 **Do NOT touch git.** The user commits manually after inspecting on disk.
@@ -1227,8 +1227,7 @@ If no FRONTIER reviewer session present, self-report and mark the Why column wit
 
 **What the orchestrator does with the verdict:**
 
-- `APPROVE` + `verdict_severity: advisory` → proceed to write phase. No operator review needed.
-- `APPROVE-WITH-NOTES` + `verdict_severity: advisory` → proceed to write; notes logged for awareness.
+- `APPROVE` or `APPROVE-WITH-NOTES` (advisory severity) → proceed to Phase 7 (write note to disk), then immediately run the **four-signal auto-proceed gate** (see § Auto-proceed policy). All four signals pass → note ships (`status: ingested`). Any signal fails → note parks (`status: parked`, escalation-log row appended), batch run continues on remaining URLs.
 - `APPROVE-WITH-NOTES` + `verdict_severity: blocking` → append escalation-log row (schema: date | extraction-slug | verdict | finding-summary | operator-action); surface to operator; do not proceed until operator acts.
 - `REJECT-AND-REDO` → fix the catch, re-surface structured summary, re-dispatch peer-reviewer. Cap at 2 iterations; on 3rd REJECT, escalate to operator.
 - `ESCALATE-AMBIGUOUS` → surface to operator with the peer-reviewer's ambiguity framing.
@@ -1248,6 +1247,190 @@ orchestrator: vis-extraction
 
 ---
 
+## Auto-proceed policy (Phase 2)
+
+A note auto-proceeds (ships silently, `status: ingested`) only when **all four signals pass**. Any failure routes the note to operator review (`status: parked`) — parking is a routing decision, not a rejection. A parked note is fully extracted and correct; the operator reviews and ships it on their own schedule.
+
+### The four signals
+
+**Signal 1 — G-extraction verdict**
+`APPROVE` or `APPROVE-WITH-NOTES` with advisory severity only. `REJECT-AND-REDO`, `ESCALATE-AMBIGUOUS`, or `APPROVE-WITH-NOTES` with blocking severity → park (and surface the finding per § Peer-reviewer dispatch above).
+
+**Signal 2 — Required-sections enforcement + OQL confidence (three sub-checks, all must pass)**
+
+Signal 2 is load-bearing as of VIS Phase 8 (2026-11-23). Three sub-checks run in sequence; any failure parks the note.
+
+**Signal 2a — Required sections present (structure check)**
+`python3 skills/vis-extraction/scripts/sections-check.py <note-path> --type <note-type>`
+Checks that every section required for the note type (per `references/sections-manifest.md`) is present and non-empty. Missing section or header present but body absent → exit 1 → PARK.
+Note types: `short` | `standard` | `prompt-library`. Derive from `type:` + `attention-mode:` frontmatter.
+
+**Signal 2b — No stub action items (content check)**
+`python3 skills/vis-extraction/scripts/sections-check.py <note-path> --type <note-type> --content`
+In addition to structure checks, verifies that no structured action item entries are stubs (placeholder text with no named-specific evidence). An entry stubs if it has no backtick token / URL / Tools-mentioned name AND contains a stub phrase (e.g., "look into", "follow up on", "research further"). Exit 2 → PARK.
+
+**Signal 2c — OQL confidence ≥ calibrated threshold**
+`python3 skills/vis-extraction/scripts/oql_signal2.py <verdict-json-path>`
+Scores the G-extraction verdict JSON on five inputs (hard-requirement margin, quality-dimension margin, discipline-rule cleanliness, iteration position, spec-routing coverage). Threshold: 80 (from `skills/output-quality-loop/references/confidence-calibration.md` VIS row — the script reads this; never hardcode). Score < 80 → exit 1 → PARK.
+The verdict JSON path is the file written by the gate-peer-reviewer during Signal 1.
+
+**Signal 3 — `squeeze-delta: 0` (quiet final squeeze pass)**
+The `squeeze-delta:` frontmatter field in the written note must equal 0. Any non-zero value means the final squeeze pass found something to trim — the note is not yet quiet — so it parks. The ≤3-pass squeeze cap composes: cap reached while non-quiet → delta ≥1 → parks (bounded effort without silent thinness).
+
+**Signal 4 — `coverage-diff.py` exits 0 (RESULT: CLEAN)**
+Run `python3 ~/workspace/skills/vis-extraction/scripts/coverage-diff.py <transcript-cache-path> <note-path>` after Phase 7 writes the note to disk. `<transcript-cache-path>` is the transcript file fetched in Step 6 (also recorded in the note's `transcript-cache:` frontmatter field — see Phase 7 write spec). Exit 0 = CLEAN → signal passes. Exit 1 = possible misses → park (flip `status: parked` in the written note's frontmatter; do not delete the file). The script checks money/percentages/numbers, names/brands, and story/example cues for completeness. (Note: passing only `<note-path>` without `<transcript-cache-path>` causes exit code 2 — bad input — which is not a CLEAN result. Always pass both paths.)
+
+### Evaluation order
+
+1. G-extraction verdict (Signal 1) — evaluated during Phase 6 reviewer dispatch
+2. Signal 2c — OQL confidence score computed from the G-extraction verdict JSON immediately after Signal 1
+3. Phase 7 writes note to disk
+4. Signal 2a — required-sections structure check (`sections-check.py --type <type>`) on the written note
+5. Signal 2b — stub action items check (`sections-check.py --type <type> --content`) on the written note
+6. Signal 3 — `squeeze-delta:` frontmatter check — read from the written note
+7. Signal 4 — `coverage-diff.py` run with `<transcript-cache-path>` and `<note-path>`
+
+If Signal 1 or 2c fail, Phase 7 still writes the note (it is fully extracted and correct), then park routing applies. If Signal 2a, 2b, 3, or 4 fail, flip `status:` to `parked` in the already-written note.
+
+### Park action
+
+When any signal fails:
+1. Ensure note is written to disk with `status: parked`
+2. Append escalation-log row: `date | extraction-slug | failed-signals | finding-summary | operator-action (pending)`
+   File: `second-brain/_meta/escalations/vis-extraction-escalation-log.md`
+3. Log event-log row with note slug and which signals failed
+4. Continue batch run on remaining URLs
+
+### Precedent — Parts 3 and 4 of the Saraev series
+
+Saraev Part 3 (squeeze-delta: 2) and Part 4 (squeeze-delta: 4) both parked under this policy and shipped via operator review. They are **proof the park→operator-ship path works**, not counterexamples to autonomous blocking. Signal 3 firing on a delta ≥1 note is the correct outcome — it routes work the operator needs to see, not work that is wrong. Do not treat delta ≥1 as ship-eligible for autonomous proceeds; that reading defeats the policy.
+
+### Advisory-only constraint
+
+G-extraction is currently in advisory-only mode (first-batch review open, escalation log at 0 entries as of 2026-10-16). The auto-proceed gate operates under this constraint: the four signals evaluate as specified, but the independence_policy gate in `gate-type-registry.md` § G-extraction governs whether a reviewer session is required. See the `phase_2_policy` field in that entry for the current effective rule.
+
+---
+
+## Batch intake (Phase 2)
+
+Batch mode processes a list of URLs through the **identical per-note pipeline** — same Phase 0-8 sequence, same G-extraction dispatch, same squeeze logic, same four-signal gate. No shortcuts. No stripped pipeline. "Faster" in batch mode means fewer context-switch interrupts for the operator, not fewer pipeline steps per note.
+
+### Invocation
+
+The operator provides a URL list in one of two forms:
+
+**Inline (≤5 URLs):**
+```
+Extract these sources in auto mode: <URL1> <URL2> <URL3>
+```
+
+**File (>5 URLs):** create a plain-text file with one URL per line, then:
+```
+Extract sources in auto mode from: <path-to-url-list.txt>
+```
+
+### Concurrency
+
+Process at most **2 URLs in parallel** at any time. In Claude Code, dispatch up to 2 sub-agents simultaneously using the Task tool; wait for both to complete before dispatching the next pair. Never dispatch 3 or more concurrently — deeper concurrency degrades extraction quality (context competition between parallel notes).
+
+### Parked-cap
+
+Default: **3**. After each URL completes, check the cumulative parked count. If the count reaches the cap, **pause the batch** and print a mid-run digest before continuing:
+
+```
+BATCH PAUSED — parked-cap reached (3 parked so far)
+
+[mid-run digest — same format as end-of-run digest, covering URLs processed so far]
+
+Continue with remaining <N> URLs? (yes / no / adjust-cap <N>)
+```
+
+The operator responds in chat. Default answer if no response within the turn is **yes, continue** — the cap is a check-in, not an abort. Operator can increase the cap, abort, or continue as-is.
+
+Custom cap: operator passes `--parked-cap N` in the invocation or adjusts in-chat at the pause.
+
+### Cost ceiling
+
+Optional. No default ceiling — operator sets explicitly:
+```
+Extract ... --cost-ceiling 2.00
+```
+
+After each URL completes, sum cumulative cost. If the next URL would push the total above the ceiling (estimated as 1.5× the current per-URL average), pause and surface:
+
+```
+BATCH PAUSED — cost ceiling approach
+Spent: $<X.XX> of $<ceiling> ceiling
+Estimated next URL: ~$<Y.YY>
+Continue? (yes / no / raise-ceiling <amount>)
+```
+
+Cost tracking uses the `cost_usd` field from G-extraction verdict + any transcript-fetch cost logged at Phase 0. If cost data is unavailable for a URL (graceful-degradation skip), treat that URL's cost as $0.00 for ceiling purposes.
+
+### Error handling
+
+- **Phase 0 hard-fail** on a URL → log as SKIPPED in the digest, continue with remaining URLs. Do not abort the batch.
+- **G-extraction sub-agent timeout or unavailable** → use graceful-degradation path (event-log row with `verdict: SKIPPED`), count note as parked (not shipped), continue.
+- **Unrecoverable error on a URL** → log as SKIPPED with error reason, continue. Never abort the whole batch for a single URL failure.
+
+### Ordering
+
+Process URLs in the order provided. Do not reorder for optimization. If the operator provides a file, process top-to-bottom.
+
+---
+
+## First-batch operator digest (Phase 2)
+
+At the end of every batch run, print one digest block covering all URLs processed in that run. Format:
+
+```
+BATCH COMPLETE — <N> URLs processed
+
+AUTO-SHIPPED (<n>):
+  ✓ <source-slug> — <note-path> — cost: $<X.XX>
+
+PARKED (<n>):
+  ✗ <source-slug> — <note-path> — failed: <signal-name(s)>
+    └ <one-line reason per failed signal>
+
+SKIPPED (<n>):
+  - <url> — <reason> (transcript unavailable / Phase 0 fail / etc.)
+
+Total cost: $<X.XX>
+Escalation-log rows added: <n>
+```
+
+**Per-note signal summary (parked notes only):** list each failed signal by name and one-line reason. Do not expose G-extraction raw verdict text in the digest — summarize as "G-extraction: REJECT-AND-REDO after 2 iterations" or "OQL confidence: 72 (threshold 80)".
+
+**Auto-shipped notes need no per-note detail** — they passed all four signals and are in `00_inbox/sources-pending/` with `status: ingested`. The operator can review them in Obsidian at their own pace.
+
+**Digest is mandatory for every batch run, even a single-URL run.** It is the operator's primary record of what the run produced without needing to open Obsidian.
+
+---
+
+## Advisory→blocking flip flow (operator-only)
+
+The advisory→blocking promotion is an **operator-only action**. It never happens automatically. The four-signal gate evaluates the same way in both modes — the flip only changes whether the G-extraction reviewer verdict is treated as blocking-capable or advisory.
+
+**When to flip:** after the operator reviews the first batch of auto-proceed and parked notes and judges the gate's verdicts are calibrated well enough to trust blocking behavior.
+
+**How to flip:**
+
+1. Open `skills/gate-peer-reviewer/references/gate-type-registry.md`
+2. Find the `independence_policy` block in the G-extraction entry (~line 589)
+3. Change `mode: advisory-only` → `mode: blocking-capable`
+4. Remove or update the `first_batch_review: required before...` line to `first_batch_review: completed <date>`
+5. Append an event-log row: `<timestamp> | gate-type-registry.md | flip | vis-extraction | G-extraction independence_policy promoted advisory-only → blocking-capable after first-batch review.`
+6. Commit the registry change
+
+**Flip prerequisite — Signal 2 is now load-bearing (precondition satisfied as of VIS Phase 8, 2026-11-23).** `sections-check.py` (Signals 2a + 2b) and `oql_signal2.py` (Signal 2c) are implemented, self-tested, and wired into the auto-proceed gate. The `signal_2_flip_status: load-bearing` field should be added to the `independence_policy` block of gate-type-registry.md when the operator performs the flip.
+
+**There is no other flip path.** The model never promotes the policy. Cowork/strategic chat never promotes it. The operator edits the file, commits, and the next batch run operates under the new mode.
+
+**If in doubt, don't flip yet.** More advisory data is never worse. The cost of staying advisory is a few extra parked notes the operator reviews; the cost of flipping prematurely is auto-proceeds on notes the gate should have blocked.
+
+---
+
 ## Version history
 
 - **v1.5 (2026-09-24, updated VIS-P4a)** — [VIS-P4a] Extraction prompt bumped to v3.5: tool URL+Cost sub-fields added to `### Tools mentioned` (verified URL or `not-found`; pricing or `unstated`); conditional `## Cost benchmarks` section added; `## Visual signal markers` renamed `## Visual signals (manual)` with checkbox format. Template and workflow updated to match (squeeze-delta frontmatter field, `## Second-squeeze delta` pass table, step 4b one-liner). Reference in this file updated from v3.4 → v3.5.
@@ -1259,3 +1442,5 @@ orchestrator: vis-extraction
 Then file the firing-tracker row at close with `Fired? = No` and the skip reason in Why.
 - **v1.7 (2026-10-13)** - [VIS-P6] Dense-source fix: Step 3.0 inventory first, density-triggered chunking (run chunks in the same chat, not helper agents), `scripts/coverage-diff.py` coverage check, one combined squeeze pass, cap of 3 squeeze passes, new optional template sections and `coverage-diff:` frontmatter. Tested on the Codie transcript: 29 of 30 transcript items in 3 passes vs 9. See vis-system-enhancement/phase-6-test-report.md.
 - **v1.8 (2026-10-13)** - [VIS-P7] Lessons from the Saraev Part 2 dense run (27,583 words, 31 chunks). (1) End-boundary check via `coverage-diff.py --pivots/--find` before chunking (estimated end was 3,250 words short). (2) `coverage-diff.py` gained `--questions`, `--inventory-check`, `--links`, `--time-at`, `--aliases`, and now ignores the note's own coverage-record sections so a clean result cannot be faked by spelling a miss out. (3) Two counters: `squeeze-delta` = missed source facts, `analysis-items` = gaps and risks; operator-requested extra passes are logged, not hidden. (4) Switch-lens rule when word scans go quiet (second-squeeze v1.4). Extraction prompt bumped v3.6 to v3.7. Same-chat chunking held at scale: about 81k tokens for the chunk loop, about 343k for the whole job.
+- **v2.0 (2026-11-23)** - [VIS-P8] Value hardening: Signal 2 promoted from advisory-pass-pending to load-bearing (three sub-checks). (1) NEW `sections-check.py` — deterministic required-sections enforcement per `references/sections-manifest.md`: `--structure` checks headers present + non-empty (exit 1 on fail), `--content` adds stub-action-items detection (exit 2 on fail), `--stubs-only` for calibration. Manifest: short→`## Operator follow-ups`; standard→`## Suggested judgments`+`## Related notes`+`## Second-squeeze delta`; prompt-library→`## Prompt library (from source)`. Stub detection: entry parks only if BOTH no named-specific evidence (backtick/URL/Tools-mentioned; capitalized proper nouns removed per Gate 2 sharpening) AND a stub phrase present. (2) NEW `oql_signal2.py` — OQL Mode 5 confidence scoring (threshold 80) from G-extraction verdict JSON; 5 inputs; self-tested 8/8. (3) SKILL.md updated: Signal 2 split into 2a (sections structure), 2b (sections stubs), 2c (OQL score); evaluation order updated to 7 steps. (4) `--auto-caption` mode added to `coverage-diff.py` (CR-281 fix): phoneme-class substitutions + story-cue false-positive filter for figure-free sentences. (5) Gate-type-registry.md `phase_2_policy` updated: five signals named, advisory-pass-pending removed, flip prerequisite satisfied. (6) CG-006 closed; CR-281 applied. T4(c) 5-signal trace: Wesley Hoang note PARKs on Signal 2a (pre-Phase-8 structure gaps — real finds); Signals 2c+3+4 all PASS.
+- **v1.9 (2026-10-16)** - [VIS-P2] Earned autonomy: four-signal auto-proceed policy + batch intake. (1) Phase 6 `auto` mode updated: on APPROVE/APPROVE-WITH-NOTES (advisory), run the four-signal gate after Phase 7 writes the note. (2) "What the orchestrator does with the verdict" updated to reference the gate. (3) New `## Auto-proceed policy (Phase 2)` section: four signals (G-extraction verdict, OQL confidence ≥ calibrated threshold, squeeze-delta: 0, `coverage-diff.py <transcript-cache-path> <note-path>` exits 0), evaluation order, park semantics, Parts 3/4 precedent, escalation-log row format. (4) New `## Batch intake (Phase 2)` section: identical per-note pipeline, concurrency ≤2, parked-cap (default 3), optional cost ceiling, ordering, error handling. (5) New `## First-batch operator digest (Phase 2)`: shipped/parked/skipped digest format, mandatory after every batch run. (6) New `## Advisory→blocking flip flow (operator-only)`: step-by-step operator flip instructions; no automatic promotion path. (7) Phase 7 write step: add `transcript-cache:` frontmatter field (Signal 4 source). (8) Extraction prompt reference v3.5→v3.7. Gate-type-registry.md G-extraction entry gains `phase_2_policy` block. confidence-calibration.md Source note (VIS) row refreshed with 5-run dataset. template-source-video.md gains `transcript-cache:` field.
